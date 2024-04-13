@@ -38,10 +38,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function copyName(detectedLang) {
         const contactName = document.querySelector('.contact-name');
-        contactName.addEventListener('click', function() {
+        contactName.addEventListener('click', function () {
             const name = this.textContent.trim();
             navigator.clipboard.writeText(name);
-            // Отображение сообщения
             const lang = detectedLang;
             let message;
             if (lang === 'ru') {
@@ -49,36 +48,28 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 message = `Name "${name}" copied to clipboard!`;
             }
-            console.log("SHOW");
             showMessage(message);
         });
     }
-    
-    
+
     function showMessage(message) {
         const messageElement = document.getElementById("message");
         messageElement.textContent = message;
         messageElement.style.display = "block";
         setTimeout(() => {
             messageElement.style.display = "none";
-        }, 3000); // Скрываем сообщение через 3 секунды
+        }, 3000);
     }
-    
-    
+
     function detectLanguage() {
         const lang = navigator.language;
         const detectedLang = /ru|uk|kk/.test(lang) ? 'ru' : 'en';
-        
-        // Находим кнопку, соответствующую обнаруженному языку
         const detectedButton = document.querySelector(`.language-switch button[data-lang="${detectedLang}"]`);
-        // Добавляем класс active к найденной кнопке
         if (detectedButton) {
             detectedButton.classList.add('active');
         }
-        
         return detectedLang;
     }
-    
 
     function applyTranslations(lang) {
         document.querySelectorAll('.slide').forEach((slide, index) => {
@@ -87,8 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
             slide.querySelector('.slide-content p').innerHTML = data.text;
         });
     }
-    
-
 
     function setCurrentSlide(n) {
         document.querySelectorAll('.slide').forEach((slide) => {
@@ -100,41 +89,45 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('.slide:nth-child(' + n + ')').classList.add('active');
         document.querySelector('.dot:nth-child(' + n + ')').classList.add('active');
     }
+
     const languageSwitchButtons = document.querySelectorAll('.language-switch button');
 
     languageSwitchButtons.forEach(button => {
         button.addEventListener('click', function () {
-            // Удалить класс .active у всех кнопок
             languageSwitchButtons.forEach(btn => btn.classList.remove('active'));
-            // Добавить класс .active к выбранной кнопке
             this.classList.add('active');
             applyTranslations(this.dataset.lang);
         });
     });
-    
 
-    let userScrolling = false;
-    let lastScrollTime = 0;
-    document.querySelector('.slider').addEventListener('wheel', (event) => {
-        userScrolling = true;
-        clearInterval(interval);
-        const now = Date.now();
-        if (now - lastScrollTime > 1000) { // 1 секунда задержка
-            if (event.deltaY < 0 && currentSlide > 1) {
+    let touchStartY, touchEndY;
+
+    document.querySelector('.slider').addEventListener('touchstart', function (event) {
+        touchStartY = event.touches[0].clientY;
+    });
+
+    document.querySelector('.slider').addEventListener('touchend', function (event) {
+        touchEndY = event.changedTouches[0].clientY;
+        handleSwipe();
+    });
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const swipeDistance = touchEndY - touchStartY;
+        if (Math.abs(swipeDistance) > swipeThreshold) {
+            if (swipeDistance > 0 && currentSlide > 1) {
                 currentSlide--;
-            } else if (event.deltaY > 0 && currentSlide < maxSlides) {
+            } else if (swipeDistance < 0 && currentSlide < maxSlides) {
                 currentSlide++;
             }
             setCurrentSlide(currentSlide);
-            lastScrollTime = now;
         }
-        event.preventDefault();
-    });
+    }
 
     let currentSlide = 1;
     let maxSlides = document.querySelectorAll('.slide').length;
     let interval = setInterval(() => {
-        if (!userScrolling && currentSlide <= maxSlides) {
+        if (currentSlide <= maxSlides) {
             setCurrentSlide(currentSlide);
             currentSlide++;
         } else {
@@ -142,15 +135,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, 6000);
 
-    document.querySelector('.slider').addEventListener('scroll', function () {
-        clearInterval(interval);
-        userScrolling = true;
-    });
-
     document.querySelectorAll('.dot').forEach((dot, index) => {
         dot.addEventListener('click', function () {
             setCurrentSlide(index + 1);
-            userScrolling = true;
         });
     });
 
