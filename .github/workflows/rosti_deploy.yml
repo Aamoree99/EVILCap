@@ -12,7 +12,7 @@ jobs:
       env:
         HOST: ssh.rosti.cz
         USER: app
-        PORT: 27323
+        PORT: 27324
         NODE_VERSION: 21.7.1
       steps:
       - uses: actions/checkout@v3
@@ -24,7 +24,7 @@ jobs:
           ssh-private-key: ${{ secrets.ROSTI_DEPLOY_SSH_KEY }}
       - name: Setup hostkey
         run: |
-          echo "ssh.rosti.cz ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoDDkMF2pCoHLB19aUT4FjpfPFgzKwBLOaHR8FJfwpgBN0ODGlU2GwKk4QK8kDVInTPe0pcbnLanr1Oo0G4lrMVxNtxaAj0WI0SQuyxTBU9W8UzPNio0rSLrMu8yC/WrwaZ2qy61Yl3vdqTEbw1+pJo/82NcSJERDnjcny1vfR8wEMCadMjeF3hzFIZQ7EQ2jcvEq4GgtXfuOA581aA7T9L+6VGkqkWSBy7+59qRCpgCzKSECNM5HFrhAPuLSztClZmovnU6vKn4YdLsltO1y/0+bp2ZQUmVLxVbd2cXzLShmtlb6K983eE8DM6R1d6CFLV3UEYpqYR/6vAkQ4L/qj" > ./known_hosts
+          echo "ssh.rosti.cz ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxPYVDew29FODZW3Bl00kiBVsmjF+GqjdqeU8lR/bvqmLX/Lg2rgZsxenc9KJAPdLbYh2cTFAEc3kiwaSbUoWVTZdnILLCJsaRELJAvL+LfMUPgLnBg06G+qNO2k5CckLRpCVmSUkCHvQTUe0pIt6EAVQ/N3wb2auSNvrduK3uikJLCdoB2kjUDpDwutDJLAT8ZODCwhKTz4F9H8FRWfBuuUjhaqzrSmnCi+hZHP97uTRWtzJ6O2OKtMIM9BGDa9ZsiOCQbmutlwU8JiDazsawMqylukuxOEKymQCJpmxFuTneDvzXaapbZo3t2RPqmbH+rz8ACw5QsqTXnIvdxi27" > ./known_hosts
       - name: env
         run: |
           cat << EOF > .env
