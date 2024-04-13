@@ -100,6 +100,18 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('.dot:nth-child(' + n + ')').classList.add('active');
     }
 
+    const languageSwitchButtons = document.querySelectorAll('.language-switch button');
+
+    languageSwitchButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            // Удалить класс .active у всех кнопок
+            languageSwitchButtons.forEach(btn => btn.classList.remove('active'));
+            // Добавить класс .active к выбранной кнопке
+            this.classList.add('active');
+            applyTranslations(this.dataset.lang);
+        });
+    });
+
     let interval = setInterval(() => {
         if (!userScrolling) {
             currentSlide = (currentSlide % maxSlides) + 1;
