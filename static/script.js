@@ -68,7 +68,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function detectLanguage() {
         const lang = navigator.language;
-        return /ru|uk|kk/.test(lang) ? 'ru' : 'en';
+        const detectedLang = /ru|uk|kk/.test(lang) ? 'ru' : 'en';
+        
+        // Находим кнопку, соответствующую обнаруженному языку
+        const detectedButton = document.querySelector(`.language-switch button[data-lang="${detectedLang}"]`);
+        // Добавляем класс active к найденной кнопке
+        if (detectedButton) {
+            detectedButton.classList.add('active');
+        }
+        
+        return detectedLang;
     }
 
     function applyTranslations(lang) {
