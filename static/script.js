@@ -36,18 +36,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }            
     };
 
+    let userScrolling = false;
+    let currentSlide = 1;
+    let maxSlides = document.querySelectorAll('.slide').length;
+    let lastScrollTime = 0;
+
+    function stopAutoScroll() {
+        userScrolling = true;
+        clearInterval(interval);
+        removeZoomEffect(); // Убираем эффект увеличения, когда автопрокрутка останавливается
+    }
+
     function copyName(detectedLang) {
         const contactName = document.querySelector('.contact-name');
-        contactName.addEventListener('click', function () {
+        contactName.addEventListener('click', function() {
             const name = this.textContent.trim();
             navigator.clipboard.writeText(name);
-            const lang = detectedLang;
-            let message;
-            if (lang === 'ru') {
-                message = `Имя "${name}" скопировано в буфер обмена!`;
-            } else {
-                message = `Name "${name}" copied to clipboard!`;
-            }
+            let message = detectedLang === 'ru' ? `Имя "${name}" скопировано в буфер обмена!` : `Name "${name}" copied to clipboard!`;
             showMessage(message);
         });
     }
@@ -63,12 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function detectLanguage() {
         const lang = navigator.language;
-        const detectedLang = /ru|uk|kk/.test(lang) ? 'ru' : 'en';
-        const detectedButton = document.querySelector(`.language-switch button[data-lang="${detectedLang}"]`);
-        if (detectedButton) {
-            detectedButton.classList.add('active');
-        }
-        return detectedLang;
+        return /ru|uk|kk/.test(lang) ? 'ru' : 'en';
     }
 
     function applyTranslations(lang) {
@@ -80,67 +80,99 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function setCurrentSlide(n) {
-        document.querySelectorAll('.slide').forEach((slide) => {
+        document.querySelectorAll('.slide').forEach(slide => {
             slide.classList.remove('active');
+            slide.querySelector('.background-image').classList.remove('zoom-effect');
         });
-        document.querySelectorAll('.dot').forEach((dot) => {
-            dot.classList.remove('active');
-        });
-        document.querySelector('.slide:nth-child(' + n + ')').classList.add('active');
+        document.querySelectorAll('.dot').forEach(dot => dot.classList.remove('active'));
+        const activeSlide = document.querySelector('.slide:nth-child(' + n + ')');
+        activeSlide.classList.add('active');
+        activeSlide.querySelector('.background-image').classList.add('zoom-effect');
         document.querySelector('.dot:nth-child(' + n + ')').classList.add('active');
     }
 
-    const languageSwitchButtons = document.querySelectorAll('.language-switch button');
+    let interval = setInterval(() => {
+        if (!userScrolling) {
+            currentSlide = (currentSlide % maxSlides) + 1;
+            setCurrentSlide(currentSlide);
+            applyZoomEffect(); // Применяем эффект увеличения при автопрокрутке
+        } else {
+            removeZoomEffect(); // Удаляем эффект увеличения, если пользователь взаимодействовал
+        }
+    }, 6000);
 
-    languageSwitchButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            languageSwitchButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            applyTranslations(this.dataset.lang);
-        });
-    });
+    function applyZoomEffect() {
+        const activeSlide = document.querySelector('.slide.active');
+        if (activeSlide) {
+            activeSlide.classList.add('zoom-effect');
+        }
+    }
+    
+    function removeZoomEffect() {
+        const activeSlide = document.querySelector('.slide.active');
+        if (activeSlide) {
+            activeSlide.classList.remove('zoom-effect');
+        }
+    }
+    
 
-    let touchStartY, touchEndY;
-
-    document.querySelector('.slider').addEventListener('touchstart', function (event) {
-        touchStartY = event.touches[0].clientY;
-    });
-
-    document.querySelector('.slider').addEventListener('touchend', function (event) {
-        touchEndY = event.changedTouches[0].clientY;
-        handleSwipe();
-    });
-
-    function handleSwipe() {
-        const swipeThreshold = 50;
-        const swipeDistance = touchEndY - touchStartY;
-        if (Math.abs(swipeDistance) > swipeThreshold) {
-            if (swipeDistance > 0 && currentSlide > 1) {
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+    
+    const handleScroll = debounce(function(event) {
+        stopAutoScroll(); // Останавливаем автопрокрутку
+        if (event.deltaY < 0 && currentSlide > 1) {
+            currentSlide--;
+        } else if (event.deltaY > 0 && currentSlide < maxSlides) {
+            currentSlide++;
+        }
+        setCurrentSlide(currentSlide);
+    }, 250, true); // Задержка в 250 мс между обработками скролла
+    
+    document.querySelector('.slider').addEventListener('wheel', handleScroll);
+     
+    
+    document.querySelector('.slider').addEventListener('touchstart', event => {
+        touchStart = event.touches[0].clientY;
+    }, false);
+    
+    document.querySelector('.slider').addEventListener('touchend', event => {
+        let touchEnd = event.changedTouches[0].clientY;
+        stopAutoScroll();
+        if (Math.abs(touchEnd - touchStart) > 10) { // Добавляем минимальный порог движения для активации
+            if (touchEnd > touchStart && currentSlide > 1) {
                 currentSlide--;
-            } else if (swipeDistance < 0 && currentSlide < maxSlides) {
+            } else if (touchEnd < touchStart && currentSlide < maxSlides) {
                 currentSlide++;
             }
             setCurrentSlide(currentSlide);
         }
-    }
-
-    let currentSlide = 1;
-    let maxSlides = document.querySelectorAll('.slide').length;
-    let interval = setInterval(() => {
-        if (currentSlide <= maxSlides) {
-            setCurrentSlide(currentSlide);
-            currentSlide++;
-        } else {
-            clearInterval(interval);
-        }
-    }, 6000);
+    }, false);
+    
+    document.querySelector('.slider').addEventListener('scroll', () => {
+        stopAutoScroll();
+    });
 
     document.querySelectorAll('.dot').forEach((dot, index) => {
-        dot.addEventListener('click', function () {
+        dot.addEventListener('click', () => {
             setCurrentSlide(index + 1);
+            stopAutoScroll();
         });
     });
 
     applyTranslations(detectLanguage());
+    setCurrentSlide(1);
     copyName(detectLanguage());
 });

@@ -5,7 +5,7 @@ body, html {
     height: 100%;
     color: white;
     font-family: 'Orbitron','Noto Sans', sans-serif;
-    background-color: #0A3E5D; 
+    background-color: #000; 
     overflow: hidden;
 }
 
@@ -110,6 +110,23 @@ main {
     transition: opacity 1s ease-in-out;
 }
 
+.background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 12s ease-in-out;
+    transform: scale(1);  /* Начальный масштаб */
+    z-index: -1;
+}
+
+.background-image.zoom-effect {
+    transform: scale(1.1); /* Увеличиваем изображение на 5% */
+}
+
 .slide.active {
     opacity: 1;
 }
@@ -199,6 +216,7 @@ main {
     border-radius: 50%;
     display: inline-block;
     cursor: pointer;
+    transition: background-color 1s ease, height 1s ease, width 1s ease;
 }
 
 .dot.active {
@@ -206,6 +224,7 @@ main {
     height: 23px;
     width: 23px;
 }
+
 
 .discord-button {
     display: inline-block;
