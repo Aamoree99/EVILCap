@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = 8000; // Порт, на котором будет запущен сервер
+const port = 8080; // Порт, на котором будет запущен сервер
 
 // Путь к папке со статическими файлами
 const staticPath = path.join(__dirname, 'static');
