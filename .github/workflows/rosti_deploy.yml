@@ -33,9 +33,6 @@ jobs:
       - name: Dependencies
         run: |
           npm install
-      - name: Build
-        run: |
-          npm run build
       - name: Setup Node.js
         run: |
           ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST /usr/local/bin/rosti node $NODE_VERSION
