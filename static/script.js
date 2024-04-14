@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
             ru: { title: "The Necro Order", text: "The Necro Order представляет собой PVP-крыло нашего альянса, специализирующееся на фракционных войнах и боевых действиях в лолусек зонах. Если вы ищете адреналин и желаете проверить свои навыки в настоящих баталиях, то вам к нам. Мы обещаем не только бои, но и поддержку, обучение и возможность стать частью закалённой боевой братии." }
         },
         6: {
-            en: { title: "Nova Labs", text: "Nova Labs is a European corporation focused on industry and manufacturing, with opportunities in mining. We offer state-of-the-art equipment and the chance to work in an international team of experts. Our approach to innovation allows every team member to contribute to our collective success and fulfill personal ambitions." },
-            ru: { title: "Nova Labs", text: "Nova Labs – это европейская корпорация, занимающаяся промышленностью и производством, с возможностями для добычи. Мы предлагаем современное оборудование и возможность работать в международной команде экспертов. Наш подход к инновациям позволяет каждому члену команды вносить вклад в общее дело и реализовывать личные амбиции." }
+            en: { title: "Nova Labs", text: "Nova Labs is a US corporation focused on industry and manufacturing, with opportunities in mining. We offer state-of-the-art equipment and the chance to work in an international team of experts. Our approach to innovation allows every team member to contribute to our collective success and fulfill personal ambitions." },
+            ru: { title: "Nova Labs", text: "Nova Labs – это американская корпорация, занимающаяся промышленностью и производством, с возможностями для добычи. Мы предлагаем современное оборудование и возможность работать в международной команде экспертов. Наш подход к инновациям позволяет каждому члену команды вносить вклад в общее дело и реализовывать личные амбиции." }
         },
         7: {
             en: {
