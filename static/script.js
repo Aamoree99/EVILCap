@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             removeZoomEffect(); // Удаляем эффект увеличения, если пользователь взаимодействовал
         }
-    }, 6000);
+    }, 10000);
 
     function applyZoomEffect() {
         const activeSlide = document.querySelector('.slide.active');
