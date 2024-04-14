@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', function () {
             ru: { title: "Nova Labs", text: "Nova Labs – это американская корпорация, занимающаяся промышленностью и производством, с возможностями для добычи. Мы предлагаем современное оборудование и возможность работать в международной команде экспертов. Наш подход к инновациям позволяет каждому члену команды вносить вклад в общее дело и реализовывать личные амбиции." }
         },
         7: {
-            en: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – ваш путь к приключениям в космосе. Наша корпорация предлагает обширные возможности для PVE миссий и майнинга, приветствуя новичков и опытных пилотов. Присоединяйтесь к нашему дружелюбному коллективу, где каждый член вносит свой вклад в общее дело. За дополнительной информацией обращайтесь к <span class="contact-name">Aamoree</span>.' },
-            ru: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – your gateway to space adventures. Our corporation offers extensive opportunities for PVE missions and mining, welcoming both newcomers and experienced pilots. Join our friendly collective where everyone contributes to our common goals. For further information, feel free to reach out to <span class="contact-name">Aamoree</span>.' }
+            ru: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – ваш путь к приключениям в космосе. Наша корпорация предлагает обширные возможности для PVE миссий и майнинга, приветствуя новичков и опытных пилотов. Присоединяйтесь к нашему дружелюбному коллективу, где каждый член вносит свой вклад в общее дело. За дополнительной информацией обращайтесь к <span class="contact-name">Aamoree</span>.' },
+            en: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – your gateway to space adventures. Our corporation offers extensive opportunities for PVE missions and mining, welcoming both newcomers and experienced pilots. Join our friendly collective where everyone contributes to our common goals. For further information, feel free to reach out to <span class="contact-name">Aamoree</span>.' }
         },
         8: {
             en: {
