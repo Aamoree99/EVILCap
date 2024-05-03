@@ -31,11 +31,13 @@ document.addEventListener('DOMContentLoaded', function () {
         8: {
             en: {
                 title: "Join Our Ranks Today!",
-                text: `You've decided to join us — excellent choice! In-game, reach out to <span class="contact-name">DonaldKrak</span> to get started or click the button below to join our Discord and become part of our thriving community. We're excited to welcome you aboard and start our journey together. Let’s achieve greatness!`
+                text: `You've decided to join us — excellent choice! In-game, reach out to <span class="contact-name">DonaldKrak</span> to get started or click the button below to join our Discord and become part of our thriving community. We're excited to welcome you aboard and start our journey together. Let’s achieve greatness!`,
+                note: `Please enter your nickname in the format "EVE nickname (real name)" and specify your corporation upon joining the server.`
             },
             ru: {
                 title: "Присоединяйтесь к Нам Сегодня!",
-                text: `Вы решили присоединиться к нам — отличный выбор! В игре обращайтесь к <span class="contact-name">DonaldKrak</span>, чтобы начать, или нажмите кнопку ниже, чтобы присоединиться к нашему Discord и стать частью нашего процветающего сообщества. Мы рады приветствовать вас в наших рядах и начать совместное путешествие. Давайте достигнем великолепия вместе!`
+                text: `Вы решили присоединиться к нам — отличный выбор! В игре обращайтесь к <span class="contact-name">DonaldKrak</span>, чтобы начать, или нажмите кнопку ниже, чтобы присоединиться к нашему Discord и стать частью нашего процветающего сообщества. Мы рады приветствовать вас в наших рядах и начать совместное путешествие. Давайте достигнем великолепия вместе!`,
+                note: `Введите ваш ник в формате "ник EVE (реальное имя)" и укажите корпорацию при присоединении к серверу.`
             }            
         }            
     };
@@ -89,8 +91,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = translations[index + 1][lang];
             slide.querySelector('.slide-content h1').innerHTML = data.title;
             slide.querySelector('.slide-content p').innerHTML = data.text;
+            if (data.note) {
+                const noteElement = slide.querySelector('.slide-content small');
+                if (noteElement) {
+                    noteElement.innerHTML = data.note;
+                }
+            }
         });
     }
+    
 
     function setCurrentSlide(n) {
         document.querySelectorAll('.slide').forEach(slide => {
