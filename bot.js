@@ -19,7 +19,6 @@ const client = new Client({
     ]
 });
 
-const DISCORD_TOKEN = 'MTIzODYyODkxNzkwMDczODU5MQ.GhyW9W.eYlNNCiS4d5EBorDxn_T8l6BHK0nNSsF6ven5w';
 const GUILD_ID = '1159107187407335434';
 const W_CHANNEL_ID = '1159107187986157599'; // ID канала для проверки новых участников
 const CHECK_CHANNEL_ID = '1230611265794080848'; // ID канала для ежедневной проверки участников
@@ -138,4 +137,4 @@ async function writeData(data) {
     }
 }
 
-client.login(DISCORD_TOKEN); // Токен бота должен быть в файле .env
+client.login(process.env.DISCORD_TOKEN); // Токен бота должен быть в файле .env
