@@ -49,6 +49,34 @@ client.on('guildMemberAdd', async member => {
     }
 });
 
+client.on('messageCreate', async message => {
+    console.log(`Message from ${message.author.tag}: ${message.content}`); 
+
+    if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !waitList.has(message.author.id)) return;
+    if (!message.content.trim()) return;
+
+    if (waitList.get(message.author.id) === message.guild.id) { 
+        const content = message.content;
+        if (content.includes(',')) {
+            const parts = content.split(',', 2);
+            if (parts.length === 2) {
+                const newNick = `${parts[0].trim()} (${parts[1].trim()})`;
+                try {
+                    await message.member.setNickname(newNick);
+                    message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}.`);
+                    waitList.delete(message.author.id); 
+                } catch (error) {
+                    message.channel.send("У меня недостаточно прав для изменения никнеймов.");
+                    console.error("Permission denied to change nickname:", error);
+                }
+            }
+        } else {
+            message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
+        }
+    }
+});
+
+
 async function checkDiscordMembersAgainstGameList() {
     const { nonComplianceCounter, ignoreList } = await readData();
     console.log("Current Ignore List:", ignoreList); // Это покажет текущий список игнорирования в консоли
