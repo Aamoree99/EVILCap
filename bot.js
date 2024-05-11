@@ -15,21 +15,23 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.DirectMessageReactions,
-        GatewayIntentBits.DirectMessageTyping
+        GatewayIntentBits.DirectMessageTyping,
+        GatewayIntentBits.GuildMessageReactions
     ]
 });
 
 const GUILD_ID = '1159107187407335434';
-const W_CHANNEL_ID = '1159107187986157599'; // ID канала для проверки новых участников
-const CHECK_CHANNEL_ID = '1230611265794080848'; // ID канала для ежедневной проверки участников
+const W_CHANNEL_ID = '1159107187986157599'; 
+const LOG_CHANNEL_ID = '1238987553735184454'; 
 const REPORT_CHANNEL_ID= '1230611265794080848';
 
 const waitList = new Map();
+const messageMap = new Map();
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
     checkDiscordMembersAgainstGameList();
-    cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); // Запускать каждый день в полночь
+    cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
 });
 
 client.on('guildMemberAdd', async member => {
@@ -50,12 +52,11 @@ client.on('guildMemberAdd', async member => {
 });
 
 client.on('messageCreate', async message => {
-    console.log(`Message from ${message.author.tag}: ${message.content}`); 
+    console.log(`Message from ${message.author.tag}: ${message.content}`);
 
-    if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !waitList.has(message.author.id)) return;
-    if (!message.content.trim()) return;
+    if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !message.content.trim() || !waitList.has(message.author.id)) return;
 
-    if (waitList.get(message.author.id) === message.guild.id) { 
+    if (waitList.get(message.author.id) === message.guild.id) {
         const content = message.content;
         if (content.includes(',')) {
             const parts = content.split(',', 2);
@@ -63,8 +64,14 @@ client.on('messageCreate', async message => {
                 const newNick = `${parts[0].trim()} (${parts[1].trim()})`;
                 try {
                     await message.member.setNickname(newNick);
-                    message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}.`);
-                    waitList.delete(message.author.id); 
+                    const responseMessage = await message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}. Ты по поводу какой корпорации? Нажми реакцию 1 для Cosmic Capybara Crew или реакцию 2 для других.`);
+                    await responseMessage.react('1️⃣');
+                    await responseMessage.react('2️⃣');
+
+                    waitList.delete(message.author.id);
+
+                    // Запоминаем ID сообщения для обработки реакций
+                    messageMap.set(responseMessage.id, message.author.id);
                 } catch (error) {
                     message.channel.send("У меня недостаточно прав для изменения никнеймов.");
                     console.error("Permission denied to change nickname:", error);
@@ -76,10 +83,42 @@ client.on('messageCreate', async message => {
     }
 });
 
+client.on('messageReactionAdd', async (reaction, user) => {
+    console.log('Обработчик messageReactionAdd запущен');
+    if (user.bot || reaction.message.channel.id !== W_CHANNEL_ID) return;
+
+    const originalUserId = messageMap.get(reaction.message.id);
+    if (!originalUserId || user.id !== originalUserId) return; // Убедимся, что реакцию ставит нужный пользователь
+
+    if (reaction.emoji.name === '1️⃣') {
+        console.log(`Пользователь ${user.tag} выбрал корпорацию Cosmic Capybara Crew.`);
+        try {
+            const role = reaction.message.guild.roles.cache.find(role => role.name === 'Пилот CCCrew');
+            const member = reaction.message.guild.members.cache.get(user.id);
+            await member.roles.add(role);
+            console.log(`Роль ${role.name} была успешно добавлена пользователю ${user.tag}.`);
+
+            const welcomeChannel = reaction.message.guild.channels.cache.get(REPORT_CHANNEL_ID);
+            if (welcomeChannel) {
+                await welcomeChannel.send(`Добро пожаловать на сервер, ${user.toString()}! Мы рады видеть тебя в рядах Пилотов CCCrew!`);
+            } else {
+                console.log('Канал для приветствия не найден.');
+            }
+        } catch (error) {
+            console.error('Ошибка при добавлении роли:', error);
+        }
+    } else if (reaction.emoji.name === '2️⃣') {
+        const targetUser = reaction.message.guild.members.cache.get('739618523076362310'); // Подставьте реальный ID
+        reaction.message.channel.send(`${user.toString()}, ты выбрал другие корпорации. ${targetUser.toString()}, пожалуйста, помоги!`);
+    }
+});
+
+
+
 
 async function checkDiscordMembersAgainstGameList() {
     const { nonComplianceCounter, ignoreList } = await readData();
-    console.log("Current Ignore List:", ignoreList); // Это покажет текущий список игнорирования в консоли
+    console.log("Current Ignore List:", ignoreList); 
 
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
@@ -93,7 +132,7 @@ async function checkDiscordMembersAgainstGameList() {
 
         let reportMessage = 'Пожалуйста, проверьте этих пользователей на соответствие их игровому имени или наличию в корпорации:';
 
-        const roleId = "1230610682018529280"; // Замените на реальный ID роли
+        const roleId = "1230610682018529280"; 
         members.forEach(member => {
             const name = member.displayName.split(' (')[0].trim().toLowerCase();
 
@@ -117,7 +156,7 @@ async function checkDiscordMembersAgainstGameList() {
             }
         });
 
-        await writeData({ nonComplianceCounter, ignoreList }); // Сохраняем обновленные данные
+        await writeData({ nonComplianceCounter, ignoreList }); 
 
         const reportChannel = guild.channels.cache.get(REPORT_CHANNEL_ID);
         if (!reportChannel) {
@@ -139,15 +178,15 @@ async function checkDiscordMembersAgainstGameList() {
 async function fetchGameNames() {
     try {
         const response = await axios.get('https://evewho.com/api/corplist/98769585');
-        const characterNames = response.data.characters.map(character => character.name.toLowerCase()); // Приводим к нижнему регистру
-        return new Set(characterNames); // Возвращаем Set
+        const characterNames = response.data.characters.map(character => character.name.toLowerCase()); 
+        return new Set(characterNames); 
     } catch (error) {
         console.error('Failed to fetch game names:', error);
         return new Set();
     }
 }
 
-const DATA_FILE = path.join(__dirname, 'complianceData.json'); // Путь к файлу данных
+const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
 async function readData() {
     try {
@@ -167,4 +206,5 @@ async function writeData(data) {
     }
 }
 
-client.login(process.env.DISCORD_TOKEN); // Токен бота должен быть в файле .env
+
+client.login(process.env.DISCORD_TOKEN); 
