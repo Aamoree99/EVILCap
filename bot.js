@@ -24,6 +24,8 @@ const W_CHANNEL_ID = '1159107187986157599'; // ID канала для прове
 const CHECK_CHANNEL_ID = '1230611265794080848'; // ID канала для ежедневной проверки участников
 const REPORT_CHANNEL_ID= '1230611265794080848';
 
+const waitList = new Map();
+
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
     checkDiscordMembersAgainstGameList();
