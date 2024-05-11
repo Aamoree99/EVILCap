@@ -137,4 +137,6 @@ async function writeData(data) {
     }
 }
 
-client.login(process.env.DISCORD_TOKEN); // Токен бота должен быть в файле .env
+const DISCORD_TOKEN='MTIzODYyODkxNzkwMDczODU5MQ.Gbr1HC.SUkbBWl8EK3BcUYBV3qrJCvAym154Ro54JL0mc'
+
+client.login(DISCORD_TOKEN); // Токен бота должен быть в файле .env
