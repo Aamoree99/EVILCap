@@ -32,6 +32,7 @@ const messageMap = new Map();
 
 client.once('ready', () => {
     logAndSend(`Logged in as ${client.user.tag}!`);
+    createRoleMessage();
     checkDiscordMembersAgainstGameList();
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     cron.schedule('0 10 * * *', () => {
@@ -244,7 +245,113 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+async function createRoleMessage() {
+    const channel = client.channels.cache.get('1163428374493003826');
+    if (!channel) return console.log("Канал не найден");
 
+    try {
+        const messageId = await readMessageId();
+        let messageExists = false;
+        if (messageId) {
+            try {
+                await channel.messages.fetch(messageId);
+                messageExists = true;
+                console.log("Сообщение уже существует");
+            } catch {
+                console.log("Сообщение не найдено, создаем новое");
+            }
+        }
+
+        if (!messageExists) {
+            const messageText = `В этом сообщении вы можете выбрать себе роль, тыкнув на соответствующую реакцию. Роли нужны для того, чтобы дискорд мог сообщать вам отдельным уведомлением (звуком или красным квадратиком на приложении), если эту роль "пинганули". Например, если вы выбрали себе роль Лед, кто угодно, увидев спавн льда в игре, может написать в дискорде "<@&1163379553348096070> в Манатириде" и все участники с этой ролью получат оповещение, как если бы им написали в личку. Пинговать можно, поставив перед названием роли собачку @
+
+            Пожалуйте, не пингуйте людей по всякой ерунде. Хороший пример пинга - заспавнился лед/газ/гравик/луна взорвана. Плохой пример пинга - "<@&1163380015191302214> ребята, а какими лопатами копать луну?", "<@&1163379553348096070> а сколько дохода с льда?".
+            
+            🌕 <@&1163380015191302214> луны
+            💸 <@&1163379884039618641> хоумфронты
+            💎 <@&1163380100520214591> гравики
+            ☁️ <@&1163404742609879091> газ
+            🧊 <@&1163379553348096070> лёд`;
+            const message = await channel.send(messageText);
+            for (const emoji of Object.keys(rolesMap)) {
+                await message.react(emoji);
+            }
+            await saveMessageId(message.id);
+            console.log("Сообщение создано и реакции добавлены");
+        }
+    } catch (error) {
+        console.error("Ошибка при отправке сообщения или добавлении реакций:", error);
+    }
+}
+
+async function readMessageId() {
+    try {
+        const data = await fs.readFile(DATA_FILE, 'utf8');
+        const jsonData = JSON.parse(data);
+        return jsonData.messageId && jsonData.messageId.length > 0 ? jsonData.messageId[0] : null;
+    } catch (error) {
+        console.log("Error reading from the data file:", error);
+        return null;
+    }
+}
+
+async function saveMessageId(messageId) {
+    try {
+        const data = await fs.readFile(DATA_FILE, 'utf8');
+        const jsonData = JSON.parse(data);
+
+        jsonData.messageId = [messageId]; 
+
+        await fs.writeFile(DATA_FILE, JSON.stringify(jsonData, null, 2), 'utf8');
+        console.log("Message ID saved successfully");
+    } catch (error) {
+        console.error("Error writing to the data file:", error);
+    }
+}
+
+const rolesMap = {
+    '🌕': '1163380015191302214', // ID для роли "луны"
+    '💸': '1163379884039618641', // ID для роли "хоумфронты"
+    '💎': '1163380100520214591', // ID для роли "гравики"
+    '☁️': '1163404742609879091', // ID для роли "газ"
+    '🧊': '1163379553348096070'  // ID для роли "лёд"
+};
+
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (reaction.message.partial) await reaction.message.fetch();
+    if (reaction.partial) await reaction.fetch();
+    if (user.bot) return;
+    if (!reaction.message.guild) return; 
+
+    const roleName = rolesMap[reaction.emoji.name];
+    if (!roleName) return console.log("Реакция не связана с ролью");
+
+    const role = reaction.message.guild.roles.cache.find(role => role.id === roleName);
+    if (!role) return console.log("Роль не найдена");
+
+    const member = reaction.message.guild.members.cache.get(user.id);
+    if (!member) return;
+    
+    member.roles.add(role).catch(console.error);
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+    if (reaction.message.partial) await reaction.message.fetch();
+    if (reaction.partial) await reaction.fetch();
+    if (user.bot) return;
+    if (!reaction.message.guild) return; 
+
+    const roleName = rolesMap[reaction.emoji.name];
+    if (!roleName) return console.log("Реакция не связана с ролью");
+
+    const role = reaction.message.guild.roles.cache.find(role => role.id === roleName);
+    if (!role) return console.log("Роль не найдена");
+
+    const member = reaction.message.guild.members.cache.get(user.id);
+    if (!member) return;
+    
+    member.roles.remove(role).catch(console.error);
+});
 
 
 async function checkDiscordMembersAgainstGameList() {
