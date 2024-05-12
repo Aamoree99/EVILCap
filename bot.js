@@ -46,6 +46,7 @@ client.once('ready', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
     });
+    cleanupOldMessages();
     setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
