@@ -33,11 +33,10 @@ const MAIN_CHANNEL_ID= '1172972375688626276';
 const waitList = new Map();
 const messageMap = new Map();
 
-client.once('ready', async () => {
-    const game = new Discord.Game("поклонение Дону");
-    await client.user.setPresence({
-        status: 'online',
-        activity: game
+client.once('ready', () => {
+    client.user.setPresence({
+        activities: [{ name: 'поклонение Дону', type: ActivityType.Playing }],
+        status: 'online'
     });
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
