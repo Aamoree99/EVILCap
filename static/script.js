@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', function () {
             en: { title: "EVIL Capybara Incorporated", text: "EVIL Capybara Incorporated – a haven of peace in hisec space. Our multinational alliance is dedicated to industry, research, and mining under the banner of pacifism. Join us to work in a stable, supportive environment where peace is not just a word, but the foundation of prosperity." },
             ru: { title: "EVIL Capybara Incorporated", text: "EVIL Capybara Incorporated – мирное прибежище в безопасном космосе. Наш альянс, объединяющий многие нации, посвящен развитию промышленности, исследованию и добыче с соблюдением принципов пацифизма. Присоединяйтесь к нам, чтобы работать в стабильной, поддерживающей среде, где мир – это не просто слово, а фундамент для процветания." }           
         },
-        2: {
+        7: {
             en: { title: "Black List Corporation", text: "Black List Corporation specializes in mineral and ice mining, with a strong emphasis on logistics. We invite you to join our team of professionals and harness the latest technologies to maximize your potential. Our corporation is your chance to be part of a large-scale project with global ambitions." },
             ru: { title: "Black List Corporation", text: "Black List Corporation специализируется на добыче ископаемых и логистике, особенно ценится наш уникальный подход к добыче льда. Мы предлагаем вам присоединиться к нашей команде профессионалов и использовать последние технологии для максимизации вашего потенциала. Наша корпорация – ваш шанс стать частью крупного проекта с глобальными амбициями." }
         },
-        3: {
+        8: {
             en: { title: "God’s Forge", text: "God’s Forge is an English-speaking powerhouse in manufacturing. We engage not only in production but also in blueprint research and occasional mining. Our experts work on designing and improving blueprints, allowing us to bring innovative projects to life. Join us to build the future together." },
             ru: { title: "God’s Forge", text: "God’s Forge – это англоязычная производственная мощь. Мы занимаемся не только производством, но и исследованием, а также добычей. Наши специалисты работают над созданием и улучшением чертежей, что позволяет нам воплощать в жизнь инновационные проекты. Присоединяйтесь к нам, чтобы вместе строить будущее." }
         },
@@ -24,11 +24,15 @@ document.addEventListener('DOMContentLoaded', function () {
             en: { title: "Nova Labs", text: "Nova Labs is a US corporation focused on industry and manufacturing, with opportunities in mining. We offer state-of-the-art equipment and the chance to work in an international team of experts. Our approach to innovation allows every team member to contribute to our collective success and fulfill personal ambitions." },
             ru: { title: "Nova Labs", text: "Nova Labs – это американская корпорация, занимающаяся промышленностью и производством, с возможностями для добычи. Мы предлагаем современное оборудование и возможность работать в международной команде экспертов. Наш подход к инновациям позволяет каждому члену команды вносить вклад в общее дело и реализовывать личные амбиции." }
         },
-        7: {
+        2: {
             ru: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – ваш путь к приключениям в космосе. Наша корпорация предлагает обширные возможности для PVE миссий и майнинга, приветствуя новичков и опытных пилотов. Присоединяйтесь к нашему дружелюбному коллективу, где каждый член вносит свой вклад в общее дело. За дополнительной информацией обращайтесь к <span class="contact-name">Aamoree</span>.' },
             en: { title: "Cosmic Capybara Crew" , text: 'Cosmic Capybara Crew – your gateway to space adventures. Our corporation offers extensive opportunities for PVE missions and mining, welcoming both newcomers and experienced pilots. Join our friendly collective where everyone contributes to our common goals. For further information, feel free to reach out to <span class="contact-name">Aamoree</span>.' }
         },
-        8: {
+        3: {
+            ru: { title: "Yellow Foxes" , text: 'Присоединяйтесь к "Yellow Foxes" и отправляйтесь к звёздам! Мы активное сообщество, специализирующееся на заработке внушительных сумм ISK в EVE, предлагая поддержку и множество возможностей для наших членов. Погрузитесь в безопасную среду с профессиональной поддержкой, где каждый пилот ценится, и успех всегда под рукой.' },
+            en: { title: "Yellow Foxes" , text: 'Join the "Yellow Foxes" and soar to the stars! We are a vibrant community focused on earning substantial ISK in EVE, offering both support and vast opportunities to our members. Dive into a secure environment with expert guidance, where every pilot is valued and success is within reach.' }
+        },
+        9: {
             en: {
                 title: "Join Our Ranks Today!",
                 text: `You've decided to join us — excellent choice! In-game, reach out to <span class="contact-name">DonaldKrak</span> to get started or click the button below to join our Discord and become part of our thriving community. We're excited to welcome you aboard and start our journey together. Let’s achieve greatness!`,
