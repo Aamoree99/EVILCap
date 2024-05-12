@@ -154,6 +154,20 @@ main {
     z-index: 2;
 }
 
+.header-links {
+    display: flex; /* Align links in a row */
+    justify-content: center; /* Center the links horizontally */
+    gap: 40px; /* Space between the links */
+}
+
+.header-links a {
+    font-family: 'Orbitron', 'Noto Sans', sans-serif;
+    color: white; /* Change as needed */
+    text-decoration: none; /* No underline */
+    font-weight: bold; /* Bold font for visibility */
+}
+
+
 
 .slide-content h1 {
     margin: 0;
@@ -263,4 +277,49 @@ main {
     padding: 10px 20px; 
     border-radius: 5px; 
     z-index: 9999; 
+}
+
+#officer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around; /* Равномерно распределяет пространство вокруг элементов */
+    padding: 20px;
+    margin-top: 100px; /* Отступ от хедера */
+    background-size: cover;
+    background-blend-mode: darken;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.officer-card {
+    flex: 0 1 calc(25% - 40px);
+    margin: 10px;
+    transition: transform 0.2s ease;
+    transform-style: preserve-3d; /* Для поддержки 3D трансформаций */
+    perspective: 1000px; /* Глубина 3D эффекта */
+}
+
+.officer-card:hover {
+    transform: scale(1.05);
+}
+
+.officer-card img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.officer-name, .officer-text {
+    color: white;
+    padding: 4px 8px;
+}
+
+
+.darkened-background {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background-image: url('slides/slide1.jpg');
+    background-size: cover;
+    background-blend-mode: darken;
+    background-color: rgba(0, 0, 0, 0.7); /* Darken the background */
 }

@@ -15,6 +15,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(templatesPath, 'index.html'));
 });
 
+app.get('/officers', (req, res) => {
+    res.sendFile(path.join(templatesPath, 'officers.html'));
+});
+
 // Запускаем сервер
 app.listen(port, () => {
     console.log(`Сервер запущен на http://localhost:${port}`);
