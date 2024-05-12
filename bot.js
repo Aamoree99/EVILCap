@@ -246,7 +246,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 async function createRoleMessage() {
-    const channel = client.channels.cache.get('1163428374493003826');
+    const channel = client.channels.cache.get('1239085828395892796');
     if (!channel) return console.log("Канал не найден");
 
     try {
