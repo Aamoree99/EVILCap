@@ -34,6 +34,8 @@ const waitList = new Map();
 const messageMap = new Map();
 
 client.once('ready', () => {
+    game = discord.Game("поклонение Дону")
+    await bot.change_presence(status=discord.Status.online, activity=game)
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
     checkDiscordMembersAgainstGameList();
