@@ -46,8 +46,9 @@ client.once('ready', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
     });
-    setInterval(cleanupOldMessages, 60 * 60 * 1000);
+    setInterval(cleanupOldMessages(), 60 * 60 * 1000);
 });
+
 const clientId = '1238628917900738591'; // Убедитесь, что CLIENT_ID добавлен в переменные окружения
 const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения
 const guildId = GUILD_ID; 
@@ -723,6 +724,7 @@ async function writeData(newData) {
 
 async function cleanupOldMessages() {
     const channel = client.channels.cache.get(LOG_CHANNEL_ID);
+    logAndSend('Начало чистки...');
 
     if (!channel) {
         console.error("Канал не найден");
@@ -740,9 +742,9 @@ async function cleanupOldMessages() {
             }
         });
 
-        console.log("Старые сообщения удалены");
+        logAndSend("Старые сообщения удалены");
     } catch (error) {
-        console.error("Произошла ошибка при удалении старых сообщений:", error);
+        logAndSend("Произошла ошибка при удалении старых сообщений:", error);
     }
 }
 
