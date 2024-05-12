@@ -41,6 +41,47 @@ client.once('ready', () => {
     });
 });
 
+client.on('messageCreate', async message => {
+    // Проверяем, что сообщение отправлено в нужном канале
+    if (message.channel.id !== "1239085828395892796") return;
+
+    const args = message.content.split(' ');
+    const command = args.shift().toLowerCase();
+
+    if (command === '/addignore') {
+        const username = args.join(' ');
+        if (!username) {
+            return message.channel.send("Укажите имя пользователя для добавления в игнор-лист.");
+        }
+        const data = await readData();
+        if (data.ignoreList.includes(username)) {
+            return message.channel.send("Пользователь уже в игнор-листе.");
+        }
+        data.ignoreList.push(username);
+        await writeData(data);
+        message.channel.send(`${username} добавлен в игнор-лист.`);
+    } else if (command === '/removeignore') {
+        const username = args.join(' ');
+        if (!username) {
+            return message.channel.send("Укажите имя пользователя для удаления из игнор-листа.");
+        }
+        const data = await readData();
+        const index = data.ignoreList.indexOf(username);
+        if (index === -1) {
+            return message.channel.send("Пользователь не найден в игнор-листе.");
+        }
+        data.ignoreList.splice(index, 1);
+        await writeData(data);
+        message.channel.send(`${username} удалён из игнор-листа.`);
+    } else if (command === '/listignore') {
+        const data = await readData();
+        if (data.ignoreList.length === 0) {
+            return message.channel.send("Игнор-лист пуст.");
+        }
+        message.channel.send(`Игнор-лист: ${data.ignoreList.join(', ')}`);
+    }
+});
+
 function logAndSend(message) {
     const now = new Date(); // Получение текущей даты и времени
     const timestamp = now.toISOString();
