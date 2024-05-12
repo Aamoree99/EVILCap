@@ -174,9 +174,10 @@ async function scheduleDailyActivity(client) {
 
             if (participants.size >= 5) {
                 const now = new Date();
-                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0, 0);
-                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0, 0);
-                
+                const timezoneOffset = now.getTimezoneOffset() * 60000; // переводим в миллисекунды
+                const localNow = new Date(now.getTime() - timezoneOffset);
+                const startTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 19, 0, 0, 0);
+                const endTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 20, 0, 0, 0);
                 let event;
                 try {
                     event = await guild.scheduledEvents.create({
@@ -235,10 +236,14 @@ async function scheduleDailyActivity(client) {
         }
     });
 
-    // Устанавливаем таймер до 18:55
-    const endTime = new Date();
-    endTime.setHours(18, 55, 0, 0);
-    const duration = endTime.getTime() - Date.now();
+
+    const now = new Date();
+    const timezoneOffset = now.getTimezoneOffset() * 60000; // переводим в миллисекунды
+    const localNow = new Date(now.getTime() - timezoneOffset);
+
+    const endTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 18, 55, 0, 0);
+    const duration = endTime.getTime() - localNow.getTime();
+
 
     setTimeout(() => {
         if (collector) {
