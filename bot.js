@@ -352,7 +352,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
             const welcomeChannel = reaction.message.guild.channels.cache.get(REPORT_CHANNEL_ID);
             if (welcomeChannel) {
-                await welcomeChannel.send(`Добро пожаловать на сервер, ${user.toString()}! Мы рады видеть тебя в рядах Пилотов CCCrew!`);
+                await welcomeChannel.send(`Добро пожаловать на сервер, ${user.toString()}! Мы рады видеть тебя в рядах Пилотов CCCrew! Ты можешь выбрать интересующие тебя активности в канале <#1163428374493003826>.`);
             } else {
                 logAndSend('Канал для приветствия не найден.');
             }
