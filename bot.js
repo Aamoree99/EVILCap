@@ -462,8 +462,12 @@ const rolesMap = {
     '💸': '1163379884039618641', 
     '💎': '1163380100520214591', 
     '☁️': '1163404742609879091', 
-    '🧊': '1163379553348096070'  
+    '🧊': '1163379553348096070',
+    '🔫': '1239331341229752432',      
+    '👾': '1239331818063528058',       
+    '🌀': '1239331564286902285'        
 };
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     if (reaction.message.partial) await reaction.message.fetch();
@@ -559,9 +563,6 @@ async function checkDiscordMembersAgainstGameList() {
         console.error('Error during member check:', error);
     }
 }
-
-const axios = require('axios');
-const fs = require('fs').promises;
 
 async function getAccessTokenUsingRefreshToken() {
     try {
