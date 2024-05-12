@@ -1,4 +1,7 @@
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
 const axios = require('axios');
 const cron = require('node-cron');
 const dotenv = require('dotenv');
@@ -40,11 +43,9 @@ client.once('ready', () => {
         scheduleDailyActivity(client);
     });
 });
-
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
-const { 1238628917900738591, GUILD_ID, process.env.DISCORD_TOKEN } = require('./config.json'); // Замените на свои значения
+const clientId = '1238628917900738591'; // Убедитесь, что CLIENT_ID добавлен в переменные окружения
+const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения
+const guildId = GUILD_ID; 
 
 const commands = [
     new SlashCommandBuilder()
