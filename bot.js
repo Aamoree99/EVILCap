@@ -46,7 +46,7 @@ client.once('ready', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
     });
-    setInterval(cleanupOldMessages(), 60 * 60 * 1000);
+    setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
 const clientId = '1238628917900738591'; // Убедитесь, что CLIENT_ID добавлен в переменные окружения
