@@ -41,46 +41,85 @@ client.once('ready', () => {
     });
 });
 
-client.on('messageCreate', async message => {
-    // Проверяем, что сообщение отправлено в нужном канале
-    if (message.channel.id !== "1239085828395892796") return;
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+const { 1238628917900738591, GUILD_ID, process.env.DISCORD_TOKEN } = require('./config.json'); // Замените на свои значения
 
-    const args = message.content.split(' ');
-    const command = args.shift().toLowerCase();
+const commands = [
+    new SlashCommandBuilder()
+        .setName('addignore')
+        .setDescription('Добавляет пользователя в игнор-лист')
+        .addStringOption(option => option.setName('username').setDescription('Имя пользователя').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('removeignore')
+        .setDescription('Удаляет пользователя из игнор-листа')
+        .addStringOption(option => option.setName('username').setDescription('Имя пользователя').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('listignore')
+        .setDescription('Показывает текущий игнор-лист')
+]
+    .map(command => command.toJSON());
 
-    if (command === '/addignore') {
-        const username = args.join(' ');
-        if (!username) {
-            return message.channel.send("Укажите имя пользователя для добавления в игнор-лист.");
-        }
+const rest = new REST({ version: '9' }).setToken(token);
+
+(async () => {
+    try {
+        console.log('Начинаю обновление команд приложения.');
+        await rest.put(
+            Routes.applicationGuildCommands(clientId, guildId),
+            { body: commands },
+        );
+        console.log('Команды приложения успешно обновлены.');
+    } catch (error) {
+        console.error(error);
+    }
+})();
+
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+        // ID канала, в котором разрешены команды
+    const allowedChannelId = "1239085828395892796";
+
+    if (interaction.channelId !== allowedChannelId) {
+        // Отправляем сообщение только этому пользователю, что у него нет прав использовать команду здесь
+        await interaction.reply({ content: "У вас нет прав использовать эту команду в данном канале.", ephemeral: true });
+        return;
+    }
+
+
+    const { commandName, options } = interaction;
+
+    if (commandName === 'addignore') {
+        const username = options.getString('username');
         const data = await readData();
         if (data.ignoreList.includes(username)) {
-            return message.channel.send("Пользователь уже в игнор-листе.");
+            await interaction.reply({ content: "Пользователь уже в игнор-листе.", ephemeral: true });
+            return;
         }
         data.ignoreList.push(username);
         await writeData(data);
-        message.channel.send(`${username} добавлен в игнор-лист.`);
-    } else if (command === '/removeignore') {
-        const username = args.join(' ');
-        if (!username) {
-            return message.channel.send("Укажите имя пользователя для удаления из игнор-листа.");
-        }
+        await interaction.reply({ content: `${username} добавлен в игнор-лист.`, ephemeral: true });
+    } else if (commandName === 'removeignore') {
+        const username = options.getString('username');
         const data = await readData();
         const index = data.ignoreList.indexOf(username);
         if (index === -1) {
-            return message.channel.send("Пользователь не найден в игнор-листе.");
+            await interaction.reply({ content: "Пользователь не найден в игнор-листе.", ephemeral: true });
+            return;
         }
         data.ignoreList.splice(index, 1);
         await writeData(data);
-        message.channel.send(`${username} удалён из игнор-листа.`);
-    } else if (command === '/listignore') {
+        await interaction.reply({ content: `${username} удалён из игнор-листа.`, ephemeral: true });
+    } else if (commandName === 'listignore') {
         const data = await readData();
-        if (data.ignoreList.length === 0) {
-            return message.channel.send("Игнор-лист пуст.");
-        }
-        message.channel.send(`Игнор-лист: ${data.ignoreList.join(', ')}`);
+        const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
+        await interaction.reply({ content: message, ephemeral: true });
     }
 });
+
 
 function logAndSend(message) {
     const now = new Date(); // Получение текущей даты и времени
@@ -287,7 +326,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 async function createRoleMessage() {
-    const channel = client.channels.cache.get('1239085828395892796');
+    const channel = client.channels.cache.get('1163428374493003826');
     if (!channel) return console.log("Канал не найден");
 
     try {
