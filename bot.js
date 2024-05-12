@@ -6,6 +6,7 @@ dotenv.config();
 const qs = require('querystring');
 const fs = require('fs').promises;
 const path = require('path');
+const { LOADIPHLPAPI } = require('dns');
 
 const client = new Client({
     intents: [
@@ -22,7 +23,7 @@ const client = new Client({
 
 const GUILD_ID = '1159107187407335434';
 const W_CHANNEL_ID = '1159107187986157599'; 
-const LOG_CHANNEL_ID = '1238987553735184454'; 
+const LOG_CHANNEL_ID = '1239085828395892796'; 
 const REPORT_CHANNEL_ID= '1230611265794080848';
 const MAIN_CHANNEL_ID= '1172972375688626276';
 
@@ -30,25 +31,42 @@ const waitList = new Map();
 const messageMap = new Map();
 
 client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+    logAndSend(`Logged in as ${client.user.tag}!`);
     checkDiscordMembersAgainstGameList();
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     cron.schedule('0 10 * * *', () => {
-        console.log('Выполняю задачу отправки уведомлений о мероприятии.');
+        logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
     });
 });
 
+function logAndSend(message) {
+    const now = new Date(); // Получение текущей даты и времени
+    const timestamp = now.toISOString();
+    console.log(`[${timestamp}] ${message}`); // Логирование в консоль
 
+    // Проверяем, что клиент уже готов и имеем доступ к каналам
+    if (client.isReady()) {
+        const channel = client.channels.cache.get(LOG_CHANNEL_ID);
+        if (channel) {
+            // Проверяем, не инициировано ли сообщение ботом
+            if (!message.includes(`[${client.user.tag}]`)) {
+                channel.send(`[${timestamp}] ${message}`).catch(console.error);
+            }
+        } else {
+            console.error('Channel not found!');
+        }
+    }
+}
 
 async function scheduleDailyActivity(client) {
-    console.log(`Пытаюсь получить гильдию с ID: ${GUILD_ID}`);
+    logAndSend(`Пытаюсь получить гильдию с ID: ${GUILD_ID}`);
 
     const guild = client.guilds.cache.get(GUILD_ID);
-    if (!guild) return console.log("Гильдия не найдена");
+    if (!guild) return logAndSend("Гильдия не найдена");
 
     const channel = guild.channels.cache.get(MAIN_CHANNEL_ID);
-    if (!channel) return console.log("Канал не найден");
+    if (!channel) return logAndSend("Канал не найден");
     let messageDeleted = false;
     const message = await channel.send({
         content: '<@&1163379884039618641> <@&1230610682018529280>, хотите поучаствовать сегодня в тыловых? Нажмите на кнопку ниже!',
@@ -66,7 +84,7 @@ async function scheduleDailyActivity(client) {
     let collector = message.createMessageComponentCollector({ componentType: 2 }); // 2 is Button
 
     collector.on('collect', async (interaction) => {
-        console.log(`Кнопка ${interaction.customId} была нажата пользователем ${interaction.user.username}.`);
+        logAndSend(`Кнопка ${interaction.customId} была нажата пользователем ${interaction.user.username}.`);
         if (interaction.customId === 'participate') {
             await interaction.deferUpdate();
             await interaction.followUp({ content: 'Спасибо за ваш интерес, мы вас записали!', ephemeral: true });
@@ -90,9 +108,9 @@ async function scheduleDailyActivity(client) {
                             location: 'Dodixie' // Указываем, что местоположение онлайн
                         }
                     });
-                    console.log(`Создан ивент: ${event.name}`);
+                    logAndSend(`Создан ивент: ${event.name}`);
             
-                    console.log('Событие успешно создано!');
+                    logAndSend('Событие успешно создано!');
                 } catch (error) {
                     console.error('Ошибка при создании события:', error);
                 }
@@ -105,7 +123,7 @@ async function scheduleDailyActivity(client) {
                         }
                     });
                 } else {
-                    console.log("Событие не было создано, сообщение не отправлено.");
+                    logAndSend("Событие не было создано, сообщение не отправлено.");
                 }
                 
 
@@ -124,7 +142,7 @@ async function scheduleDailyActivity(client) {
     });
 
     collector.on('end', async () => {
-        console.log(`Collected ${participants.size} participants.`);
+        logAndSend(`Collected ${participants.size} participants.`);
         if (participants.size < 5 && !messageDeleted) { // Проверяем, удалено ли сообщение
             try {
                 await message.delete();
@@ -151,22 +169,21 @@ async function scheduleDailyActivity(client) {
 client.on('guildMemberAdd', async member => {
     const channel = member.guild.channels.cache.get(W_CHANNEL_ID);
     if (!channel) {
-        console.log(`Channel with ID ${W_CHANNEL_ID} not found in guild ${member.guild.id}`);
+        logAndSend(`Channel with ID ${W_CHANNEL_ID} not found in guild ${member.guild.id}`);
         return;
     }
 
-    console.log(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
+    logAndSend(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
     if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
-        console.log(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
+        logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
         channel.send(`${member.toString()}, пожалуйста, напиши свой ник и имя через запятую, например: Ник игры, Имя.`);
         waitList.set(member.id, member.guild.id);
     } else {
-        console.log(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
+        logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
     }
 });
 
 client.on('messageCreate', async message => {
-    console.log(`Message from ${message.author.tag}: ${message.content}`);
 
     if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !message.content.trim() || !waitList.has(message.author.id)) return;
 
@@ -198,25 +215,25 @@ client.on('messageCreate', async message => {
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
-    console.log('Обработчик messageReactionAdd запущен');
+    logAndSend('Обработчик messageReactionAdd запущен');
     if (user.bot || reaction.message.channel.id !== W_CHANNEL_ID) return;
 
     const originalUserId = messageMap.get(reaction.message.id);
     if (!originalUserId || user.id !== originalUserId) return; // Убедимся, что реакцию ставит нужный пользователь
 
     if (reaction.emoji.name === '1️⃣') {
-        console.log(`Пользователь ${user.tag} выбрал корпорацию Cosmic Capybara Crew.`);
+        logAndSend(`Пользователь ${user.tag} выбрал корпорацию Cosmic Capybara Crew.`);
         try {
             const role = reaction.message.guild.roles.cache.find(role => role.name === 'Пилот CCCrew');
             const member = reaction.message.guild.members.cache.get(user.id);
             await member.roles.add(role);
-            console.log(`Роль ${role.name} была успешно добавлена пользователю ${user.tag}.`);
+            logAndSend(`Роль ${role.name} была успешно добавлена пользователю ${user.tag}.`);
 
             const welcomeChannel = reaction.message.guild.channels.cache.get(REPORT_CHANNEL_ID);
             if (welcomeChannel) {
                 await welcomeChannel.send(`Добро пожаловать на сервер, ${user.toString()}! Мы рады видеть тебя в рядах Пилотов CCCrew!`);
             } else {
-                console.log('Канал для приветствия не найден.');
+                logAndSend('Канал для приветствия не найден.');
             }
         } catch (error) {
             console.error('Ошибка при добавлении роли:', error);
@@ -232,7 +249,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 async function checkDiscordMembersAgainstGameList() {
     const { nonComplianceCounter, ignoreList } = await readData();
-    console.log("Current Ignore List:", ignoreList); 
+    logAndSend("Current Ignore List:", ignoreList); 
 
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
