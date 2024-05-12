@@ -722,8 +722,7 @@ async function writeData(newData) {
 }
 
 async function cleanupOldMessages() {
-    const channelId = 'ВАШ_ID_КАНАЛА'; // Замените на ваш ID канала
-    const channel = client.channels.cache.get(channelId);
+    const channel = client.channels.cache.get(LOG_CHANNEL_ID);
 
     if (!channel) {
         console.error("Канал не найден");
