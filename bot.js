@@ -33,9 +33,12 @@ const MAIN_CHANNEL_ID= '1172972375688626276';
 const waitList = new Map();
 const messageMap = new Map();
 
-client.once('ready', () => {
-    game = discord.Game("поклонение Дону")
-    await bot.change_presence(status=discord.Status.online, activity=game)
+client.once('ready', async () => {
+    const game = new Discord.Game("поклонение Дону");
+    await client.user.setPresence({
+        status: 'online',
+        activity: game
+    });
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
     checkDiscordMembersAgainstGameList();
