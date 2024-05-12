@@ -342,9 +342,10 @@ async function createRoleMessage() {
             try {
                 await channel.messages.fetch(messageId);
                 messageExists = true;
-                console.log("Сообщение уже существует");
+                logAndSend("Сообщение уже существует");
+                return;
             } catch {
-                console.log("Сообщение не найдено, создаем новое");
+                logAndSend("Сообщение не найдено, создаем новое");
             }
         }
 
@@ -363,7 +364,7 @@ async function createRoleMessage() {
                 await message.react(emoji);
             }
             await saveMessageId(message.id);
-            console.log("Сообщение создано и реакции добавлены");
+            logAndSend("Сообщение создано и реакции добавлены");
         }
     } catch (error) {
         console.error("Ошибка при отправке сообщения или добавлении реакций:", error);
