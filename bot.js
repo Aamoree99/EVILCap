@@ -40,7 +40,6 @@ client.once('ready', () => {
     });
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
-    checkDiscordMembersAgainstGameList();
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     cron.schedule('0 10 * * *', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
@@ -62,7 +61,14 @@ const commands = [
         .addStringOption(option => option.setName('username').setDescription('Имя пользователя').setRequired(true)),
     new SlashCommandBuilder()
         .setName('listignore')
-        .setDescription('Показывает текущий игнор-лист')
+        .setDescription('Показывает текущий игнор-лист'),
+    new SlashCommandBuilder()
+        .setName('reactionslist')
+        .setDescription('Показывает список пользователей и количество их реакций на сообщение')
+        .addStringOption(option =>
+            option.setName('messageid')
+                .setDescription('ID сообщения')
+                .setRequired(true))
 ]
     .map(command => command.toJSON());
 
@@ -122,6 +128,30 @@ client.on('interactionCreate', async interaction => {
         const data = await readData();
         const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
         await interaction.reply({ content: message, ephemeral: true });
+    } else if (commandName === 'reactionslist') {
+        const messageId = options.getString('messageid');
+        const message = await interaction.channel.messages.fetch(messageId);
+        const userReactions = new Map();
+
+        for (const reaction of message.reactions.cache.values()) {
+            const users = await reaction.users.fetch();
+            users.forEach(user => {
+                if (!user.bot) {
+                    if (userReactions.has(user.username)) {
+                        userReactions.set(user.username, userReactions.get(user.username) + 1);
+                    } else {
+                        userReactions.set(user.username, 1);
+                    }
+                }
+            });
+        }
+
+        let responseMessage = 'Список реакций на сообщение:\n';
+        userReactions.forEach((count, username) => {
+            responseMessage += `${username}: ${count} реакций\n`;
+        });
+
+        await interaction.reply({ content: responseMessage, ephemeral: true });
     }
 });
 
