@@ -69,6 +69,10 @@ const commands = [
             option.setName('messageid')
                 .setDescription('ID сообщения')
                 .setRequired(true))
+        .addStringOption(option =>
+            option.setName('channelid')
+                .setDescription('ID канала')
+                .setRequired(true))
 ]
     .map(command => command.toJSON());
 
@@ -129,8 +133,10 @@ client.on('interactionCreate', async interaction => {
         const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
         await interaction.reply({ content: message, ephemeral: true });
     } else if (commandName === 'reactionslist') {
+        const channelId = options.getString('channelid');
         const messageId = options.getString('messageid');
-        const message = await interaction.channel.messages.fetch(messageId);
+        const channel = await client.channels.fetch(channelId);
+        const message = await channel.messages.fetch(messageId);
         const userReactions = new Map();
 
         for (const reaction of message.reactions.cache.values()) {
