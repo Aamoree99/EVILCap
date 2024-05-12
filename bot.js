@@ -38,6 +38,7 @@ client.once('ready', () => {
         activities: [{ name: 'поклонение Дону', type: ActivityType.Playing }],
         status: 'online'
     });
+    logAndSend(`<@235822777678954496>, папа я родился!`);
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
