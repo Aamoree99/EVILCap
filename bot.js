@@ -343,6 +343,7 @@ async function createRoleMessage() {
                 await channel.messages.fetch(messageId);
                 messageExists = true;
                 logAndSend("Сообщение уже существует");
+                logAndSend(messageId);
                 return;
             } catch {
                 logAndSend("Сообщение не найдено, создаем новое");
@@ -368,31 +369,6 @@ async function createRoleMessage() {
         }
     } catch (error) {
         console.error("Ошибка при отправке сообщения или добавлении реакций:", error);
-    }
-}
-
-async function readMessageId() {
-    try {
-        const data = await fs.readFile(DATA_FILE, 'utf8');
-        const jsonData = JSON.parse(data);
-        return jsonData.messageId && jsonData.messageId.length > 0 ? jsonData.messageId[0] : null;
-    } catch (error) {
-        console.log("Error reading from the data file:", error);
-        return null;
-    }
-}
-
-async function saveMessageId(messageId) {
-    try {
-        const data = await fs.readFile(DATA_FILE, 'utf8');
-        const jsonData = JSON.parse(data);
-
-        jsonData.messageId = [messageId]; 
-
-        await fs.writeFile(DATA_FILE, JSON.stringify(jsonData, null, 2), 'utf8');
-        console.log("Message ID saved successfully");
-    } catch (error) {
-        console.error("Error writing to the data file:", error);
     }
 }
 
@@ -513,23 +489,55 @@ async function fetchGameNames() {
 
 const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
-async function readData() {
+// Универсальная функция для чтения данных из JSON-файла
+async function readFromJSON(filePath) {
     try {
-        const data = await fs.readFile(DATA_FILE, 'utf8');
+        const data = await fs.readFile(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        console.error('Error reading data file:', error);
-        return { nonComplianceCounter: {}, ignoreList: [] };
+        console.error('Error reading from JSON file:', error);
+        // Возвращаем пустой объект или другие стандартные значения в случае ошибки
+        return null;
     }
 }
 
-async function writeData(data) {
+// Универсальная функция для записи данных в JSON-файл
+async function writeToJSON(filePath, data) {
     try {
-        await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+        console.log("Data successfully written to JSON file");
     } catch (error) {
-        console.error('Error writing data file:', error);
+        console.error('Error writing to JSON file:', error);
     }
 }
+
+async function readMessageId() {
+    const jsonData = await readFromJSON(DATA_FILE);
+    return jsonData && jsonData.messageId && jsonData.messageId.length > 0 ? jsonData.messageId[0] : null;
+}
+
+async function saveMessageId(messageId) {
+    const jsonData = await readFromJSON(DATA_FILE) || {};
+    jsonData.messageId = [messageId];
+    await writeToJSON(DATA_FILE, jsonData);
+}
+
+async function readData() {
+    return await readFromJSON(DATA_FILE) || { nonComplianceCounter: {}, ignoreList: [] };
+}
+
+async function writeData(newData) {
+    try {
+        const dataFilePath = DATA_FILE;  // Указываете путь к вашему JSON файлу
+        const existingData = await readFromJSON(dataFilePath) || {};  // Чтение текущих данных или инициализация пустым объектом, если данных нет
+        const updatedData = { ...existingData, ...newData };  // Объединение существующих данных с новыми данными
+        await writeToJSON(dataFilePath, updatedData);  // Запись обновлённых данных обратно в файл
+        console.log("Data successfully updated in JSON file");
+    } catch (error) {
+        console.error('Error updating data in JSON file:', error);
+    }
+}
+
 
 
 client.login(process.env.DISCORD_TOKEN); 
