@@ -356,14 +356,14 @@ async function createRoleMessage() {
 
         if (!messageExists) {
     // Получаем канал для отправки запроса по ID из глобальной переменной
-    const logChannel = client.channels.cache.get(log_channel);
+    const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
     if (!logChannel) {
         logAndSend('Канал для логирования не найден.');
         return; // Прекращаем выполнение, если канал не найден
     }
 
     // Запросить ID от пользователя
-    const filter = (response) => response.author.id === 'УКАЖИТЕ_ID_ПОЛЬЗОВАТЕЛЯ';
+    const filter = (response) => response.author.id === '235822777678954496';
     await logChannel.send('Пожалуйста, введите ID канала:');
     try {
         const collected = await logChannel.awaitMessages({ filter, max: 1, time: 120000, errors: ['time'] });
