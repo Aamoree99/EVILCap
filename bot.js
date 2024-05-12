@@ -73,7 +73,10 @@ const commands = [
         .addStringOption(option =>
             option.setName('channelid')
                 .setDescription('ID канала')
-                .setRequired(true))
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('members')
+        .setDescription('Показать участников корпы сейчас')
 ]
     .map(command => command.toJSON());
 
@@ -159,6 +162,11 @@ client.on('interactionCreate', async interaction => {
         });
 
         await interaction.reply({ content: responseMessage, ephemeral: true });
+    } else if (commandName === 'members') {
+            const namesSet = await fetchGameNames();
+            const namesList = Array.from(namesSet);
+            const message = namesList.length === 0 ? "Список имен пуст." : `Список имен: ${namesList.join(', ')}\nОбщее количество: ${namesList.length}`;
+            await interaction.reply({ content: message, ephemeral: true });
     }
 });
 
@@ -372,6 +380,17 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+function generateMessageText() {
+    const introText = `В этом сообщении вы можете выбрать себе роль, тыкнув на соответствующую реакцию. Роли нужны для того, чтобы дискорд мог сообщать вам отдельным уведомлением (звуком или красным квадратиком на приложении), если эту роль "пинганули". Например, если вы выбрали себе роль Лед, кто угодно, увидев спавн льда в игре, может написать в дискорде "<@&1163379553348096070> в Манатириде" и все участники с этой ролью получат оповещение, как если бы им написали в личку. Пинговать можно, поставив перед названием роли собачку @
+    
+    Пожалуйте, не пингуйте людей по всякой ерунде. Хороший пример пинга - заспавнился лед/газ/гравик/луна взорвана. Плохой пример пинга - "<@&1163380015191302214> ребята, а какими лопатами копать луну?", "<@&1163379553348096070> а сколько дохода с льда?"\n\n`;
+    const rolesText = Object.entries(rolesMap)
+        .map(([emoji, roleId]) => `${emoji} <@&${roleId}>`)
+        .join('\n');
+    
+    return introText + rolesText;
+}
+
 async function createRoleMessage() {
     const channel = client.channels.cache.get('1163428374493003826');
     if (!channel) {
@@ -379,16 +398,26 @@ async function createRoleMessage() {
         return;
     }
 
+    const expectedText = generateMessageText();
+
     try {
         const messageId = await readMessageId();
         let messageExists = false;
 
         if (messageId) {
             try {
-                await channel.messages.fetch(messageId);
+                const message = await channel.messages.fetch(messageId);
                 messageExists = true;
-                logAndSend("Сообщение уже существует");
-                logAndSend(messageId);
+
+                if (message.content !== expectedText || !allReactionsPresent(message)) {
+                    logAndSend("Сообщение отличается, обновляем...");
+                    await message.edit(expectedText);
+                    await updateReactions(message);
+                    logAndSend("Сообщение обновлено");
+                } else {
+                    logAndSend("Сообщение уже существует и оно корректно");
+                    logAndSend(messageId);
+                }
                 return;
             } catch {
                 logAndSend("Сообщение не найдено, создаем новое");
@@ -396,36 +425,44 @@ async function createRoleMessage() {
         }
 
         if (!messageExists) {
-            const messageText = `В этом сообщении вы можете выбрать себе роль, тыкнув на соответствующую реакцию. Роли нужны для того, чтобы дискорд мог сообщать вам отдельным уведомлением (звуком или красным квадратиком на приложении), если эту роль "пинганули". Например, если вы выбрали себе роль Лед, кто угодно, увидев спавн льда в игре, может написать в дискорде "<@&1163379553348096070> в Манатириде" и все участники с этой ролью получат оповещение, как если бы им написали в личку. Пинговать можно, поставив перед названием роли собачку @
-            
-            Пожалуйте, не пингуйте людей по всякой ерунде. Хороший пример пинга - заспавнился лед/газ/гравик/луна взорвана. Плохой пример пинга - "<@&1163380015191302214> ребята, а какими лопатами копать луну?", "<@&1163379553348096070> а сколько дохода с льда?".
-            
-            🌕 <@&1163380015191302214> 
-            💸 <@&1163379884039618641> 
-            💎 <@&1163380100520214591> 
-            ☁️ <@&1163404742609879091> 
-            🧊 <@&1163379553348096070> `;
-            
-            const message = await channel.send(messageText);
-            for (const emoji of Object.keys(rolesMap)) {
-                await message.react(emoji);
-            }
+            const message = await channel.send(expectedText);
+            await addReactions(message);
             await saveMessageId(message.id);
-            logAndSend("Сообщение создано и реакции добавлены");
+            logAndSend("Новое сообщение создано и реакции добавлены");
         }
     } catch (error) {
         console.error("Произошла ошибка при создании сообщения:", error);
     }
 }
 
+function allReactionsPresent(message) {
+    const expectedReactions = new Set(Object.keys(rolesMap));
+    const messageReactions = new Set(message.reactions.cache.keys());
+    return [...expectedReactions].every(r => messageReactions.has(r));
+}
+
+async function updateReactions(message) {
+    const currentReactions = message.reactions.cache.keys();
+    for (const emoji of Object.keys(rolesMap)) {
+        if (!currentReactions.has(emoji)) {
+            await message.react(emoji);
+        }
+    }
+}
+
+async function addReactions(message) {
+    for (const emoji of Object.keys(rolesMap)) {
+        await message.react(emoji);
+    }
+}
 
 
 const rolesMap = {
-    '🌕': '1163380015191302214', // ID для роли "луны"
-    '💸': '1163379884039618641', // ID для роли "хоумфронты"
-    '💎': '1163380100520214591', // ID для роли "гравики"
-    '☁️': '1163404742609879091', // ID для роли "газ"
-    '🧊': '1163379553348096070'  // ID для роли "лёд"
+    '🌕': '1163380015191302214', 
+    '💸': '1163379884039618641', 
+    '💎': '1163380100520214591', 
+    '☁️': '1163404742609879091', 
+    '🧊': '1163379553348096070'  
 };
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -507,9 +544,9 @@ async function checkDiscordMembersAgainstGameList() {
 
         await writeData({ nonComplianceCounter, ignoreList }); 
 
-        const reportChannel = guild.channels.cache.get(REPORT_CHANNEL_ID);
+        const reportChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
         if (!reportChannel) {
-            console.error(`Report channel with ID ${REPORT_CHANNEL_ID} not found.`);
+            console.error(`Report channel with ID ${LOG_CHANNEL_ID} not found.`);
             return;
         }
 
@@ -523,12 +560,92 @@ async function checkDiscordMembersAgainstGameList() {
     }
 }
 
+const axios = require('axios');
+const fs = require('fs').promises;
+
+async function getAccessTokenUsingRefreshToken() {
+    try {
+        const complianceData = JSON.parse(await fs.readFile('complianceData.json', 'utf8'));
+        const authorizationBase64 = complianceData.Authorization[0];
+        const refreshToken = complianceData.refreshToken[0];
+        console.log("Token Before:", refreshToken);
+
+        const response = await axios.post('https://login.eveonline.com/oauth/token', {
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${authorizationBase64}`
+            }
+        });
+
+        if (response.data.refresh_token) {
+            complianceData.refreshToken[0] = response.data.refresh_token;
+            console.log("Token After:", response.data.refresh_token);
+            await fs.writeFile('complianceData.json', JSON.stringify(complianceData, null, 2));
+        }
+
+        return response.data.access_token;
+    } catch (error) {
+        console.error('Error refreshing access token:', error);
+        return null;
+    }
+}
+
+
+async function getCorporationMembers(accessToken) {
+    try {
+        const access_token = accessToken;
+        const response = await axios.get('https://esi.evetech.net/latest/corporations/98769585/members/?datasource=tranquility', {
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching corporation members:', error);
+        return [];
+    }
+}
+
+async function getCharacterNames(characterIds) {
+    try {
+        const promises = characterIds.map(async (characterId) => {
+            const response = await axios.get(`https://esi.evetech.net/latest/characters/${characterId}/?datasource=tranquility`);
+            return response.data.name;
+        });
+        const characterNames = await Promise.all(promises);
+        return characterNames;
+    } catch (error) {
+        console.error('Error fetching character names:', error);
+        return [];
+    }
+}
 
 async function fetchGameNames() {
     try {
-        const response = await axios.get('https://evewho.com/api/corplist/98769585');
-        const characterNames = response.data.characters.map(character => character.name.toLowerCase()); 
-        return new Set(characterNames); 
+        const accessToken = await getAccessTokenUsingRefreshToken();
+        if (!accessToken) {
+            console.error("Failed to obtain access token.");
+            return new Set();
+        }
+
+        const corporationMembers = await getCorporationMembers(accessToken);
+        if (!corporationMembers.length) {
+            console.error("No members found or failed to fetch members.");
+            return new Set();
+        }
+
+        const characterNames = await getCharacterNames(corporationMembers);
+        if (!characterNames.length) {
+            console.error("No character names found or failed to fetch names.");
+            return new Set();
+        }
+
+        return new Set(characterNames.map(name => name.toLowerCase()));
     } catch (error) {
         console.error('Failed to fetch game names:', error);
         return new Set();
