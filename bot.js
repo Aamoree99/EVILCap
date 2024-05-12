@@ -442,13 +442,29 @@ function allReactionsPresent(message) {
 }
 
 async function updateReactions(message) {
-    const currentReactions = message.reactions.cache.keys();
+    const currentReactions = new Set(message.reactions.cache.keys());
+
+    // Добавляем реакции, которые должны быть, но их нет
     for (const emoji of Object.keys(rolesMap)) {
         if (!currentReactions.has(emoji)) {
-            await message.react(emoji);
+            try {
+                await message.react(emoji);
+            } catch (error) {
+                console.error(`Could not react with ${emoji}:`, error);
+            }            
+            console.log(`Added missing reaction: ${emoji}`);
+        }
+    }
+
+    // Удаляем реакции, которые больше не нужны
+    for (const reaction of message.reactions.cache.values()) {
+        if (!rolesMap.hasOwnProperty(reaction.emoji.name)) {
+            await reaction.remove();
+            console.log(`Removed outdated reaction: ${reaction.emoji.name}`);
         }
     }
 }
+
 
 async function addReactions(message) {
     for (const emoji of Object.keys(rolesMap)) {
