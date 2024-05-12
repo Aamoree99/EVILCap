@@ -46,8 +46,6 @@ client.once('ready', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
     });
-    cleanupOldMessages();
-    setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
 const clientId = '1238628917900738591'; // Убедитесь, что CLIENT_ID добавлен в переменные окружения
@@ -722,33 +720,5 @@ async function writeData(newData) {
         console.error('Error updating data in JSON file:', error);
     }
 }
-
-async function cleanupOldMessages() {
-    const channel = client.channels.cache.get(LOG_CHANNEL_ID);
-    logAndSend('Начало чистки...');
-
-    if (!channel) {
-        console.error("Канал не найден");
-        return;
-    }
-
-    try {
-        const messages = await channel.messages.fetch();
-        const now = Date.now();
-        const twelveHours = 1000 * 60 * 60 * 12; // 12 часов в миллисекундах
-
-        messages.each(async (message) => {
-            if (now - message.createdTimestamp > twelveHours) {
-                await message.delete();
-            }
-        });
-
-        logAndSend("Старые сообщения удалены");
-    } catch (error) {
-        logAndSend("Произошла ошибка при удалении старых сообщений:", error);
-    }
-}
-
-
 
 client.login(process.env.DISCORD_TOKEN); 
