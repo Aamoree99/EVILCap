@@ -41,7 +41,7 @@ client.once('ready', () => {
     logAndSend(`<@235822777678954496>, папа я родился!`);
     logAndSend(`Logged in as ${client.user.tag}!`);
     createRoleMessage();
-    cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
+    //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     cron.schedule('0 10 * * *', () => {
         logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
         scheduleDailyActivity(client);
