@@ -1192,6 +1192,10 @@ async function checkBalance() {
     return division1.balance;
 }
 
+let totalBets = 0;
+let accumulatedWins = 0;
+let bonusPool = 0;
+
 function calculateWinAmount() {
     // Вероятности для разных уровней выигрышей (начальные значения)
     const baseProbabilities = {
@@ -1212,10 +1216,6 @@ function calculateWinAmount() {
         low: 800000 // 800k ISK (ниже взноса)
     };
 
-    // Начальные значения
-    let totalBets = 0;
-    let accumulatedWins = 0;
-    let bonusPool = 0;
     const stake = 1000000; // 1 млн ISK
 
     // Функция для расчета текущего состояния казино
