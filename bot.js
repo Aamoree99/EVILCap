@@ -38,6 +38,10 @@ let tokenCache = {
     expiresAt: null
 };
 
+let totalBets = 0;
+let accumulatedWins = 0;
+let bonusPool = 0;
+
 client.once('ready', async () => {
     client.user.setPresence({
         activities: [{ name: 'поклонение Дону', type: ActivityType.Playing }],
@@ -260,6 +264,11 @@ client.on('interactionCreate', async interaction => {
                     Object.keys(winners).forEach((winner, index) => {
                         reply += `${index + 1}. ${winner} - ${winners[winner]} ISK\n`;
                     });
+
+                    reply += `\nТекущее состояние казино:\n`;
+                    reply += `Общая сумма ставок: ${totalBets} ISK\n`;
+                    reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
+                    reply += `Бонусный пул: ${bonusPool} ISK\n`;
         
                     const winnerMessage = await interaction.reply({ content: reply + '\nОтветьте с номером победителя, которому была произведена выплата.', ephemeral: true });
         
@@ -1192,9 +1201,7 @@ async function checkBalance() {
     return division1.balance;
 }
 
-let totalBets = 0;
-let accumulatedWins = 0;
-let bonusPool = 0;
+
 
 function calculateWinAmount() {
     // Вероятности для разных уровней выигрышей (начальные значения)
