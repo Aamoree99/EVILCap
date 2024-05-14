@@ -827,7 +827,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     if (reaction.message.id === messageId && reaction.message.channel.id === '1163428374493003826') {
         const member = await reaction.message.guild.members.fetch(user.id);
         await member.roles.add(role);
-        logAndSend(`Added role <@&${role}> to user <@&${user.id}>`);
+        logAndSend(`Added role <@&${role}> to user <@${user.id}>`);
     }
 });
 
@@ -843,7 +843,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
     if (reaction.message.id === messageId && reaction.message.channel.id === '1163428374493003826') {
         const member = await reaction.message.guild.members.fetch(user.id);
         await member.roles.remove(role);
-        logAndSend(`Removed role <@&${role}> to user <@&${user.id}>`);
+        logAndSend(`Removed role <@&${role}> to user <@${user.id}>`);
     }
 });
 
