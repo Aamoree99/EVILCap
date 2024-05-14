@@ -57,6 +57,7 @@ client.once('ready', async () => {
     });
     checkBalance();
     await createRoleMessage();
+    await cleanupOldMessages();
     setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
