@@ -167,38 +167,58 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: message, ephemeral: true });
         },
         async reactionslist() {
-            const channelId = options.getString('channelid');
-            const messageId = options.getString('messageid');
-            const commandChannelId = interaction.channelId;
-            if (commandChannelId !== LOG_CHANNEL_ID) {
-                await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
-                return;
-            }
-            await interaction.deferReply({ ephemeral: true });
+            // Получаем идентификатор канала и сообщения из параметров команды
+    const channelId = interaction.options.getString('channelid');
+    const messageId = interaction.options.getString('messageid');
 
-            const channel = await client.channels.fetch(channelId);
-            const message = await channel.messages.fetch(messageId);
-            const userReactions = new Map();
+    // Идентификатор канала, где вводится команда
+    const commandChannelId = interaction.channelId;
 
-            for (const reaction of message.reactions.cache.values()) {
-                const users = await reaction.users.fetch();
-                users.forEach(user => {
-                    if (!user.bot) {
-                        if (userReactions.has(user.username)) {
-                            userReactions.set(user.username, userReactions.get(user.username) + 1);
-                        } else {
-                            userReactions.set(user.username, 1);
-                        }
+    // Проверяем, что команда введена в нужном канале
+    if (commandChannelId !== LOG_CHANNEL_ID) {
+        await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+        return;
+    }
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        const message = await channel.messages.fetch(messageId);
+        const userReactions = new Map();
+
+        for (const reaction of message.reactions.cache.values()) {
+            const users = await reaction.users.fetch();
+            for (const user of users.values()) {
+                if (!user.bot) {
+                    // Получаем объект участника сервера
+                    const member = await interaction.guild.members.fetch(user.id);
+                    // Берем никнейм на сервере, если он есть, иначе имя пользователя
+                    let username = member.nickname || user.username;
+                    // Обрезаем ник до символа '(' если он присутствует
+                    const parenIndex = username.indexOf('(');
+                    if (parenIndex !== -1) {
+                        username = username.substring(0, parenIndex).trim();
                     }
-                });
+
+                    if (userReactions.has(username)) {
+                        userReactions.set(username, userReactions.get(username) + 1);
+                    } else {
+                        userReactions.set(username, 1);
+                    }
+                }
             }
+        }
 
-            let responseMessage = 'Список реакций на сообщение:\n';
-            userReactions.forEach((count, username) => {
-                responseMessage += `${username}: ${count} реакций\n`;
-            });
+        let responseMessage = 'Список реакций на сообщение:\n';
+        userReactions.forEach((count, username) => {
+            responseMessage += `${username}: ${count} реакций\n`;
+        });
 
-            await interaction.editReply({ content: responseMessage });
+        await interaction.editReply({ content: responseMessage });
+    } catch (error) {
+        console.error(error);
+        await interaction.editReply({ content: 'Произошла ошибка при получении реакции.' });
+    }
         },
         async members() {
             if (channelId !== LOG_CHANNEL_ID) {
