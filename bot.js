@@ -252,53 +252,61 @@ client.on('interactionCreate', async interaction => {
             if (channelId === LOG_CHANNEL_ID) {
                 // Логика для лог-канала
                 try {
-                    const data = await readData();
-                    const winners = data.winners;
-        
-                    if (!winners || Object.keys(winners).length === 0) {
-                        await interaction.reply({ content: 'Нет победителей для выплаты.', ephemeral: true });
-                        return;
-                    }
-        
-                    let reply = 'Список победителей и их выигрыши:\n';
-                    Object.keys(winners).forEach((winner, index) => {
-                        reply += `${index + 1}. ${winner} - ${winners[winner]} ISK\n`;
-                    });
+    const data = await readData();
+    const winners = data.winners;
 
-                    reply += `\nТекущее состояние казино:\n`;
-                    reply += `Общая сумма ставок: ${totalBets} ISK\n`;
-                    reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
-                    reply += `Бонусный пул: ${bonusPool} ISK\n`;
-        
-                    const winnerMessage = await interaction.reply({ content: reply + '\nОтветьте с номером победителя, которому была произведена выплата.', ephemeral: true });
-        
-                    const filter = response => {
-                        const number = parseInt(response.content);
-                        return !isNaN(number) && number > 0 && number <= Object.keys(winners).length && response.author.id === interaction.user.id;
-                    };
-        
-                    const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
-        
-                    collector.on('collect', async response => {
-                        const number = parseInt(response.content);
-                        const winnerName = Object.keys(winners)[number - 1];
-                        
-                        delete winners[winnerName];
-        
-                        await writeData(data);
-                        await interaction.channel.send(`Выплата для ${winnerName} была подтверждена и удалена из списка.`);
-                    });
-        
-                    collector.on('end', collected => {
-                        if (collected.size === 0) {
-                            interaction.channel.send('Время ожидания истекло. Попробуйте снова.');
-                        }
-                    });
-        
-                } catch (error) {
-                    console.error('Ошибка при чтении данных:', error);
-                    await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
-                }
+    let reply = '';
+
+    if (!winners || Object.keys(winners).length === 0) {
+        reply = 'Нет победителей для выплаты.\n';
+    } else {
+        reply = 'Список победителей и их выигрыши:\n';
+        Object.keys(winners).forEach((winner, index) => {
+            reply += `${index + 1}. ${winner} - ${winners[winner]} ISK\n`;
+        });
+
+        reply += '\nОтветьте с номером победителя, которому была произведена выплата.';
+    }
+
+    // Добавление текущих значений переменных состояния казино
+    reply += `\n\nТекущее состояние казино:\n`;
+    reply += `Общая сумма ставок: ${totalBets} ISK\n`;
+    reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
+    reply += `Бонусный пул: ${bonusPool} ISK\n`;
+
+    const winnerMessage = await interaction.reply({ content: reply, ephemeral: true });
+
+    // Если есть победители, ожидание номера для подтверждения выплаты
+    if (winners && Object.keys(winners).length > 0) {
+        const filter = response => {
+            const number = parseInt(response.content);
+            return !isNaN(number) && number > 0 && number <= Object.keys(winners).length && response.author.id === interaction.user.id;
+        };
+
+        const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
+
+        collector.on('collect', async response => {
+            const number = parseInt(response.content);
+            const winnerName = Object.keys(winners)[number - 1];
+            
+            delete winners[winnerName];
+
+            await writeData(data);
+            await interaction.channel.send(`Выплата для ${winnerName} была подтверждена и удалена из списка.`);
+        });
+
+        collector.on('end', collected => {
+            if (collected.size === 0) {
+                interaction.channel.send('Время ожидания истекло. Попробуйте снова.');
+            }
+        });
+    }
+
+} catch (error) {
+    console.error('Ошибка при чтении данных:', error);
+    await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
+}
+
             } else if (channelId === CASINO_CHANNEL_ID) {
                 // Логика для канала казино
                 try {
@@ -1307,13 +1315,17 @@ async function startGame(channel, user, winAmount) {
     let data = await readData();
     let winners = data.winners || {};
 
-    // Проверка наличия пользователя в списке победителей
-    if (winners[user.username]) {
-        // Если пользователь уже существует, добавляем выигрыш к его сумме
-        winners[user.username] += winAmount;
-    } else {
-        // Если пользователя нет, добавляем новую запись
-        winners[user.username] = winAmount;
+    if (winAmount > 0) {
+        if (winners[user.username]) {
+            // Если пользователь уже существует, добавляем выигрыш к его сумме
+            winners[user.username] += winAmount;
+        } else {
+            // Если пользователя нет, добавляем новую запись
+            winners[user.username] = winAmount;
+        }
+
+        // Запись обновленного списка победителей в файл
+        await writeData({ winners });
     }
 
     // Запись обновленного списка победителей в файл
