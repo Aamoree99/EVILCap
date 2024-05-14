@@ -1,7 +1,11 @@
 {
-  "nonComplianceCounter": [],
+  "nonComplianceCounter": {
+    "lb": 1,
+    "outsm-01": 1
+  },
   "ignoreList": [
-    "ghanuur"
+    "ghaanur",
+    "aamoree"
   ],
   "messageId": [
     "1239301902311624856"
@@ -11,5 +15,10 @@
   ],
   "Authorization": [
     "Mjk2ZjMwOTZlZDIxNGFmNDliZmE1MTk5NzkxYTM1MDQ6ZlEyQ095elNoZnRzeTJEZ2lQZXlQS05SaFpLZlZxWHJHb1k4MUYweQ=="
-  ]
+  ],
+  "participants": [],
+  "eventId": [],
+  "winners": {
+    "aamoree_99": 800000
+  }
 }
