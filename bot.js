@@ -167,14 +167,15 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: message, ephemeral: true });
         },
         async reactionslist() {
-            if (channelId !== LOG_CHANNEL_ID) {
+            const channelId = options.getString('channelid');
+            const messageId = options.getString('messageid');
+            const commandChannelId = interaction.channelId;
+            if (commandChannelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
                 return;
             }
             await interaction.deferReply({ ephemeral: true });
 
-            const channelId = options.getString('channelid');
-            const messageId = options.getString('messageid');
             const channel = await client.channels.fetch(channelId);
             const message = await channel.messages.fetch(messageId);
             const userReactions = new Map();
