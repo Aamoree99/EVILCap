@@ -1328,7 +1328,7 @@ async function startGame(channel, user, winAmount) {
         const winMessage = `<@${user.id}> выиграл ${winAmount} ISK! Поздравляем! Напиши <@235822777678954496>.`;
         await channel.send(winMessage);
     } else {
-        const loseMessage = `<@${user.id}> не выиграл. Удача в следующий раз!`;
+        const loseMessage = `<@${user.id}> не выиграл. Удачи в следующий раз!`;
         await channel.send(loseMessage);
     }
 
