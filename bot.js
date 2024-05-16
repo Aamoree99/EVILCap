@@ -441,25 +441,33 @@ client.on('interactionCreate', async interaction => {
         async hf() {
             try {
                 const data = await readData();
-                const participants = data.participants || {};
-                const maxParticipants = 5;
+const participants = data.participants || {};
+const maxParticipants = 5;
 
-                const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
-                const roleChannel = await client.channels.fetch('1163428374493003826');
-                const role = await interaction.guild.roles.fetch('1163379884039618641');
+const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+const roleChannel = await client.channels.fetch('1163428374493003826');
+const role = await interaction.guild.roles.fetch('1163379884039618641');
 
-                if (!mainChannel || !role || !roleChannel) {
-                    await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
-                    return;
-                }
+if (!mainChannel || !role || !roleChannel) {
+    await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
+    return;
+}
 
-                // Извлекаем имена и количество окон
-                const participantEntries = Object.entries(participants);
-                const participantNames = participantEntries.map(([name, count]) => `${name}: ${count}`).join(', ');
+// Извлекаем имена и количество окон
+const participantEntries = Object.entries(participants);
 
-                const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames}. Не упустите шанс, присоединяйтесь к нам!`;
-                await mainChannel.send(replyMessage);
-                await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
+// Получаем список участников с их упоминаниями
+const participantNames = await Promise.all(
+    participantEntries.map(async ([id, count]) => {
+        const member = await interaction.guild.members.fetch(id);
+        return `${member.toString()}: ${count}`;
+    })
+);
+
+const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames.join(', ')}. Не упустите шанс, присоединяйтесь к нам!`;
+await mainChannel.send(replyMessage);
+await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
+
             } catch (error) {
                 console.error("Error in hf function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
