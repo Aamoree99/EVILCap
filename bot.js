@@ -246,14 +246,20 @@ client.on('interactionCreate', async interaction => {
             const message = namesList.length === 0 ? "Список имен пуст." : `Список имен: ${namesList.join(', ')}\nОбщее количество: ${namesList.length}`;
             await interaction.reply({ content: message, ephemeral: true });
         },
-        async moon() {
-            const allowedChannels = ['1172972375688626276', '1212507080934686740'];
-            const currentChannelId = interaction.channel.id;
+        async function moon(interaction) {
+    try {
+        const data = await readData();
+        const ignoreList = data.ignoreList || [];
+        const allowedChannels = ['1172972375688626276', '1212507080934686740'];
+        const currentChannelId = interaction.channel.id;
+        const authorUsername = interaction.user.username;
 
-            if (!allowedChannels.includes(currentChannelId)) {
-                await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-                return;
-            }
+        if (!allowedChannels.includes(currentChannelId)) {
+            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+            return;
+        }
+
+        if (ignoreList.includes(authorUsername)) {
             const phrases = [
                 "Пришло время заработать немного ISK!",
                 "Давайте наберем побольше прибыли!",
@@ -282,7 +288,26 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.reply({ content: "Канал не найден.", ephemeral: true });
             }
-        },
+        } else {
+            const now = new Date();
+            const nextEvenDay = new Date(now);
+            nextEvenDay.setUTCHours(11, 0, 0, 0);
+            if (nextEvenDay <= now || nextEvenDay.getUTCDay() % 2 !== 0) {
+                nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDay() % 2 === 0 ? 2 : 1));
+            }
+            const hoursUntilNextEvenDay = Math.ceil((nextEvenDay - now) / (1000 * 60 * 60));
+
+            if (currentChannelId === '1172972375688626276') {
+                await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов.`);
+            } else if (currentChannelId === '1212507080934686740') {
+                await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours.`);
+            }
+        }
+    } catch (error) {
+        console.error("Error in moon function:", error);
+        await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
+    }
+},
         async winners() {
             const channelId = interaction.channel.id;
         
@@ -412,25 +437,32 @@ client.on('interactionCreate', async interaction => {
                 setTimeout(() => confirmationMessage.delete(), 5000);
             });
         },
-        async hf() {
-            const data = await readData();
-            const participants = data.participants || [];
-            const numParticipants = participants.length;
-            const maxParticipants = 5;
+        async function hf(interaction) {
+    try {
+        const data = await readData();
+        const participants = data.participants || {};
+        const maxParticipants = 5;
 
-            const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
-            const roleChannel = await client.channels.fetch('1163428374493003826');
-            const role = await interaction.guild.roles.fetch('1163379884039618641');
+        const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+        const roleChannel = await client.channels.fetch('1163428374493003826');
+        const role = await interaction.guild.roles.fetch('1163379884039618641');
 
-            if (!mainChannel || !role || !roleChannel) {
-                await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
-                return;
-            }
-
-            const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент ${numParticipants} из ${maxParticipants} участников уже зарегистрировались. Не упустите шанс, присоединяйтесь к нам!`;
-            await mainChannel.send(replyMessage);
-            await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
+        if (!mainChannel || !role || !roleChannel) {
+            await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
+            return;
         }
+
+        // Извлекаем имена и количество окон
+        const participantEntries = Object.entries(participants);
+        const participantNames = participantEntries.map(([name, count]) => `${name}: ${count}`).join(', ');
+
+        const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames}. Не упустите шанс, присоединяйтесь к нам!`;
+        await mainChannel.send(replyMessage);
+        await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
+    } catch (error) {
+        console.error("Error in hf function:", error);
+        await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
+    
     }
 
     if (interaction.isCommand()) {
@@ -471,7 +503,11 @@ client.on('messageCreate', async message => {
         if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !message.content.trim() || !waitList.has(message.author.id)) return;
 
         if (waitList.get(message.author.id) === message.guild.id) {
-            const content = message.content;
+            let content = message.content;
+
+            // Удаляем упоминания из содержимого сообщения
+            content = content.replace(/<@!?\d+>/g, '').trim();
+
             if (content.includes(',')) {
                 const parts = content.split(',', 2);
                 if (parts.length === 2) {
@@ -490,6 +526,8 @@ client.on('messageCreate', async message => {
                         message.channel.send("У меня недостаточно прав для изменения никнеймов.");
                         console.error("Permission denied to change nickname:", error);
                     }
+                } else {
+                    message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
                 }
             } else {
                 message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
@@ -499,6 +537,7 @@ client.on('messageCreate', async message => {
         console.error("Error in messageCreate event handler:", error);
     }
 });
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     try {
