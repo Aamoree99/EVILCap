@@ -1,8 +1,8 @@
 {
-  "name": "mydiscordbot",
-  "version": "1.0.0",
+  "name": "evil_capybara_web",
+  "version": "2.1",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "concurrently \"node app.js\" \"node bot.js\""
@@ -14,6 +14,7 @@
     "axios": "^1.6.8",
     "discord.js": "^14.15.2",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "node-cron": "^3.0.3",
     "node-schedule": "^2.1.1"
   },
