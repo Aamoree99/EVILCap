@@ -13,10 +13,13 @@
   "Authorization": [
     "Mjk2ZjMwOTZlZDIxNGFmNDliZmE1MTk5NzkxYTM1MDQ6ZlEyQ095elNoZnRzeTJEZ2lQZXlQS05SaFpLZlZxWHJHb1k4MUYweQ=="
   ],
-  "participants": [],
+  "participants": {
+    "423082891703222272": 1
+  },
   "eventId": [
-    "1240410349413601290"
+    "1240658668370792489"
   ],
   "winners": {},
-  "activeGames": {}
+  "activeGames": {},
+  "moonMessage": []
 }

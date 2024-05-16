@@ -31,6 +31,7 @@ const LOG_CHANNEL_ID = '1239085828395892796';
 const REPORT_CHANNEL_ID= '1230611265794080848';
 const MAIN_CHANNEL_ID= '1172972375688626276';
 const CASINO_CHANNEL_ID= '1239752190986420274';
+const MOON_CHANNEL_ID= '1159193601289490534';
 
 const waitList = new Map();
 const messageMap = new Map();
@@ -48,7 +49,7 @@ let isProcessing = false;
 
 client.once('ready', async () => {
     client.user.setPresence({
-        activities: [{ name: 'поклонение Дону', type: ActivityType.Playing }],
+        activities: [{ name: 'анализирование Гачи', type: ActivityType.Playing }],
         status: 'online'
     });
     logAndSend(`<@235822777678954496>, папа я родился!`);
@@ -59,7 +60,13 @@ client.once('ready', async () => {
     createRoleMessage();
     scheduleTransactionCheck();
     await sendRandomPhrase();
-
+    cron.schedule('0 11 * * *', () => {
+        updateMoonMessage();
+    }, {
+        scheduled: true,
+        timezone: "UTC"
+    });
+    await updateMoonMessage();
     scheduleDailyMessage();
     setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
@@ -591,11 +598,11 @@ async function scheduleDailyActivity(client) {
             activityData.eventId = [];
         }
         if (!activityData.participants) {
-            activityData.participants = [];
+            activityData.participants = {};
         }
 
         let message;
-        let participants = new Set(activityData.participants);
+        let totalAccounts = 0;
 
         if (activityData.eventId.length > 0) {
             try {
@@ -614,7 +621,11 @@ async function scheduleDailyActivity(client) {
                         new ButtonBuilder()
                             .setCustomId('participate')
                             .setLabel('Участвовать')
-                            .setStyle(ButtonStyle.Primary)
+                            .setStyle(ButtonStyle.Primary),
+                        new ButtonBuilder()
+                            .setCustomId('participate_multi')
+                            .setLabel('Добавить окно')
+                            .setStyle(ButtonStyle.Secondary)
                     )
                 ]
             });
@@ -629,21 +640,35 @@ async function scheduleDailyActivity(client) {
             logAndSend(`Кнопка ${interaction.customId} была нажата пользователем ${interaction.user.username}.`);
             if (interaction.customId === 'participate') {
                 await interaction.deferUpdate();
-                if (participants.has(interaction.user.id)) {
-                    await interaction.followUp({ content: 'Вы уже записаны!', ephemeral: true });
-                } else {
-                    participants.add(interaction.user.id);
-                    activityData.participants = Array.from(participants);
+                if (!activityData.participants[interaction.user.id]) {
+                    activityData.participants[interaction.user.id] = 1; // Регистрируем основное участие
+                    totalAccounts += 1;
                     await writeToJSON(DATA_FILE, activityData);
-                    await interaction.followUp({ content: 'Спасибо за ваш интерес, мы вас записали!', ephemeral: true });
-
-                    if (participants.size >= 5) {
-                        await mainChannel.send(`<@&1163379884039618641> Флот собран! Набор в новый флот начат.`);
-                        scheduleEvent();
-                        activityData.participants = [];
-                        await writeToJSON(DATA_FILE, activityData);
-                    }
+                    await interaction.followUp({ content: 'Вы успешно записаны на участие одним окном!', ephemeral: true });
+                } else {
+                    await interaction.followUp({ content: 'Вы уже записаны!', ephemeral: true });
                 }
+            } else if (interaction.customId === 'participate_multi') {
+                await interaction.deferUpdate();
+                if (activityData.participants[interaction.user.id]) {
+                    activityData.participants[interaction.user.id] += 1; // Добавляем дополнительное окно
+                    totalAccounts += 1;
+                    await writeToJSON(DATA_FILE, activityData);
+                    await interaction.followUp({ content: 'Дополнительное окно добавлено!', ephemeral: true });
+                } else {
+                    await interaction.followUp({ content: 'Сначала зарегистрируйте основное участие!', ephemeral: true });
+                }
+            }
+
+            if (totalAccounts >= 5) {
+                let participantsDetail = Object.entries(activityData.participants)
+                    .map(([id, count]) => `<@${id}> (${count} окон)`)
+                    .join(', ');
+
+                await mainChannel.send(`<@&1163379884039618641> Флот полностью сформирован с участием следующих пилотов: ${participantsDetail}. Приглашаем новых участников к следующему сбору!`);
+                scheduleEvent();
+                activityData.participants = {};
+                await writeToJSON(DATA_FILE, activityData);
             }
         });
 
@@ -664,7 +689,7 @@ async function scheduleDailyActivity(client) {
                         location: 'Dodixie'
                     }
                 });
-                participants.forEach(async (userId) => {
+                Object.keys(activityData.participants).forEach(async (userId) => {
                     const user = await client.users.fetch(userId);
                     if (user && !user.bot) {
                         user.send(`Группа собрана! Старт через 30 минут. Вот ссылка: ${event.url}`);
@@ -1564,14 +1589,12 @@ const phrases = [
     "Всё лучшее происходит в душе"
   ];
   
-  // Helper function to send a random phrase
   async function sendRandomPhrase() {
     const channel = await client.channels.fetch(MAIN_CHANNEL_ID);
     const randomPhrase = phrases[randomInt(phrases.length)];
     channel.send(randomPhrase);
   }
   
-  // Function to schedule daily message at a random time starting tomorrow
   function scheduleDailyMessage() {
     const now = new Date();
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -1579,15 +1602,99 @@ const phrases = [
     const randomHour = randomInt(24);
     const randomMinute = randomInt(60);
   
-    // Set the time for tomorrow's message
     tomorrow.setHours(randomHour, randomMinute, 0);
   
-    // Schedule the message for tomorrow
     scheduleJob(tomorrow, function() {
       sendRandomPhrase();
-      scheduleDailyMessage(); // Reschedule for the next day
+      scheduleDailyMessage(); 
     });
   }
 
+function createMoonMessage(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const today = date.getDate();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕
 
-client.login(process.env.DISCORD_TOKEN); 
+**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**
+
+`;
+
+    for (let day = today; day <= lastDay; day++) {
+        if (day % 2 === 0) {
+            const emoji = day === today ? '🟡' : '🌑';
+            content += `${emoji} ${day} мая - Ore ${8 + (day - 16) / 2}\n`;
+        }
+    }
+
+    content += `
+
+Клонилка стоит на **Ore 1**
+Радиус сжималки у орки 116 км, радиус бафов 118 км
+Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
+
+    return content;
+}
+
+async function updateMoonMessage() {
+    const channel = client.channels.cache.get(MOON_CHANNEL_ID);
+    const data = await readData(); 
+    let message;
+    
+    if (data.moonMessage && data.moonMessage.length > 0) {
+        const messageId = data.moonMessage[0]; 
+        try {
+            message = await channel.messages.fetch(messageId);
+        } catch (error) {
+            console.error('Error fetching the message:', error);
+            message = null;
+        }
+    }
+
+    if (!message) {
+        message = await channel.send(createMoonMessage(new Date()));
+        data.moonMessage = [message.id]; 
+        await writeData(data); 
+        console.log(`New message created with ID: ${message.id}`);
+    } else {
+        const newContent = createMoonMessage(new Date());
+        await message.edit(newContent);
+        console.log('Message updated successfully.');
+    }
+}
+
+function createMoonMessage(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const today = date.getDate();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const months = [
+        'января/january', 'февраля/february', 'марта/march', 'апреля/april', 'мая/may', 'июня/june',
+        'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
+    ];    
+
+    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕
+
+    **Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**
+    
+    `;
+    
+    for (let day = today; day <= lastDay; day++) {
+        if (day % 2 === 0) {
+            const emoji = day === today ? '🟡' : '🌑';
+            content += `${emoji} ${day} ${months[month]} - Ore ${8 + (day - 16) / 2}\n`;
+        }
+    }
+    
+    content += `
+    
+    Клонилка стоит на **Ore 1**
+    Радиус сжималки у орки 116 км, радиус бафов 118 км
+    Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
+    
+    return content;
+    
+}
+
+client.login(token); 
