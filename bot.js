@@ -645,6 +645,7 @@ async function scheduleDailyActivity(client) {
 
         let message;
         let totalAccounts = 0;
+        let collector;
 
         if (activityData.eventId.length > 0) {
             try {
@@ -676,10 +677,38 @@ async function scheduleDailyActivity(client) {
             logAndSend(`Сохранено новое сообщение с ID: ${message.id}`);
         }
 
-        let collector = message.createMessageComponentCollector({ componentType: 2 }); // 2 is Button
+        let inactivityTimeout;
+        let isCountingDown = false;
+
+        async function startCountdown() {
+            if (isCountingDown) return;
+            isCountingDown = true;
+
+            inactivityTimeout = setTimeout(async () => {
+                logAndSend("Время ожидания истекло, сбрасываем список участников.");
+                activityData.participants = {};
+                await writeToJSON(DATA_FILE, activityData);
+                isCountingDown = false;
+            }, 4 * 60 * 60 * 1000); // 4 часа
+        }
+
+        function resetCountdown() {
+            if (inactivityTimeout) {
+                clearTimeout(inactivityTimeout);
+                inactivityTimeout = null;
+                isCountingDown = false;
+            }
+        }
+
+        collector = message.createMessageComponentCollector({ componentType: 2 }); // 2 is Button
 
         collector.on('collect', async (interaction) => {
             logAndSend(`Кнопка ${interaction.customId} была нажата пользователем ${interaction.user.username}.`);
+
+            if (!isCountingDown) {
+                startCountdown();
+            }
+
             if (interaction.customId === 'participate') {
                 await interaction.deferUpdate();
                 if (!activityData.participants[interaction.user.id]) {
@@ -711,6 +740,7 @@ async function scheduleDailyActivity(client) {
                 scheduleEvent();
                 activityData.participants = {};
                 await writeToJSON(DATA_FILE, activityData);
+                resetCountdown();
             }
         });
 
@@ -746,6 +776,7 @@ async function scheduleDailyActivity(client) {
         console.error("Ошибка в scheduleDailyActivity:", error);
     }
 }
+
 
 
 function logAndSend(message) {
