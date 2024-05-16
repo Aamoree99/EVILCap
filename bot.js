@@ -184,57 +184,57 @@ client.on('interactionCreate', async interaction => {
         },
         async reactionslist() {
             // Получаем идентификатор канала и сообщения из параметров команды
-    const channelId = interaction.options.getString('channelid');
-    const messageId = interaction.options.getString('messageid');
+            const channelId = interaction.options.getString('channelid');
+            const messageId = interaction.options.getString('messageid');
 
-    // Идентификатор канала, где вводится команда
-    const commandChannelId = interaction.channelId;
+            // Идентификатор канала, где вводится команда
+            const commandChannelId = interaction.channelId;
 
-    // Проверяем, что команда введена в нужном канале
-    if (commandChannelId !== LOG_CHANNEL_ID) {
-        await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
-        return;
-    }
-    await interaction.deferReply({ ephemeral: true });
+            // Проверяем, что команда введена в нужном канале
+            if (commandChannelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+                return;
+            }
+            await interaction.deferReply({ ephemeral: true });
 
-    try {
-        const channel = await client.channels.fetch(channelId);
-        const message = await channel.messages.fetch(messageId);
-        const userReactions = new Map();
+            try {
+                const channel = await client.channels.fetch(channelId);
+                const message = await channel.messages.fetch(messageId);
+                const userReactions = new Map();
 
-        for (const reaction of message.reactions.cache.values()) {
-            const users = await reaction.users.fetch();
-            for (const user of users.values()) {
-                if (!user.bot) {
-                    // Получаем объект участника сервера
-                    const member = await interaction.guild.members.fetch(user.id);
-                    // Берем никнейм на сервере, если он есть, иначе имя пользователя
-                    let username = member.nickname || user.username;
-                    // Обрезаем ник до символа '(' если он присутствует
-                    const parenIndex = username.indexOf('(');
-                    if (parenIndex !== -1) {
-                        username = username.substring(0, parenIndex).trim();
-                    }
+                for (const reaction of message.reactions.cache.values()) {
+                    const users = await reaction.users.fetch();
+                    for (const user of users.values()) {
+                        if (!user.bot) {
+                            // Получаем объект участника сервера
+                            const member = await interaction.guild.members.fetch(user.id);
+                            // Берем никнейм на сервере, если он есть, иначе имя пользователя
+                            let username = member.nickname || user.username;
+                            // Обрезаем ник до символа '(' если он присутствует
+                            const parenIndex = username.indexOf('(');
+                            if (parenIndex !== -1) {
+                                username = username.substring(0, parenIndex).trim();
+                            }
 
-                    if (userReactions.has(username)) {
-                        userReactions.set(username, userReactions.get(username) + 1);
-                    } else {
-                        userReactions.set(username, 1);
+                            if (userReactions.has(username)) {
+                                userReactions.set(username, userReactions.get(username) + 1);
+                            } else {
+                                userReactions.set(username, 1);
+                            }
+                        }
                     }
                 }
+
+                let responseMessage = 'Список реакций на сообщение:\n';
+                userReactions.forEach((count, username) => {
+                    responseMessage += `${username}: ${count} реакций\n`;
+                });
+
+                await interaction.editReply({ content: responseMessage });
+            } catch (error) {
+                console.error(error);
+                await interaction.editReply({ content: 'Произошла ошибка при получении реакции.' });
             }
-        }
-
-        let responseMessage = 'Список реакций на сообщение:\n';
-        userReactions.forEach((count, username) => {
-            responseMessage += `${username}: ${count} реакций\n`;
-        });
-
-        await interaction.editReply({ content: responseMessage });
-    } catch (error) {
-        console.error(error);
-        await interaction.editReply({ content: 'Произошла ошибка при получении реакции.' });
-    }
         },
         async members() {
             if (channelId !== LOG_CHANNEL_ID) {
@@ -246,144 +246,144 @@ client.on('interactionCreate', async interaction => {
             const message = namesList.length === 0 ? "Список имен пуст." : `Список имен: ${namesList.join(', ')}\nОбщее количество: ${namesList.length}`;
             await interaction.reply({ content: message, ephemeral: true });
         },
-        async function moon(interaction) {
-    try {
-        const data = await readData();
-        const ignoreList = data.ignoreList || [];
-        const allowedChannels = ['1172972375688626276', '1212507080934686740'];
-        const currentChannelId = interaction.channel.id;
-        const authorUsername = interaction.user.username;
+        async moon() {
+            try {
+                const data = await readData();
+                const ignoreList = data.ignoreList || [];
+                const allowedChannels = ['1172972375688626276', '1212507080934686740'];
+                const currentChannelId = interaction.channel.id;
+                const authorUsername = interaction.user.username;
 
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-            return;
-        }
+                if (!allowedChannels.includes(currentChannelId)) {
+                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+                    return;
+                }
 
-        if (ignoreList.includes(authorUsername)) {
-            const phrases = [
-                "Пришло время заработать немного ISK!",
-                "Давайте наберем побольше прибыли!",
-                "Не упустим возможность заработать!",
-                "Пора пополнить наши кошельки!",
-                "Время действовать и зарабатывать!"
-            ];
-            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-            const baseMessage = "<@&1163380015191302214> Луна взорвана!"; 
-            const channel = client.channels.cache.get('1172972375688626276'); 
-            const en_phrases = [
-                "Time to make some ISK!",
-                "Let's rack up some profits!",
-                "Don't miss the chance to earn!",
-                "Time to fill our wallets!",
-                "Time to act and earn!"
-            ];
-            const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-            const en_baseMessage = "<@&1163380015191302214> The moon has exploded."; 
-            const en_channel = client.channels.cache.get('1212507080934686740'); 
+                if (ignoreList.includes(authorUsername)) {
+                    const phrases = [
+                        "Пришло время заработать немного ISK!",
+                        "Давайте наберем побольше прибыли!",
+                        "Не упустим возможность заработать!",
+                        "Пора пополнить наши кошельки!",
+                        "Время действовать и зарабатывать!"
+                    ];
+                    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                    const baseMessage = "<@&1163380015191302214> Луна взорвана!"; 
+                    const channel = client.channels.cache.get('1172972375688626276'); 
+                    const en_phrases = [
+                        "Time to make some ISK!",
+                        "Let's rack up some profits!",
+                        "Don't miss the chance to earn!",
+                        "Time to fill our wallets!",
+                        "Time to act and earn!"
+                    ];
+                    const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
+                    const en_baseMessage = "<@&1163380015191302214> The moon has exploded."; 
+                    const en_channel = client.channels.cache.get('1212507080934686740'); 
 
-            if (channel) {
-                await channel.send(`${baseMessage} ${randomPhrase}`);
-                await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
-                await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-            } else {
-                await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+                    if (channel) {
+                        await channel.send(`${baseMessage} ${randomPhrase}`);
+                        await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
+                        await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+                    } else {
+                        await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+                    }
+                } else {
+                    const now = new Date();
+                    const nextEvenDay = new Date(now);
+                    nextEvenDay.setUTCHours(11, 0, 0, 0);
+                    if (nextEvenDay <= now || nextEvenDay.getUTCDay() % 2 !== 0) {
+                        nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDay() % 2 === 0 ? 2 : 1));
+                    }
+                    const hoursUntilNextEvenDay = Math.ceil((nextEvenDay - now) / (1000 * 60 * 60));
+
+                    if (currentChannelId === '1172972375688626276') {
+                        await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов.`);
+                    } else if (currentChannelId === '1212507080934686740') {
+                        await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours.`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error in moon function:", error);
+                await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
             }
-        } else {
-            const now = new Date();
-            const nextEvenDay = new Date(now);
-            nextEvenDay.setUTCHours(11, 0, 0, 0);
-            if (nextEvenDay <= now || nextEvenDay.getUTCDay() % 2 !== 0) {
-                nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDay() % 2 === 0 ? 2 : 1));
-            }
-            const hoursUntilNextEvenDay = Math.ceil((nextEvenDay - now) / (1000 * 60 * 60));
-
-            if (currentChannelId === '1172972375688626276') {
-                await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов.`);
-            } else if (currentChannelId === '1212507080934686740') {
-                await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours.`);
-            }
-        }
-    } catch (error) {
-        console.error("Error in moon function:", error);
-        await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-    }
-},
+        },
         async winners() {
             const channelId = interaction.channel.id;
         
             if (channelId === LOG_CHANNEL_ID) {
                 // Логика для лог-канала
                 try {
-    const data = await readData();
-    const winners = data.winners;
+                    const data = await readData();
+                    const winners = data.winners;
 
-    let reply = '';
+                    let reply = '';
 
-    if (!winners || Object.keys(winners).length === 0) {
-        reply = 'Нет победителей для выплаты.\n';
-    } else {
-        reply = 'Список победителей и их выигрыши:\n';
-        Object.keys(winners).forEach((winner, index) => {
-            reply += `${index + 1}. ${winner} - ${winners[winner]} ISK\n`;
-        });
+                    if (!winners || Object.keys(winners).length === 0) {
+                        reply = 'Нет победителей для выплаты.\n';
+                    } else {
+                        reply = 'Список победителей и их выигрыши:\n';
+                        Object.keys(winners).forEach((winner, index) => {
+                            reply += `${index + 1}. ${winner} - ${winners[winner]} ISK\n`;
+                        });
 
-        reply += '\nОтветьте с номером победителя, которому была произведена выплата.';
-    }
+                        reply += '\nОтветьте с номером победителя, которому была произведена выплата.';
+                    }
 
-    // Добавление текущих значений переменных состояния казино
-    reply += `\n\nТекущее состояние казино:\n`;
-    reply += `Общая сумма ставок: ${totalBets} ISK\n`;
-    reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
-    reply += `Бонусный пул: ${bonusPool} ISK\n`;
+                    // Добавление текущих значений переменных состояния казино
+                    reply += `\n\nТекущее состояние казино:\n`;
+                    reply += `Общая сумма ставок: ${totalBets} ISK\n`;
+                    reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
+                    reply += `Бонусный пул: ${bonusPool} ISK\n`;
 
-    const winnerMessage = await interaction.reply({ content: reply, ephemeral: true });
+                    const winnerMessage = await interaction.reply({ content: reply, ephemeral: true });
 
-    // Если есть победители, ожидание номера для подтверждения выплаты
-    if (winners && Object.keys(winners).length > 0) {
-        const filter = response => {
-            const number = parseInt(response.content);
-            return !isNaN(number) && number > 0 && number <= Object.keys(winners).length && response.author.id === interaction.user.id;
-        };
+                    // Если есть победители, ожидание номера для подтверждения выплаты
+                    if (winners && Object.keys(winners).length > 0) {
+                        const filter = response => {
+                            const number = parseInt(response.content);
+                            return !isNaN(number) && number > 0 && number <= Object.keys(winners).length && response.author.id === interaction.user.id;
+                        };
 
-        const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
+                        const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
 
-        collector.on('collect', async response => {
-            const number = parseInt(response.content);
-            const winnerName = Object.keys(winners)[number - 1];
-            
-            delete winners[winnerName];
+                        collector.on('collect', async response => {
+                            const number = parseInt(response.content);
+                            const winnerName = Object.keys(winners)[number - 1];
+                            
+                            delete winners[winnerName];
 
-            await writeData(data);
-            await interaction.channel.send(`Выплата для ${winnerName} была подтверждена и удалена из списка.`);
-        });
+                            await writeData(data);
+                            await interaction.channel.send(`Выплата для ${winnerName} была подтверждена и удалена из списка.`);
+                        });
 
-        collector.on('end', collected => {
-            if (collected.size === 0) {
-                interaction.channel.send('Время ожидания истекло. Попробуйте снова.');
-            }
-        });
-    }
+                        collector.on('end', collected => {
+                            if (collected.size === 0) {
+                                interaction.channel.send('Время ожидания истекло. Попробуйте снова.');
+                            }
+                        });
+                    }
 
-        } catch (error) {
-            console.error('Ошибка при чтении данных:', error);
-            await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
-        }
+                } catch (error) {
+                    console.error('Ошибка при чтении данных:', error);
+                    await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
+                }
 
             } else if (channelId === CASINO_CHANNEL_ID) {
                 // Логика для канала казино
                 try {
                     const data = await readData();
                     const winners = data.winners || {};
-        
+
                     const userWins = winners[interaction.user.username];
-        
+
                     if (!userWins) {
                         await interaction.reply({ content: 'У вас нет выигрышей на данный момент.', ephemeral: true });
                         return;
                     }
-        
+
                     let reply = `Ваш текущий выигрыш: ${userWins} ISK`;
-        
+
                     await interaction.reply({ content: reply, ephemeral: true });
                 } catch (error) {
                     console.error('Ошибка при чтении данных:', error);
@@ -392,9 +392,11 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале или канале казино.", ephemeral: true });
             }
-        }, async startcasino() {
+        },
+        async startcasino() {
             await startCasinoGame(interaction);
-        }, async show_sessions() {
+        },
+        async show_sessions() {
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "This command can only be used in the log channel.", ephemeral: true });
                 return;
@@ -437,33 +439,34 @@ client.on('interactionCreate', async interaction => {
                 setTimeout(() => confirmationMessage.delete(), 5000);
             });
         },
-        async function hf(interaction) {
-    try {
-        const data = await readData();
-        const participants = data.participants || {};
-        const maxParticipants = 5;
+        async hf() {
+            try {
+                const data = await readData();
+                const participants = data.participants || {};
+                const maxParticipants = 5;
 
-        const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
-        const roleChannel = await client.channels.fetch('1163428374493003826');
-        const role = await interaction.guild.roles.fetch('1163379884039618641');
+                const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+                const roleChannel = await client.channels.fetch('1163428374493003826');
+                const role = await interaction.guild.roles.fetch('1163379884039618641');
 
-        if (!mainChannel || !role || !roleChannel) {
-            await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
-            return;
+                if (!mainChannel || !role || !roleChannel) {
+                    await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
+                    return;
+                }
+
+                // Извлекаем имена и количество окон
+                const participantEntries = Object.entries(participants);
+                const participantNames = participantEntries.map(([name, count]) => `${name}: ${count}`).join(', ');
+
+                const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames}. Не упустите шанс, присоединяйтесь к нам!`;
+                await mainChannel.send(replyMessage);
+                await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
+            } catch (error) {
+                console.error("Error in hf function:", error);
+                await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
+            }
         }
-
-        // Извлекаем имена и количество окон
-        const participantEntries = Object.entries(participants);
-        const participantNames = participantEntries.map(([name, count]) => `${name}: ${count}`).join(', ');
-
-        const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames}. Не упустите шанс, присоединяйтесь к нам!`;
-        await mainChannel.send(replyMessage);
-        await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
-    } catch (error) {
-        console.error("Error in hf function:", error);
-        await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-    
-    }
+    };
 
     if (interaction.isCommand()) {
         if (commandHandlers[commandName]) {
