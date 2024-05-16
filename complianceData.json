@@ -2,7 +2,9 @@
   "nonComplianceCounter": {},
   "ignoreList": [
     "ghaanur",
-    "aamoree"
+    "aamoree",
+    "donaldkrak",
+    "morfiusoksaras"
   ],
   "messageId": [
     "1239301902311624856"
@@ -14,12 +16,13 @@
     "Mjk2ZjMwOTZlZDIxNGFmNDliZmE1MTk5NzkxYTM1MDQ6ZlEyQ095elNoZnRzeTJEZ2lQZXlQS05SaFpLZlZxWHJHb1k4MUYweQ=="
   ],
   "participants": {
-    "423082891703222272": 1
   },
   "eventId": [
     "1240658668370792489"
   ],
   "winners": {},
   "activeGames": {},
-  "moonMessage": []
+  "moonMessage": [
+    "1240673539015708803"
+  ]
 }
