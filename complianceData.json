@@ -1,8 +1,5 @@
 {
-  "nonComplianceCounter": {
-    "lb": 1,
-    "outsm-01": 1
-  },
+  "nonComplianceCounter": {},
   "ignoreList": [
     "ghaanur",
     "aamoree"
@@ -17,8 +14,9 @@
     "Mjk2ZjMwOTZlZDIxNGFmNDliZmE1MTk5NzkxYTM1MDQ6ZlEyQ095elNoZnRzeTJEZ2lQZXlQS05SaFpLZlZxWHJHb1k4MUYweQ=="
   ],
   "participants": [],
-  "eventId": [],
-  "winners": {
-    "aamoree_99": 800000
-  }
+  "eventId": [
+    "1240410349413601290"
+  ],
+  "winners": {},
+  "activeGames": {}
 }

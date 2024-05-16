@@ -1,24 +1,23 @@
 {
-  "name": "evil_web",
+  "name": "mydiscordbot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "concurrently \"node app.js\" \"node bot.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"node app.js\" \"node bot.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "http-server": "^14.1.1",
-    "concurrently": "^8.2.2"
-  },
   "dependencies": {
-    "express": "^4.19.2",
     "axios": "^1.6.8",
     "discord.js": "^14.15.2",
     "dotenv": "^16.4.5",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "node-schedule": "^2.1.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

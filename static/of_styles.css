@@ -1,17 +1,14 @@
 html, body {
     padding: 0;
     margin: 0;
-    height: 100%;
+    height: 100%; 
     color: white;
     font-family: 'Orbitron', 'Noto Sans', sans-serif;
-    background-image: url('/slides/slide1.jpg');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-attachment: fixed; /* Заставляет фон оставаться на месте при прокрутке */
+    overflow-x: hidden; 
+    position: relative; 
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('/slides/slide1.jpg') no-repeat center center fixed;
+    background-size: cover; 
 }
-
-
 
 header, footer {
     position: fixed;
@@ -21,7 +18,7 @@ header, footer {
     justify-content: space-between;
     padding: 0 20px;
     box-sizing: border-box;
-    z-index: 1000; 
+    z-index: 2; 
 }
 
 header {
@@ -31,16 +28,36 @@ header {
 }
 
 .header-links {
-    display: flex; /* Align links in a row */
-    justify-content: center; /* Center the links horizontally */
-    gap: 40px; /* Space between the links */
+    display: flex; 
+    justify-content: center; 
+    margin-right: 30px;
+    gap: 60px; 
 }
 
 .header-links a {
     font-family: 'Orbitron', 'Noto Sans', sans-serif;
-    color: white; /* Change as needed */
-    text-decoration: none; /* No underline */
-    font-weight: bold; /* Bold font for visibility */
+    color: white; 
+    animation: glow 1s ease-in-out infinite alternate;
+    text-decoration: none; 
+    font-weight: bold; 
+    font-size: 1.2em; 
+    padding: 10px 20px; 
+}
+
+.header-links a:hover {
+    color:#ffd700;
+}
+
+@keyframes glow {
+    0% {
+        text-shadow: 0 0 10px rgba(255, 204, 0, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(255, 204, 0, 0.5);
+    }
+    50% {
+        text-shadow: 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(255, 204, 0, 0.5), 0 0 40px rgba(255, 204, 0, 0.5);
+    }
+    100% {
+        text-shadow: 0 0 10px rgba(255, 204, 0, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(255, 204, 0, 0.5);
+    }
 }
 
 footer {
@@ -54,6 +71,8 @@ footer {
 .logo {
     display: flex;
     align-items: center;
+    text-decoration: none;
+    color: white;
     font-size: 20px;
 }
 
@@ -65,60 +84,76 @@ footer {
 }
 
 .logo span {
-    font-size: 30px; /* Размер шрифта для десктопных устройств */
+    font-size: 30px; 
 }
 
-/* Медиа-запрос для мобильных устройств */
 @media screen and (max-width: 768px) {
     .logo span {
-        font-size: 16px; /* Уменьшаем размер шрифта для мобильных устройств */
+        font-size: 16px; 
     }
 }
 
-
-
-
 #officer-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around; /* Равномерно распределяет пространство вокруг элементов */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-content: space-around;
+    align-items: start;
+    gap: 20px;
     padding: 20px;
-    margin-top: 100px; /* Отступ от хедера */
-    background-size: cover;
-    background-blend-mode: darken;
-    background-color: rgba(0, 0, 0, 0);
+    margin: 100px auto 50px;
+    width: 90%;
 }
 
 .officer-card {
-    flex: 0 1 calc(25% - 40px);
-    margin: 10px;
-    transition: transform 0.2s ease;
-    transform-style: preserve-3d; /* Для поддержки 3D трансформаций */
-    perspective: 1000px; /* Глубина 3D эффекта */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    perspective: 1000px;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 25vw;
+    min-height: 300px;
 }
 
-.officer-card:hover {
-    transform: scale(1.05);
-}
-
-.officer-card img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-.officer-name, .officer-text {
-    color: white;
-    padding: 4px 8px;
-}
-
-
-.darkened-background {
+.card-inner {
     position: relative;
     width: 100%;
-    min-height: 100vh;
-    background-image: url('slides/slide1.jpg');
-    background-size: cover;
-    background-blend-mode: darken;
-    background-color: rgba(0, 0, 0, 0.7); /* Darken the background */
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.card-front, .card-back{
+    position:relative;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-front img {
+    width: 100%;
+    height: auto;
+    border-bottom: 1px solid white;
+}
+
+.officer-name, .officer-text, .officer-extra{
+    padding: 10px;
+    text-align: center;
+    color: white;
+    flex-grow: 1;
+}
+
+.card-back {
+    transform: rotateY(180deg);
+}
+
+
+.officer-card .card-inner.is-flipped {
+    transform: rotateY(180deg);
 }

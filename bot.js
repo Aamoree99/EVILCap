@@ -9,6 +9,8 @@ dotenv.config();
 const qs = require('querystring');
 const fs = require('fs').promises;
 const path = require('path');
+const { scheduleJob } = require('node-schedule');
+const { randomInt } = require('crypto');
 
 const client = new Client({
     intents: [
@@ -41,6 +43,8 @@ let tokenCache = {
 let totalBets = 0;
 let accumulatedWins = 0;
 let bonusPool = 0;
+let transactionsCache = [];
+let isProcessing = false;
 
 client.once('ready', async () => {
     client.user.setPresence({
@@ -51,13 +55,12 @@ client.once('ready', async () => {
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
-    cron.schedule('0 10 * * *', () => {
-        logAndSend('Выполняю задачу отправки уведомлений о мероприятии.');
-        scheduleDailyActivity(client);
-    });
-    checkBalance();
-    await createRoleMessage();
-    await cleanupOldMessages();
+    scheduleDailyActivity(client);
+    createRoleMessage();
+    scheduleTransactionCheck();
+    await sendRandomPhrase();
+
+    scheduleDailyMessage();
     setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
@@ -99,8 +102,13 @@ const commands = [
         .setDescription('Выплаты казино'),
     new SlashCommandBuilder()
         .setName('startcasino')
-        .setDescription('Начать казино игру')
-    
+        .setDescription('Начать казино игру'),
+    new SlashCommandBuilder()
+        .setName('show_sessions')
+        .setDescription('Показывает активные сессии и их уникальные коды с возможностью удаления'),
+    new SlashCommandBuilder()
+        .setName('hf')
+        .setDescription('Пинг и показать количество участников')
 ]
     .map(command => command.toJSON());
 
@@ -119,7 +127,7 @@ const rest = new REST({ version: '9' }).setToken(token);
     }
 })();
 
-const activeGames = {};
+let activeGames = {};
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand() && !interaction.isButton()) return;
@@ -324,10 +332,10 @@ client.on('interactionCreate', async interaction => {
         });
     }
 
-} catch (error) {
-    console.error('Ошибка при чтении данных:', error);
-    await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
-}
+        } catch (error) {
+            console.error('Ошибка при чтении данных:', error);
+            await interaction.reply({ content: 'Произошла ошибка при чтении данных. Пожалуйста, попробуйте снова позже.', ephemeral: true });
+        }
 
             } else if (channelId === CASINO_CHANNEL_ID) {
                 // Логика для канала казино
@@ -352,48 +360,71 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале или канале казино.", ephemeral: true });
             }
+        }, async startcasino() {
+            await startCasinoGame(interaction);
+        }, async show_sessions() {
+            if (channelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "This command can only be used in the log channel.", ephemeral: true });
+                return;
+            }
+
+            let data = await readData();
+            let activeGames = data.activeGames || {};
+
+            if (!Object.keys(activeGames).length) {
+                await interaction.reply('No active sessions.');
+                return;
+            }
+
+            let sessionMessage = '';
+            Object.values(activeGames).forEach((gameInfo, idx) => {
+                let nickname = gameInfo.nickname;
+                let uniqueCode = gameInfo.uniqueCode;
+                sessionMessage += `${idx + 1}. **${nickname}** - Code: \`${uniqueCode}\`\n`;
+            });
+
+            let sessionMsg = await interaction.reply({ content: sessionMessage, fetchReply: true });
+
+            // Add reactions for each session
+            for (let i = 0; i < Object.keys(activeGames).length; i++) {
+                await sessionMsg.react(`${i + 1}\u20E3`);
+            }
+
+            const filter = (reaction, user) => user.id !== client.user.id && reaction.message.id === sessionMsg.id;
+
+            const collector = sessionMsg.createReactionCollector({ filter, max: 1 });
+
+            collector.on('collect', async (reaction, user) => {
+                let sessionIdx = parseInt(reaction.emoji.name) - 1;
+                let userIds = Object.keys(activeGames);
+                delete activeGames[userIds[sessionIdx]];
+                await writeData(data);
+
+                await sessionMsg.delete();
+                const confirmationMessage = await interaction.channel.send(`Session ${sessionIdx + 1} has been deleted.`);
+                setTimeout(() => confirmationMessage.delete(), 5000);
+            });
         },
-        async startcasino() {
-            if (channelId !== CASINO_CHANNEL_ID) {
-                return interaction.reply({ content: 'Эта команда доступна только в определенном канале.', ephemeral: true });
+        async hf() {
+            const data = await readData();
+            const participants = data.participants || [];
+            const numParticipants = participants.length;
+            const maxParticipants = 5;
+
+            const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+            const roleChannel = await client.channels.fetch('1163428374493003826');
+            const role = await interaction.guild.roles.fetch('1163379884039618641');
+
+            if (!mainChannel || !role || !roleChannel) {
+                await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
+                return;
             }
 
-            if (activeGames[interaction.user.id]) {
-                return interaction.reply({ content: 'Вы уже начали игру. Пожалуйста, завершите текущую игру перед началом новой.', ephemeral: true });
-            }
-
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`confirm_${interaction.user.id}`)
-                        .setLabel('Подтвердить отправку 1кк ISK')
-                        .setStyle(ButtonStyle.Primary),
-                );
-
-            const initialBalance = await checkBalance();
-            const startTime = new Date();
-            const expectedAmount = 1000000; // 1 млн ISK
-
-            activeGames[interaction.user.id] = { 
-                channel: interaction.channel, 
-                user: interaction.user, 
-                startTime, 
-                initialBalance, 
-                expectedAmount, 
-                timeout: null 
-            };
-
-            await interaction.reply({ content: 'Пожалуйста, подтвердите отправку 1кк ISK корпорации Cosmic Capybara Crew.', components: [row] });
-
-            // Установка таймера на 30 минут для отмены игры
-            activeGames[interaction.user.id].timeout = setTimeout(async () => {
-                if (activeGames[interaction.user.id]) {
-                    await interaction.followUp({ content: 'Игра отменена из-за отсутствия подтверждения.', ephemeral: true });
-                    delete activeGames[interaction.user.id];
-                }
-            }, 300000);
+            const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент ${numParticipants} из ${maxParticipants} участников уже зарегистрировались. Не упустите шанс, присоединяйтесь к нам!`;
+            await mainChannel.send(replyMessage);
+            await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
         }
-    };
+    }
 
     if (interaction.isCommand()) {
         if (commandHandlers[commandName]) {
@@ -401,36 +432,8 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // Обработка нажатия кнопки
     if (interaction.isButton()) {
-        const [action, userId] = interaction.customId.split('_');
-        if (action !== 'confirm') return;
-
-        const userGame = activeGames[userId];
-        if (!userGame || userGame.channel.id !== interaction.channel.id) {
-            return interaction.reply({ content: 'Эта кнопка не для вас или не в правильном канале.', ephemeral: true });
-        }
-
-        if (interaction.user.id !== userId) {
-            return interaction.reply({ content: 'Эта кнопка не для вас.', ephemeral: true });
-        }
-
-        if (interaction.customId === `confirm_${userId}`) {
-            clearTimeout(userGame.timeout); // Очистка таймера, если пользователь подтвердил
-            await interaction.update({ content: 'Пожалуйста, подождите 5 минут для обработки перевода...', components: [] });
-
-            setTimeout(async () => {
-                const currentBalance = await checkBalance();
-
-                if (currentBalance >= userGame.initialBalance + userGame.expectedAmount) {
-                    const winAmount = calculateWinAmount();
-                    await startGame(userGame.channel, userGame.user, winAmount);
-                    delete activeGames[userId];
-                } else {
-                    await interaction.followUp({ content: 'Ошибка при обработке перевода. Попробуйте снова.', ephemeral: true });
-                }
-            }, 300100);
-        }
+        await confirmTransaction(interaction);
     }
 });
 
@@ -498,12 +501,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
         if (!originalUserId || user.id !== originalUserId) return; // Убедимся, что реакцию ставит нужный пользователь
 
         if (reaction.emoji.name === '1️⃣') {
-            logAndSend(`Пользователь <@${user.tag}> выбрал корпорацию Cosmic Capybara Crew.`);
+            logAndSend(`Пользователь <@${user.id}> выбрал корпорацию Cosmic Capybara Crew.`);
             try {
                 const role = reaction.message.guild.roles.cache.find(role => role.id === '1239714360503308348');
                 const member = reaction.message.guild.members.cache.get(user.id);
                 await member.roles.add(role);
-                logAndSend(`Роль <@&${role.id}> была успешно добавлена пользователю <@&${user.id}>.`);
+                logAndSend(`Роль <@&${role.id}> была успешно добавлена пользователю <@${user.id}>.`);
 
                 const welcomeChannel = reaction.message.guild.channels.cache.get(REPORT_CHANNEL_ID);
                 if (welcomeChannel) {
@@ -574,8 +577,14 @@ async function scheduleDailyActivity(client) {
         const guild = client.guilds.cache.get(GUILD_ID);
         if (!guild) return logAndSend("Гильдия не найдена");
 
-        const channel = guild.channels.cache.get(MAIN_CHANNEL_ID);
+        const channel = guild.channels.cache.get('1163428374493003826');
         if (!channel) return logAndSend("Канал не найден");
+
+        const mainChannel = guild.channels.cache.get(MAIN_CHANNEL_ID);
+        if (!mainChannel) {
+            logAndSend("Основной канал не найден");
+            return;
+        }
 
         let activityData = await readFromJSON(DATA_FILE);
         if (!activityData.eventId) {
@@ -593,7 +602,7 @@ async function scheduleDailyActivity(client) {
                 message = await channel.messages.fetch(activityData.eventId[0]);
                 logAndSend("Возобновление существующего сообщения для сбора участников.");
             } catch (error) {
-                console.error('Error fetching existing message:', error);
+                console.error('Ошибка при получении существующего сообщения:', error);
             }
         }
 
@@ -611,6 +620,7 @@ async function scheduleDailyActivity(client) {
             });
             activityData.eventId = [message.id];
             await writeToJSON(DATA_FILE, activityData);
+            logAndSend(`Сохранено новое сообщение с ID: ${message.id}`);
         }
 
         let collector = message.createMessageComponentCollector({ componentType: 2 }); // 2 is Button
@@ -622,89 +632,51 @@ async function scheduleDailyActivity(client) {
                 if (participants.has(interaction.user.id)) {
                     await interaction.followUp({ content: 'Вы уже записаны!', ephemeral: true });
                 } else {
-                    await interaction.followUp({ content: 'Спасибо за ваш интерес, мы вас записали!', ephemeral: true });
                     participants.add(interaction.user.id);
                     activityData.participants = Array.from(participants);
                     await writeToJSON(DATA_FILE, activityData);
+                    await interaction.followUp({ content: 'Спасибо за ваш интерес, мы вас записали!', ephemeral: true });
 
                     if (participants.size >= 5) {
-                        const now = new Date();
-                        const timezoneOffset = now.getTimezoneOffset() * 60000; // переводим в миллисекунды
-                        const localNow = new Date(now.getTime() - timezoneOffset);
-                        const startTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 19, 0, 0, 0);
-                        const endTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 20, 0, 0, 0);
-                        let event;
-                        try {
-                            event = await guild.scheduledEvents.create({
-                                name: 'Homefronts',
-                                description: 'Time to make some ISK!',
-                                scheduledStartTime: startTime, // начало через 1 час
-                                scheduledEndTime: endTime, // конец через 2 часа
-                                privacyLevel: 2,
-                                entityType: 3, // 3 для онлайн событий
-                                entityMetadata: {
-                                    location: 'Dodixie' // Указываем, что местоположение онлайн
-                                }
-                            });
-                            logAndSend(`Создан ивент: ${event.name}`);
-
-                            logAndSend('Событие успешно создано!');
-                        } catch (error) {
-                            console.error('Ошибка при создании события:', error);
-                        }
-
-                        if (event) {
-                            participants.forEach(async (userId) => {
-                                const user = await client.users.fetch(userId);
-                                if (user && !user.bot) {
-                                    user.send(`Привет! Напоминаем, что сегодня в 19:00 начнется мероприятие. Вот ссылка: ${event.url}`);
-                                }
-                            });
-                        } else {
-                            logAndSend("Событие не было создано, сообщение не отправлено.");
-                        }
-
-                        try {
-                            await message.delete();
-                            activityData = { ...activityData, eventId: [], participants: [] };
-                            await writeToJSON(DATA_FILE, activityData);
-                        } catch (error) {
-                            console.error('Ошибка при удалении сообщения:', error);
-                        }
-
-                        collector.stop();
+                        await mainChannel.send(`<@&1163379884039618641> Флот собран! Набор в новый флот начат.`);
+                        scheduleEvent();
+                        activityData.participants = [];
+                        await writeToJSON(DATA_FILE, activityData);
                     }
                 }
             }
         });
 
-        collector.on('end', async () => {
-            logAndSend(`Collected ${participants.size} participants.`);
-            if (participants.size < 5) {
-                try {
-                    await message.delete();
-                    activityData = { ...activityData, eventId: [], participants: [] };
-                    await writeToJSON(DATA_FILE, activityData);
-                } catch (error) {
-                    console.error('Ошибка при удалении сообщения:', error);
-                }
+        async function scheduleEvent() {
+            const now = new Date();
+            const startTime = new Date(now.getTime() + 30 * 60000);
+            const endTime = new Date(startTime.getTime() + 60 * 60000);
+
+            try {
+                const event = await guild.scheduledEvents.create({
+                    name: 'Homefronts',
+                    description: 'Time to make some ISK!',
+                    scheduledStartTime: startTime,
+                    scheduledEndTime: endTime,
+                    privacyLevel: 2,
+                    entityType: 3,
+                    entityMetadata: {
+                        location: 'Dodixie'
+                    }
+                });
+                participants.forEach(async (userId) => {
+                    const user = await client.users.fetch(userId);
+                    if (user && !user.bot) {
+                        user.send(`Группа собрана! Старт через 30 минут. Вот ссылка: ${event.url}`);
+                    }
+                });
+                logAndSend(`Событие "${event.name}" успешно создано и начнется в ${startTime.toISOString()}.`);
+            } catch (error) {
+                console.error('Ошибка при создании события:', error);
             }
-        });
-
-        const now = new Date();
-        const timezoneOffset = now.getTimezoneOffset() * 60000; // переводим в миллисекунды
-        const localNow = new Date(now.getTime() - timezoneOffset);
-
-        const endTime = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 18, 55, 0, 0);
-        const duration = endTime.getTime() - localNow.getTime();
-
-        setTimeout(() => {
-            if (collector) {
-                collector.stop();
-            }
-        }, duration);
+        }
     } catch (error) {
-        console.error("Error in scheduleDailyActivity:", error);
+        console.error("Ошибка в scheduleDailyActivity:", error);
     }
 }
 
@@ -1119,57 +1091,67 @@ async function writeData(newData) {
     }
 }
 
-
-        
 async function cleanupOldMessages(before = null) {
-    const channel = client.channels.cache.get(LOG_CHANNEL_ID);
+    const CHANNEL_IDS = [LOG_CHANNEL_ID, CASINO_CHANNEL_ID]; // Replace with your channel IDs
+
     try {
         logAndSend('Начало чистки...');
 
-        if (!channel) {
-            console.error("Канал не найден");
-            return;
-        }
+        for (const channelId of CHANNEL_IDS) {
+            const channel = client.channels.cache.get(channelId);
 
-        try {
-            const options = { limit: 100 };
-            if (before) {
-                options.before = before;
+            if (!channel) {
+                console.error(`Канал с ID ${channelId} не найден`);
+                continue;
             }
-            const messages = await channel.messages.fetch(options);
 
-            const now = Date.now();
-            const twelveHours = 1000 * 60 * 60; // 12 часов в миллисекундах
-
-            const deletionPromises = [];
-
-            for (const message of messages.values()) {
-                const age = now - message.createdTimestamp;
-
-                if (age > twelveHours) {
-                    deletionPromises.push(
-                        message.delete()
-                            .then(() => console.log(`Удалено сообщение: ${message.id}`))
-                            .catch(error => console.log(`Не удалось удалить сообщение ${message.id}: ${error}`))
-                    );
+            try {
+                const options = { limit: 100 };
+                if (before) {
+                    options.before = before;
                 }
-            }
+                const messages = await channel.messages.fetch(options);
 
-            await Promise.all(deletionPromises);
+                if (messages.size === 0) {
+                    console.log(`Нет сообщений для удаления в канале ${channelId}`);
+                    continue;
+                }
 
-            if (messages.size === 100) {
-                const lastMessage = messages.last();
-                await cleanupOldMessages(lastMessage.id);
-            } else {
-                logAndSend("Старые сообщения удалены");
+                const now = Date.now();
+                const twelveHours = 1000 * 60 * 60 * 12; // 12 часов в миллисекундах
+
+                const deletionPromises = [];
+
+                for (const message of messages.values()) {
+                    const age = now - message.createdTimestamp;
+
+                    if (age > twelveHours) {
+                        deletionPromises.push(
+                            message.delete()
+                                .then(() => console.log(`Удалено сообщение: ${message.id} из канала ${channelId}`))
+                                .catch(error => console.log(`Не удалось удалить сообщение ${message.id} из канала ${channelId}: ${error}`))
+                        );
+                    }
+                }
+
+                await Promise.all(deletionPromises);
+
+                if (messages.size === 100) {
+                    const lastMessage = messages.last();
+                    await cleanupOldMessages(lastMessage.id); // Recursive call for the same channel
+                } else {
+                    logAndSend(`Старые сообщения удалены из канала ${channelId}`);
+                }
+            } catch (error) {
+                console.error(`Произошла ошибка при удалении старых сообщений из канала ${channelId}:`, error);
             }
-        } catch (error) {
-            console.error("Произошла ошибка при удалении старых сообщений:", error);
         }
     } catch (error) {
         console.error("Error in cleanupOldMessages:", error);
     }
 }
+
+
 
 const responses = [
     "Слышь, ты это, заходи, если что.",
@@ -1196,7 +1178,7 @@ const specialPersonResponse = "Здравствуй, мой генерал! Се
 
 client.on('messageCreate', async (message) => {
     // Проверяем, чтобы сообщение не было от бота и было в нужном канале
-    if (message.author.bot || message.channel.id !== LOG_CHANNEL_ID) return;
+    if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
     const messageContent = message.content.toLowerCase();
 
@@ -1214,7 +1196,255 @@ client.on('messageCreate', async (message) => {
         }
     }
 });
-        
+
+async function startCasinoGame(interaction) {
+    if (!interaction.isCommand() && !interaction.isButton()) {
+        return interaction.reply({ content: 'Ошибка: Неправильный тип взаимодействия.', ephemeral: true });
+    }
+
+    if (!interaction.channel) {
+        return interaction.reply({ content: 'Ошибка: Канал не найден.', ephemeral: true });
+    }
+
+    if (interaction.channel.id !== CASINO_CHANNEL_ID) {
+        return interaction.reply({ content: 'This command is only available in a specific channel.', ephemeral: true });
+    }
+    
+    if (activeGames[interaction.user.id]) {
+        return interaction.reply({ content: 'You have already started a game. Please finish your current game before starting a new one.', ephemeral: true });
+    }
+
+    const uniqueCode = generateUniqueCode();
+    const initialBalance = await checkBalance();
+    const startTime = new Date();
+
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId(`confirm_${interaction.user.id}`)
+                .setLabel('Confirm ISK Transfer')
+                .setStyle(ButtonStyle.Primary),
+        );
+
+        // Console log the nickname
+
+        const message = await interaction.reply({ content: `Please confirm the transfer of any amount of ISK to the Cosmic Capybara Crew corporation.`, components: [row], fetchReply: true });
+    activeGames[interaction.user.id] = {
+        channel: interaction.channel,
+        user: interaction.user,
+        startTime: startTime.toISOString(),
+        initialBalance: initialBalance,
+        uniqueCode: uniqueCode,
+        messageId: message.id,
+        nickname: interaction.member.nickname || interaction.user.username,
+        timeout: setTimeout(async () => {
+            if (activeGames[interaction.user.id]) {
+                await interaction.followUp({ content: 'Game cancelled due to lack of confirmation.', ephemeral: true });
+                delete activeGames[interaction.user.id];
+                await saveActiveGames();
+            }
+        }, 300000) // 5 minutes timeout
+    };    
+
+    await saveActiveGames();
+
+    await interaction.followUp({ content: `Your unique code for the transfer: ${uniqueCode}`, ephemeral: true });
+}
+
+async function confirmTransaction(interaction) {
+    const [action, userId] = interaction.customId.split('_');
+    if (action !== 'confirm') return;
+
+    const userGame = activeGames[userId];
+    if (!userGame || userGame.channel.id !== interaction.channel.id || interaction.message.id !== userGame.messageId) {
+        return interaction.reply({ content: 'This button is not for you or not in the correct channel.', ephemeral: true });
+    }
+
+    if (interaction.user.id !== userId) {
+        return interaction.reply({ content: 'This button is not for you.', ephemeral: true });
+    }
+
+    if (interaction.customId === `confirm_${userId}`) {
+        clearTimeout(userGame.timeout);
+        await interaction.update({ content: 'Thank you! Your transaction is being processed. Please wait up to one hour for confirmation.', components: [] });
+        await saveActiveGames();
+    }
+}
+
+
+async function fetchTransactions() {
+    const token = await getAccessTokenUsingRefreshToken();
+    const response = await fetch("https://esi.evetech.net/latest/corporations/98769585/wallets/1/journal/?datasource=tranquility&page=1", {
+        method: 'GET',
+        headers: {
+            'accept': 'application/json',
+            'authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache'
+        }
+    });
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+        const now = new Date();
+        const eveTimeNow = new Date(now.toISOString().slice(0, 19) + 'Z'); // Преобразуем текущее время в UTC (EVE time)
+        const twoHoursAgo = new Date(eveTimeNow.getTime() - 2 * 60 * 60 * 1000); // 2 часа назад по EVE time
+
+        transactionsCache = data.filter(tx => {
+            const txDate = new Date(tx.date);
+            return tx.ref_type === "player_donation" && txDate >= twoHoursAgo;
+        });
+
+    } else {
+        console.error('Ошибка: Ожидался массив транзакций');
+        transactionsCache = [];
+    }
+}
+
+
+async function checkTransactions() {
+    if (isProcessing) return;
+
+    isProcessing = true;
+
+    let currentBalance = await checkBalance();
+
+    for (const userId in activeGames) {
+        const game = activeGames[userId];
+        const normalizedUniqueCode = game.uniqueCode.replace(/\s+/g, ''); // Remove spaces from uniqueCode
+
+        const transaction = transactionsCache.find(tx => tx.reason.replace(/\s+/g, '') === normalizedUniqueCode && tx.amount >= 1);
+
+        if (transaction) {
+            const stake = transaction.amount;
+            const winAmount = calculateWinAmount(stake);
+
+            try {
+                // Fetch the full channel object
+                const channel = await client.channels.fetch(game.channel.id);
+
+                if (winAmount <= currentBalance) {
+                    await processWin(channel, game.user, winAmount);
+                    currentBalance -= winAmount;
+                } else {
+                    await channel.send(`<@${game.user.id}> did not win. Better luck next time!`);
+                }
+
+                delete activeGames[userId];
+                await saveActiveGames();
+            } catch (error) {
+                console.error(`Failed to process transaction for user ${userId}:`, error);
+            }
+        }
+    }
+
+    isProcessing = false;
+}
+
+
+
+async function processWin(channel, user, winAmount) {
+    if (winAmount > 0) {
+        const winMessage = `<@${user.id}> won ${winAmount} ISK! Congratulations! Please contact <@235822777678954496>.`;
+    await channel.send(winMessage);
+    } else {
+    const loseMessage = `<@${user.id}> did not win. Better luck next time!`;
+    await channel.send(loseMessage);
+    }
+
+    // Read existing data
+    let data = await readData();
+    let winners = data.winners || {};
+
+    // Update winners with the new win amount
+    const username = user.username; // Assuming `user.username` contains the correct username
+    if (winAmount > 0) {
+        if (winners[username]) {
+            winners[username] += winAmount;
+        } else {
+            winners[username] = winAmount;
+        }
+    }
+
+    // Write updated data
+    data.winners = winners;
+    await writeData(data);
+}
+
+
+
+function calculateWinAmount(stake) {
+    console.log(stake);
+
+    const baseProbabilities = {
+        jackpot: 0.001,
+        high: 0.01,
+        medium: 0.05,
+        low: 0.20
+    };
+
+    let probabilities = { ...baseProbabilities };
+
+    const amounts = {
+        jackpot: stake * 50,
+        high: stake * 20,
+        medium: stake * 5,
+        low: stake * 0.8
+    };
+
+    function calculateCasinoProfit() {
+        return totalBets - accumulatedWins - bonusPool;
+    }
+
+    function adjustProbabilities() {
+        const profit = calculateCasinoProfit();
+
+        if (profit < totalBets * 0.2) {
+            probabilities.jackpot *= 0.5;
+            probabilities.high *= 0.7;
+            probabilities.medium *= 0.8;
+            probabilities.low *= 0.9;
+        } else if (profit > totalBets * 0.5) {
+            probabilities.jackpot *= 1.5;
+            probabilities.high *= 1.2;
+            probabilities.medium *= 1.1;
+            probabilities.low *= 1.05;
+        } else {
+            probabilities = { ...baseProbabilities };
+        }
+    }
+
+    function addToBonusPool() {
+        bonusPool += stake * 0.05;
+    }
+
+    function getWinAmount() {
+        const randomValue = Math.random();
+
+        if (randomValue < probabilities.jackpot) {
+            const win = amounts.jackpot + bonusPool;
+            accumulatedWins += win;
+            bonusPool = 0;
+            return win;
+        } else if (randomValue < probabilities.jackpot + probabilities.high) {
+            accumulatedWins += amounts.high;
+            return amounts.high;
+        } else if (randomValue < probabilities.jackpot + probabilities.high + probabilities.medium) {
+            accumulatedWins += amounts.medium;
+            return amounts.medium;
+        } else if (randomValue < probabilities.jackpot + probabilities.high + probabilities.medium + probabilities.low) {
+            accumulatedWins += amounts.low;
+            return amounts.low;
+        } else {
+            return 0;
+        }
+    }
+
+    totalBets += stake;
+    addToBonusPool();
+    adjustProbabilities();
+    return getWinAmount();
+}
+
 async function checkBalance() {
     const token = await getAccessTokenUsingRefreshToken();
     const response = await fetch("https://esi.evetech.net/latest/corporations/98769585/wallets/?datasource=tranquility", {
@@ -1227,133 +1457,137 @@ async function checkBalance() {
     });
     const data = await response.json();
     const division1 = data.find(division => division.division === 1);
-    console.log(division1.balance);
     return division1.balance;
 }
 
+function generateUniqueCode() {
+    return Math.random().toString(36).substr(2, 9);
+}
 
+async function scheduleTransactionCheck() {
+    await deleteOldSessions();
+    await loadActiveGames();
+    await fetchTransactions();
+    logAndSend('Активные игры загружены. Планирование проверки транзакций.');
+    await checkTransactions();
 
-function calculateWinAmount() {
-    // Вероятности для разных уровней выигрышей (начальные значения)
-    const baseProbabilities = {
-        jackpot: 0.001, // 0.1%
-        high: 0.01, // 1%
-        medium: 0.05, // 5%
-        low: 0.20 // 20%
-    };
+    cron.schedule('*/5 * * * *', async () => {
+        console.log(`Время проверки транзакций: ${new Date().toISOString()}`);
+        await deleteOldSessions();
+        await fetchTransactions();
+        await checkTransactions();
+    }, {
+        scheduled: true,
+        timezone: "UTC"
+    });
 
-    // Копируем базовые вероятности в объект вероятностей
-    let probabilities = { ...baseProbabilities };
+    console.log('Проверка транзакций запланирована каждые 5 минут.');
+}
 
-    // Размеры выигрышей
-    const amounts = {
-        jackpot: 50000000, // 50 млн ISK
-        high: 20000000, // 20 млн ISK
-        medium: 5000000, // 5 млн ISK
-        low: 800000 // 800k ISK (ниже взноса)
-    };
-
-    const stake = 1000000; // 1 млн ISK
-
-    // Функция для расчета текущего состояния казино
-    function calculateCasinoProfit() {
-        return totalBets - accumulatedWins - bonusPool;
-    }
-
-    // Функция для динамического изменения вероятностей
-    function adjustProbabilities() {
-        const profit = calculateCasinoProfit();
-
-        if (profit < totalBets * 0.2) {
-            // Если прибыль казино меньше 20% от общей суммы ставок, уменьшаем вероятность выигрышей
-            probabilities.jackpot *= 0.5;
-            probabilities.high *= 0.7;
-            probabilities.medium *= 0.8;
-            probabilities.low *= 0.9;
-        } else if (profit > totalBets * 0.5) {
-            // Если прибыль казино больше 50% от общей суммы ставок, увеличиваем вероятность выигрышей
-            probabilities.jackpot *= 1.5;
-            probabilities.high *= 1.2;
-            probabilities.medium *= 1.1;
-            probabilities.low *= 1.05;
-        } else {
-            // Вероятности возвращаются к базовым значениям
-            probabilities = { ...baseProbabilities };
+async function saveActiveGames() {
+    try {
+        const simplifiedActiveGames = {};
+        for (const userId in activeGames) {
+            const game = activeGames[userId];
+            simplifiedActiveGames[userId] = {
+                channelId: game.channel.id,
+                userId: game.user.id, // Still keep userId for reference
+                startTime: game.startTime,
+                initialBalance: game.initialBalance,
+                uniqueCode: game.uniqueCode,
+                messageId: game.messageId,
+                nickname: game.nickname // Save the nickname
+            };
         }
+        await writeData({ activeGames: simplifiedActiveGames });
+    } catch (error) {
+        console.error('Ошибка при сохранении активных игр:', error);
     }
-
-    // Функция для добавления бонуса в пул
-    function addToBonusPool() {
-        bonusPool += stake * 0.05; // 5% от ставки идет в бонусный пул
-    }
-
-    // Функция для расчета выигрыша
-    function getWinAmount() {
-        const randomValue = Math.random();
-
-        if (randomValue < probabilities.jackpot) {
-            accumulatedWins += amounts.jackpot + bonusPool;
-            const win = amounts.jackpot + bonusPool;
-            bonusPool = 0; // Сбрасываем бонусный пул
-            return win; // Джекпот
-        } else if (randomValue < probabilities.jackpot + probabilities.high) {
-            accumulatedWins += amounts.high;
-            return amounts.high; // Высокий выигрыш
-        } else if (randomValue < probabilities.jackpot + probabilities.high + probabilities.medium) {
-            accumulatedWins += amounts.medium;
-            return amounts.medium; // Средний выигрыш
-        } else if (randomValue < probabilities.jackpot + probabilities.high + probabilities.medium + probabilities.low) {
-            accumulatedWins += amounts.low;
-            return amounts.low; // Низкий выигрыш
-        } else {
-            return 0; // Ничего не выигрывает
-        }
-    }
-
-    // Обновление общей суммы ставок
-    totalBets += stake;
-
-    // Добавляем часть ставки в бонусный пул
-    addToBonusPool();
-
-    // Корректируем вероятности перед расчетом выигрыша
-    adjustProbabilities();
-
-    // Рассчитываем и возвращаем выигрыш
-    return getWinAmount();
 }
 
 
-async function startGame(channel, user, winAmount) {
-    if (winAmount > 0) {
-        const winMessage = `<@${user.id}> выиграл ${winAmount} ISK! Поздравляем! Напиши <@235822777678954496>.`;
-        await channel.send(winMessage);
-    } else {
-        const loseMessage = `<@${user.id}> не выиграл. Удачи в следующий раз!`;
-        await channel.send(loseMessage);
-    }
-
-    // Чтение текущих победителей из файла
-    let data = await readData();
-    let winners = data.winners || {};
-
-    if (winAmount > 0) {
-        if (winners[user.username]) {
-            // Если пользователь уже существует, добавляем выигрыш к его сумме
-            winners[user.username] += winAmount;
-        } else {
-            // Если пользователя нет, добавляем новую запись
-            winners[user.username] = winAmount;
+async function loadActiveGames() {
+    try {
+        const data = await readData();
+        const simplifiedActiveGames = data.activeGames || {};
+        for (const userId in simplifiedActiveGames) {
+            const game = simplifiedActiveGames[userId];
+            activeGames[userId] = {
+                channel: { id: game.channelId },
+                user: { id: game.userId },
+                startTime: game.startTime,
+                initialBalance: game.initialBalance,
+                uniqueCode: game.uniqueCode,
+                messageId: game.messageId,
+                nickname: game.nickname, // Restore the nickname
+                timeout: null // We cannot restore the timer, so this needs to be handled separately
+            };
         }
-
-        // Запись обновленного списка победителей в файл
-        await writeData({ winners });
+        logAndSend(`Бот перезапущен. Восстановлено ${Object.keys(activeGames).length} активных сессий.`);
+    } catch (error) {
+        console.error('Ошибка при загрузке активных игр:', error);
+        activeGames = {};
     }
-
-    // Запись обновленного списка победителей в файл
-    await writeData({ winners });
 }
 
+async function deleteOldSessions() {
+    const data = await readData();
+    const activeGames = data.activeGames || {};
+    const currentTime = new Date();
+
+    for (const [userId, gameInfo] of Object.entries(activeGames)) {
+        const startTime = new Date(gameInfo.startTime);
+        const ageInHours = (currentTime - startTime) / (1000 * 60 * 60);
+
+        if (ageInHours > 3) {
+            delete activeGames[userId];
+        }
+    }
+
+    await writeData(data);
+}
+
+const phrases = [
+    "Я смотрю Гачи и я горжусь этим",
+    "Аниме для мужиков",
+    "Жожо лучшее произведение человечества",
+    "Никто не может противостоять моему ORA ORA ORA!",
+    "Хентай с глубоким сюжетом",
+    "2D лучше, чем 3D",
+    "Яой для ценителей высокого искусства",
+    "Утренние аниме-марафоны — лучший способ начать день",
+    "Повязка на глаз — символ мужества",
+    "Всегда держи масло под рукой",
+    "Никто не может устоять перед моим YES SIR!",
+    "Ремень — лучший аксессуар",
+    "Жизнь в джимме — жизнь по-настоящему",
+    "Всё лучшее происходит в душе"
+  ];
+  
+  // Helper function to send a random phrase
+  async function sendRandomPhrase() {
+    const channel = await client.channels.fetch(MAIN_CHANNEL_ID);
+    const randomPhrase = phrases[randomInt(phrases.length)];
+    channel.send(randomPhrase);
+  }
+  
+  // Function to schedule daily message at a random time starting tomorrow
+  function scheduleDailyMessage() {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    
+    const randomHour = randomInt(24);
+    const randomMinute = randomInt(60);
+  
+    // Set the time for tomorrow's message
+    tomorrow.setHours(randomHour, randomMinute, 0);
+  
+    // Schedule the message for tomorrow
+    scheduleJob(tomorrow, function() {
+      sendRandomPhrase();
+      scheduleDailyMessage(); // Reschedule for the next day
+    });
+  }
 
 
 client.login(process.env.DISCORD_TOKEN); 
