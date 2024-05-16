@@ -1682,33 +1682,6 @@ const phrases = [
     });
   }
 
-function createMoonMessage(date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const today = date.getDate();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕
-
-**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**
-
-`;
-
-    for (let day = today; day <= lastDay; day++) {
-        if (day % 2 === 0) {
-            const emoji = day === today ? '🟡' : '🌑';
-            content += `${emoji} ${day} мая - Ore ${8 + (day - 16) / 2}\n`;
-        }
-    }
-
-    content += `
-
-Клонилка стоит на **Ore 1**
-Радиус сжималки у орки 116 км, радиус бафов 118 км
-Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
-
-    return content;
-}
-
 async function updateMoonMessage() {
     const channel = client.channels.cache.get(MOON_CHANNEL_ID);
     const data = await readData(); 
@@ -1746,7 +1719,7 @@ function createMoonMessage(date) {
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
     ];
 
-    const moonEmojis = ['🌕', '🌖', '🌗', '🌘', '🌑'];
+    const moonEmojis = ['🌖', '🌗', '🌘', '🌑'];
     
     let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕
 
