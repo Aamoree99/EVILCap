@@ -59,7 +59,6 @@ client.once('ready', async () => {
     scheduleDailyActivity(client);
     createRoleMessage();
     scheduleTransactionCheck();
-    await sendRandomPhrase();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
     }, {
@@ -1745,17 +1744,26 @@ function createMoonMessage(date) {
     const months = [
         'января/january', 'февраля/february', 'марта/march', 'апреля/april', 'мая/may', 'июня/june',
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
-    ];    
+    ];
 
+    const moonEmojis = ['🌕', '🌖', '🌗', '🌘', '🌑'];
+    
     let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕
 
     **Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**
     
     `;
-    
+
+    let emojiIndex = 0;
     for (let day = today; day <= lastDay; day++) {
         if (day % 2 === 0) {
-            const emoji = day === today ? '🟡' : '🌑';
+            let emoji;
+            if (day === today) {
+                emoji = '🟡'; // Today
+            } else {
+                emoji = moonEmojis[emojiIndex] || '🌑';
+                emojiIndex = Math.min(emojiIndex + 1, moonEmojis.length - 1);
+            }
             content += `${emoji} ${day} ${months[month]} - Ore ${8 + (day - 16) / 2}\n`;
         }
     }
@@ -1767,7 +1775,7 @@ function createMoonMessage(date) {
     Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
     
     return content;
-    
 }
+
 
 client.login(token); 
