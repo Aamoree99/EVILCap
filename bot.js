@@ -1766,7 +1766,7 @@ let messageCount = 0;
 let nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
 
 client.on('messageCreate', message =>; {
-    if (message.channel.id === CHANNEL_ID && !message.author.bot) {
+    if (message.channel.id === MAIN_CHANNEL_ID && !message.author.bot) {
         messageCount++;
         if (messageCount >= nextMessageThreshold) {
             sendScheduledPhrase();
@@ -1774,8 +1774,7 @@ client.on('messageCreate', message =>; {
     }
 });
 
-function sendScheduledPhrase() {
-    const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>. "; // замените на ваши ID каналов
+const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>. "; // замените на ваши ID каналов
 
 // Список фраз с пропагандой тыловых операций
 const scheduledPhrases = [
@@ -1790,6 +1789,9 @@ const scheduledPhrases = [
     "Сотрудничество с сокорпами в тыловых операциях принесет вам стабильный доход и меньше стресса. " + channelInfo,
     "Зарабатывайте больше с меньшими усилиями, работая в тыловых операциях вместе с сокорпами. " + channelInfo
 ];
+
+function sendScheduledPhrase() {
+    
     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
     if (channel && channel.isText()) {
         const randomPhrase = scheduledPhrases[Math.floor(Math.random() * scheduledPhrases.length)];
