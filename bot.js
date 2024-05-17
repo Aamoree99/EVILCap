@@ -1765,16 +1765,7 @@ const MAX_MESSAGES = 100;
 let messageCount = 0;
 let nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
 
-client.on('messageCreate', message =>; {
-    if (message.channel.id === MAIN_CHANNEL_ID && !message.author.bot) {
-        messageCount++;
-        if (messageCount >= nextMessageThreshold) {
-            sendScheduledPhrase();
-        }
-    }
-});
-
-const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>. "; // замените на ваши ID каналов
+const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>."; // замените на ваши ID каналов
 
 // Список фраз с пропагандой тыловых операций
 const scheduledPhrases = [
@@ -1790,23 +1781,38 @@ const scheduledPhrases = [
     "Зарабатывайте больше с меньшими усилиями, работая в тыловых операциях вместе с сокорпами. " + channelInfo
 ];
 
-function sendScheduledPhrase() {
-    
+client.once('ready', async () => {
+    console.log('Bot is ready!');
+    await sendScheduledPhrase();
+});
+
+client.on('messageCreate', async message => {
+    if (message.channel.id === MAIN_CHANNEL_ID && !message.author.bot) {
+        messageCount++;
+        if (messageCount >= nextMessageThreshold) {
+            await sendScheduledPhrase();
+        }
+    }
+});
+
+async function sendScheduledPhrase() {
     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
     if (channel && channel.isText()) {
         const randomPhrase = scheduledPhrases[Math.floor(Math.random() * scheduledPhrases.length)];
-        channel.send(randomPhrase)
-            .then(() =>; {
-                messageCount = 0;
-                nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
-            })
-            .catch(console.error);
+        try {
+            await channel.send(randomPhrase);
+            messageCount = 0;
+            nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
     }
 }
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
 
 
 client.login(token); 
