@@ -59,6 +59,7 @@ client.once('ready', async () => {
     scheduleDailyActivity(client);
     createRoleMessage();
     scheduleTransactionCheck();
+    await sendScheduledPhrase();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
     }, {
@@ -1763,8 +1764,10 @@ const MAX_MESSAGES = 100;
 
 let messageCount = 0;
 let nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
+let lastPhraseIndex = -1;  // Хранит индекс последнего отправленного сообщения
 
-const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>."; // замените на ваши ID каналов
+const channelInfo = "\nВыбрать роль можно в канале <#1163428374493003826>,\n\nОзнакомиться можно в канале <#1211698477151817789>.";
+ // замените на ваши ID каналов
 
 // Список фраз с пропагандой тыловых операций
 const scheduledPhrases = [
@@ -1809,12 +1812,6 @@ const scheduledPhrases = [
     "Фракционные войны: битвы за будущее и честь! " + channelInfo
 ];
 
-
-client.once('ready', async () => {
-    console.log('Bot is ready!');
-    await sendScheduledPhrase();
-});
-
 client.on('messageCreate', async message => {
     if (message.channel.id === MAIN_CHANNEL_ID && !message.author.bot) {
         messageCount++;
@@ -1827,11 +1824,17 @@ client.on('messageCreate', async message => {
 async function sendScheduledPhrase() {
     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
     if (channel && channel.isTextBased()) {
-        const randomPhrase = scheduledPhrases[Math.floor(Math.random() * scheduledPhrases.length)];
+        let randomPhraseIndex;
+        do {
+            randomPhraseIndex = Math.floor(Math.random() * scheduledPhrases.length);
+        } while (randomPhraseIndex === lastPhraseIndex);
+
+        const randomPhrase = scheduledPhrases[randomPhraseIndex];
         try {
             await channel.send(randomPhrase);
             messageCount = 0;
             nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
+            lastPhraseIndex = randomPhraseIndex;  // Обновляем индекс последнего отправленного сообщения
         } catch (error) {
             console.error('Error sending message:', error);
         }
