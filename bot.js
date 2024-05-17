@@ -1797,7 +1797,7 @@ client.on('messageCreate', async message => {
 
 async function sendScheduledPhrase() {
     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
-    if (channel && channel.isText()) {
+    if (channel && channel.isTextBased()) {
         const randomPhrase = scheduledPhrases[Math.floor(Math.random() * scheduledPhrases.length)];
         try {
             await channel.send(randomPhrase);
