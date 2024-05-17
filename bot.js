@@ -67,6 +67,7 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
+    sendScheduledPhrase();
     setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
@@ -1756,6 +1757,53 @@ function createMoonMessage(date) {
     Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
     
     return content;
+}
+
+const MIN_MESSAGES = 70;
+const MAX_MESSAGES = 100;
+
+let messageCount = 0;
+let nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
+
+client.on('messageCreate', message =>; {
+    if (message.channel.id === CHANNEL_ID && !message.author.bot) {
+        messageCount++;
+        if (messageCount >= nextMessageThreshold) {
+            sendScheduledPhrase();
+        }
+    }
+});
+
+function sendScheduledPhrase() {
+    const channelInfo = "Выбрать роль можно в канале <#1163428374493003826>, ознакомиться в канале <#1211698477151817789>. "; // замените на ваши ID каналов
+
+// Список фраз с пропагандой тыловых операций
+const scheduledPhrases = [
+    "USG Ishimura тоже копала луны и к чему это привело? Лучше делайте тыловые. " + channelInfo,
+    "Если ты копаешь, а рядом с тобой сапер, значит пора задуматься и полететь тыловые. " + channelInfo,
+    "Тыловые операции приносят стабильный доход и требуют меньше усилий. " + channelInfo,
+    "Работа на тыловых позициях позволяет заработать больше с меньшими усилиями. " + channelInfo,
+    "В тыловых операциях вы работаете вместе с сокорпами, что делает работу более организованной и эффективной. " + channelInfo,
+    "Сокорпы предпочитают тыловые операции, чтобы минимизировать усилия и максимизировать прибыль. Присоединяйтесь к ним! " + channelInfo,
+    "Тыловые операции с сокорпами - это лучший способ заработать больше и избежать ненужных сложностей. " + channelInfo,
+    "Выберите тыловые операции и работайте вместе с сокорпами для достижения максимальной эффективности и прибыли. " + channelInfo,
+    "Сотрудничество с сокорпами в тыловых операциях принесет вам стабильный доход и меньше стресса. " + channelInfo,
+    "Зарабатывайте больше с меньшими усилиями, работая в тыловых операциях вместе с сокорпами. " + channelInfo
+];
+    const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+    if (channel && channel.isText()) {
+        const randomPhrase = scheduledPhrases[Math.floor(Math.random() * scheduledPhrases.length)];
+        channel.send(randomPhrase)
+            .then(() =>; {
+                messageCount = 0;
+                nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
+            })
+            .catch(console.error);
+    }
+}
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 
