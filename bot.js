@@ -32,6 +32,7 @@ const REPORT_CHANNEL_ID= '1230611265794080848';
 const MAIN_CHANNEL_ID= '1172972375688626276';
 const CASINO_CHANNEL_ID= '1239752190986420274';
 const MOON_CHANNEL_ID= '1159193601289490534';
+const EN_MAIN_CHANNEL_ID= '1212507080934686740';
 
 const waitList = new Map();
 const messageMap = new Map();
@@ -126,6 +127,13 @@ const commands = [
         .addStringOption(option =>
             option.setName('tag')
                 .setDescription('Тег для ролей')
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('ice')
+        .setDescription('Создает уведомление о льде.')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('название системы')
                 .setRequired(true))
 ]
     .map(command => command.toJSON());
@@ -500,7 +508,53 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             console.error(error);
             await interaction.reply('Произошла ошибка при обработке команды.');
         }
+        },
+        async function ice(name) {
+    try {
+        const allowedChannels = ['MAIN_CHANNEL_ID', 'EN_MAIN_CHANNEL_ID'];
+        const currentChannelId = interaction.channel.id;
+
+        if (!allowedChannels.includes(currentChannelId)) {
+            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+            return;
         }
+
+        const phrases = [
+            "Давайте наберем побольше льда!",
+            "Не упустим возможность пополнить запасы!",
+            "Пора пополнить наши склады льдом!",
+            "Время действовать и собирать лед!"
+        ];
+        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+        const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}!`; 
+        const channel = client.channels.cache.get('MAIN_CHANNEL_ID'); 
+        const en_phrases = [
+            "Let's gather as much ice as we can!",
+            "Don't miss the chance to stock up!",
+            "Time to fill our warehouses with ice!",
+            "Time to act and collect ice!"
+        ];
+        const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
+        
+        // Translate system name from Russian to English
+        const translatedName = await translate(name, { to: 'en' });
+
+        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${translatedName} system!`; 
+        const en_channel = client.channels.cache.get('EN_MAIN_CHANNEL_ID'); 
+
+        if (channel) {
+            await channel.send(`${baseMessage} ${randomPhrase}`);
+            await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
+            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        } else {
+            await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+        }
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+    }
+}
+
     };
 
     if (interaction.isCommand()) {
