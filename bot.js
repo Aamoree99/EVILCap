@@ -511,15 +511,14 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         },
         async ice(name) {
     try {
- const mainChannelId = 'MAIN_CHANNEL_ID';
-        const enMainChannelId = 'EN_MAIN_CHANNEL_ID';
-        const currentChannelId = interaction.channel.id;
+                const allowedChannels = ['1172972375688626276', '1212507080934686740'];
+                const currentChannelId = interaction.channel.id;
+                const authorUsername = interaction.user.username;
 
-        if (currentChannelId !== mainChannelId && currentChannelId !== enMainChannelId) {
-            await interaction.reply({ content: "Эту команду можно использовать только в каналах MAIN_CHANNEL_ID или EN_MAIN_CHANNEL_ID.", ephemeral: true });
-            return;
-        
-        }
+                if (!allowedChannels.includes(currentChannelId)) {
+                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+                    return;
+                }
 
         const phrases = [
             "Давайте наберем побольше льда!",
@@ -529,7 +528,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         ];
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
         const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}!`; 
-        const channel = client.channels.cache.get('MAIN_CHANNEL_ID'); 
+        const channel = client.channels.cache.get('1172972375688626276'); 
         const en_phrases = [
             "Let's gather as much ice as we can!",
             "Don't miss the chance to stock up!",
@@ -539,7 +538,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
 
         const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system!`; 
-        const en_channel = client.channels.cache.get('EN_MAIN_CHANNEL_ID'); 
+        const en_channel = client.channels.cache.get('1212507080934686740'); 
 
         if (channel) {
             await channel.send(`${baseMessage} ${randomPhrase}`);
