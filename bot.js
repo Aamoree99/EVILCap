@@ -509,7 +509,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             await interaction.reply('Произошла ошибка при обработке команды.');
         }
         },
-        async function ice(name) {
+        async ice(name) {
     try {
         const allowedChannels = ['MAIN_CHANNEL_ID', 'EN_MAIN_CHANNEL_ID'];
         const currentChannelId = interaction.channel.id;
@@ -535,11 +535,8 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             "Time to act and collect ice!"
         ];
         const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-        
-        // Translate system name from Russian to English
-        const translatedName = await translate(name, { to: 'en' });
 
-        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${translatedName} system!`; 
+        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system!`; 
         const en_channel = client.channels.cache.get('EN_MAIN_CHANNEL_ID'); 
 
         if (channel) {
