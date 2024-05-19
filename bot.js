@@ -1853,7 +1853,7 @@ function createMoonMessage(date) {
     **Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**
     
     `;
-
+    
     let emojiIndex = 0;
     for (let day = today; day <= lastDay; day++) {
         if (day % 2 === 0) {
@@ -1872,9 +1872,12 @@ function createMoonMessage(date) {
     
     Клонилка стоит на **Ore 1**
     Радиус сжималки у орки 116 км, радиус бафов 118 км
-    Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)`;
+    Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)**
     
+    <https://docs.google.com/spreadsheets/d/1eZ2tIRbpC7FL3mK-TgjzCfF5e29-Rmhy2iPi4fuR1no/edit#gid=1084867218>`;
+        
     return content;
+    
 }
 
 const MIN_MESSAGES = 70;
