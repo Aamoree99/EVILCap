@@ -511,12 +511,14 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         },
         async ice(name) {
     try {
-        const allowedChannels = ['MAIN_CHANNEL_ID', 'EN_MAIN_CHANNEL_ID'];
+ const mainChannelId = 'MAIN_CHANNEL_ID';
+        const enMainChannelId = 'EN_MAIN_CHANNEL_ID';
         const currentChannelId = interaction.channel.id;
 
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+        if (currentChannelId !== mainChannelId && currentChannelId !== enMainChannelId) {
+            await interaction.reply({ content: "Эту команду можно использовать только в каналах MAIN_CHANNEL_ID или EN_MAIN_CHANNEL_ID.", ephemeral: true });
             return;
+        
         }
 
         const phrases = [
