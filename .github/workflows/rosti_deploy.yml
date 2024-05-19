@@ -77,7 +77,7 @@ jobs:
           rm rosti.nginx.conf
       - name: Copy code
         run: |
-          rsync -ae "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./ $USER@$HOST:/srv/app/
+          rsync -ae "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git --exclude=complianceData.json ./ $USER@$HOST:/srv/app/
       - name: Apply changes
         run: |
           ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST supervisorctl reread
