@@ -509,7 +509,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             await interaction.reply('Произошла ошибка при обработке команды.');
         }
         },
-        async ice(interaction) {
+        async ice() {
     try {
         
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
