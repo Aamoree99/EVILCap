@@ -115,7 +115,18 @@ const commands = [
         .setDescription('Показывает активные сессии и их уникальные коды с возможностью удаления'),
     new SlashCommandBuilder()
         .setName('hf')
-        .setDescription('Пинг и показать количество участников')
+        .setDescription('Пинг и показать количество участников'),
+    new SlashCommandBuilder()
+        .setName('create_category')
+        .setDescription('Создает новую категорию с каналами и ролями.')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Имя категории')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('tag')
+                .setDescription('Тег для ролей')
+                .setRequired(true))
 ]
     .map(command => command.toJSON());
 
@@ -472,7 +483,19 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             } catch (error) {
                 console.error("Error in hf function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-            }
+            },
+            async create_category(interaction) {
+        const { channelId, guild } = interaction;
+        if (channelId !== LOG_CHANNEL_ID) {
+            await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+            return;
+        }
+
+        const name = interaction.options.getString('name');
+        const tag = interaction.options.getString('tag');
+        const response = await create_category(guild, name, tag);
+        await interaction.reply(response);
+    }
         }
     };
 
@@ -1882,6 +1905,191 @@ async function sendScheduledPhrase() {
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+async function create_category(guild, name, tag) {
+    try {
+        // Создаем роли
+        const pilotRole = await guild.roles.create({
+            name: `Пилот ${tag}`,
+            permissions: [],
+        });
+
+        const officerRole = await guild.roles.create({
+            name: `Офицер ${tag}`,
+            permissions: [],
+        });
+
+        const ceoRole = await guild.roles.create({
+            name: `СЕО ${tag}`,
+            permissions: [],
+        });
+
+        const additionalRole = guild.roles.cache.find(role => role.name === 'AdditionalRoleName'); // Замените на имя вашей дополнительной роли
+
+        // Создаем категорию
+        const category = await guild.channels.create({
+            name: name,
+            type: ChannelType.GuildCategory,
+            permissionOverwrites: [
+                {
+                    id: guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: pilotRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: officerRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: ceoRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: additionalRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+            ],
+        });
+
+        // Создаем текстовые каналы
+        await guild.channels.create({
+            name: 'общий-чат',
+            type: ChannelType.GuildText,
+            parent: category.id,
+            permissionOverwrites: [
+                {
+                    id: guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: pilotRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+                {
+                    id: officerRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages],
+                },
+                {
+                    id: ceoRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages],
+                },
+                {
+                    id: additionalRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+            ],
+        });
+
+        await guild.channels.create({
+            name: 'killboard',
+            type: ChannelType.GuildText,
+            parent: category.id,
+            permissionOverwrites: [
+                {
+                    id: guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: pilotRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+                {
+                    id: officerRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+                {
+                    id: ceoRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+                {
+                    id: additionalRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                },
+            ],
+        });
+
+        await guild.channels.create({
+            name: 'офицерский-канал',
+            type: ChannelType.GuildText,
+            parent: category.id,
+            permissionOverwrites: [
+                {
+                    id: guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: pilotRole.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: officerRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: ceoRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: additionalRole.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                },
+            ],
+        });
+
+        // Создаем голосовые каналы
+        const voiceChannelPermissions = [
+            {
+                id: guild.id,
+                deny: [PermissionsBitField.Flags.ViewChannel],
+            },
+            {
+                id: pilotRole.id,
+                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
+            },
+            {
+                id: officerRole.id,
+                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak, PermissionsBitField.Flags.MoveMembers],
+            },
+            {
+                id: ceoRole.id,
+                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak, PermissionsBitField.Flags.MoveMembers],
+            },
+            {
+                id: additionalRole.id,
+                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
+            },
+        ];
+
+        await guild.channels.create({
+            name: 'Голосовой-1',
+            type: ChannelType.GuildVoice,
+            parent: category.id,
+            permissionOverwrites: voiceChannelPermissions,
+        });
+
+        await guild.channels.create({
+            name: 'Голосовой-2',
+            type: ChannelType.GuildVoice,
+            parent: category.id,
+            permissionOverwrites: voiceChannelPermissions,
+        });
+
+        await guild.channels.create({
+            name: 'Голосовой-3',
+            type: ChannelType.GuildVoice,
+            parent: category.id,
+            permissionOverwrites: voiceChannelPermissions,
+        });
+
+        return `Категория "${name}" с тегом "${tag}" успешно создана!`;
+    } catch (error) {
+        console.error(error);
+        return 'Произошла ошибка при создании категории и каналов.';
+    }
 }
 
 
