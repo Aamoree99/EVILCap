@@ -501,6 +501,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             console.error(error);
             await interaction.reply('Произошла ошибка при обработке команды.');
         }
+        }
     };
 
     if (interaction.isCommand()) {
