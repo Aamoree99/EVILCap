@@ -1925,7 +1925,7 @@ async function create_category(guild, name, tag) {
             permissions: [],
         });
 
-        const additionalRole = guild.roles.cache.find(role => role.name === 'AdditionalRoleName'); // Замените на имя вашей дополнительной роли
+        const additionalRole = guild.roles.cache.find(role => role.id === '1159109482303979662'); // Замените на имя вашей дополнительной роли
 
         // Создаем категорию
         const category = await guild.channels.create({
@@ -1957,7 +1957,7 @@ async function create_category(guild, name, tag) {
 
         // Создаем текстовые каналы
         await guild.channels.create({
-            name: 'общий-чат',
+            name: '💬｜общий-чат',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
@@ -1985,7 +1985,7 @@ async function create_category(guild, name, tag) {
         });
 
         await guild.channels.create({
-            name: 'killboard',
+            name: '📊｜killboard',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
@@ -2013,7 +2013,7 @@ async function create_category(guild, name, tag) {
         });
 
         await guild.channels.create({
-            name: 'офицерский-канал',
+            name: '🛡｜офицерский-канал',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
