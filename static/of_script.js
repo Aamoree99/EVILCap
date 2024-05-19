@@ -4,11 +4,12 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "Neuron Flax", img: "/slides/of8.png", text: "Officer of the Extraction Department", extra: "Charizard" },
         { name: "Aamoree", img: "/slides/of6.png", text: "CEO of Cosmic Capybara Crew (Professional Training Academy)", extra: "Gengar" },
         { name: "Mr Filch", img: "/slides/of3.jpg", text: "CEO Yellow Foxes", extra: "Profitable fleet" },
+        { name: "Nataly78 Arkaral ", img: "/slides/of10.jpg", text: "CEO Amar mining and industrial Corp", extra: "Bulbasaur" },
         { name: "Arushia", img: "/slides/of7.png", text: "CEO of Nova Labs (EU Production Wing)", extra: "Bulbasaur" },
         { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Blaziken" },
         { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Umbreon" },
-        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Lucario" },
-        { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Gardevoir" }
+        { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Gardevoir" },
+        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Lucario" }
     ];
 
     const grid = document.getElementById('officer-grid');
