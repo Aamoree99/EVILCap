@@ -1925,7 +1925,7 @@ async function create_category(guild, name, tag) {
             permissions: [],
         });
 
-        const additionalRole = guild.roles.cache.find(role => role.id === '1159109482303979662'); // Замените на имя вашей дополнительной роли
+        const additionalRole = guild.roles.cache.find(role => role.name === 'AdditionalRoleName'); // Замените на имя вашей дополнительной роли
 
         // Создаем категорию
         const category = await guild.channels.create({
@@ -1946,7 +1946,7 @@ async function create_category(guild, name, tag) {
                 },
                 {
                     id: ceoRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.ManageRoles, PermissionsBitField.Flags.ManageMessages, PermissionsBitField.Flags.ManageWebhooks, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
                 },
                 {
                     id: additionalRole.id,
@@ -1957,7 +1957,7 @@ async function create_category(guild, name, tag) {
 
         // Создаем текстовые каналы
         await guild.channels.create({
-            name: '💬｜общий-чат',
+            name: 'общий-чат',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
@@ -1967,19 +1967,19 @@ async function create_category(guild, name, tag) {
                 },
                 {
                     id: pilotRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: officerRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages, PermissionsBitField.Flags.ManageRoles],
                 },
                 {
                     id: ceoRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageMessages, PermissionsBitField.Flags.ManageRoles, PermissionsBitField.Flags.ManageChannels],
                 },
                 {
                     id: additionalRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
             ],
         });
@@ -1995,25 +1995,25 @@ async function create_category(guild, name, tag) {
                 },
                 {
                     id: pilotRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: officerRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: ceoRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: additionalRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
             ],
         });
 
         await guild.channels.create({
-            name: '🛡｜офицерский-канал',
+            name: 'офицерский-канал',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
@@ -2027,15 +2027,15 @@ async function create_category(guild, name, tag) {
                 },
                 {
                     id: officerRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: ceoRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
                 {
                     id: additionalRole.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel],
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.SendMessages],
                 },
             ],
         });
@@ -2056,7 +2056,7 @@ async function create_category(guild, name, tag) {
             },
             {
                 id: ceoRole.id,
-                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak, PermissionsBitField.Flags.MoveMembers],
+                allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak, PermissionsBitField.Flags.MoveMembers, PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.ManageRoles, PermissionsBitField.Flags.ManageWebhooks],
             },
             {
                 id: additionalRole.id,
