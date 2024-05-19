@@ -1925,7 +1925,7 @@ async function create_category(guild, name, tag) {
             permissions: [],
         });
 
-        const additionalRole = guild.roles.cache.find(role => role.name === 'AdditionalRoleName'); // Замените на имя вашей дополнительной роли
+        const additionalRole = guild.roles.cache.find(role => role.id === '1159109482303979662'); // Замените на имя вашей дополнительной роли
 
         // Создаем категорию
         const category = await guild.channels.create({
