@@ -485,9 +485,8 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
             }
         },
-            async create_category(interaction) {
+            async create_category() {
         try {
-            const { channelId, guild } = interaction;
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
                 return;
