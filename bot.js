@@ -483,7 +483,8 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             } catch (error) {
                 console.error("Error in hf function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-            },
+            }
+        },
             async create_category(interaction) {
         const { channelId, guild } = interaction;
         if (channelId !== LOG_CHANNEL_ID) {
@@ -496,7 +497,6 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         const response = await create_category(guild, name, tag);
         await interaction.reply(response);
     }
-        }
     };
 
     if (interaction.isCommand()) {
