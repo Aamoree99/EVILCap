@@ -491,7 +491,7 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
                 return;
             }
-
+            const guild = client.guilds.cache.get(GUILD_ID);
             const name = interaction.options.getString('name');
             const tag = interaction.options.getString('tag');
             const response = await create_category(guild, name, tag);
