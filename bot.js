@@ -1957,7 +1957,7 @@ async function create_category(guild, name, tag) {
 
         // Создаем текстовые каналы
         await guild.channels.create({
-            name: 'общий-чат',
+            name: '💬｜общий-чат',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
@@ -2013,7 +2013,7 @@ async function create_category(guild, name, tag) {
         });
 
         await guild.channels.create({
-            name: 'офицерский-канал',
+            name: '🛡｜офицерский-канал',
             type: ChannelType.GuildText,
             parent: category.id,
             permissionOverwrites: [
