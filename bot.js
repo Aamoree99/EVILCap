@@ -1868,13 +1868,7 @@ function createMoonMessage(date) {
         }
     }
     
-    content += `
-    
-    Клонилка стоит на **Ore 1**
-    Радиус сжималки у орки 116 км, радиус бафов 118 км
-    Лунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)**
-    
-    <https://docs.google.com/spreadsheets/d/1eZ2tIRbpC7FL3mK-TgjzCfF5e29-Rmhy2iPi4fuR1no/edit#gid=1084867218>`;
+    content += `Клонилка стоит на **Ore 1**\nРадиус сжималки у орки 116 км, радиус бафов 118 км\nЛунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)\n<https://docs.google.com/spreadsheets/d/1eZ2tIRbpC7FL3mK-TgjzCfF5e29-Rmhy2iPi4fuR1no/edit#gid=1084867218>`;
         
     return content;
     
