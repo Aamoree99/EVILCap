@@ -1846,9 +1846,9 @@ function createMoonMessage(date) {
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
     ];
 
-    const moonEmojis = [' 🌖', '🌗', '🌘', '🌑'];
+    const moonEmojis = ['🌖', '🌗', '🌘', '🌑'];
     
-    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕\n\n**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n\n`;
+    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕\n\n**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n**Журнал добычи**\n`;
     
     let emojiIndex = 0;
     for (let day = today; day <= lastDay; day++) {
@@ -1864,7 +1864,7 @@ function createMoonMessage(date) {
         }
     }
     
-    content += `\nКлонилка стоит на **Ore 1**\nРадиус сжималки у орки 116 км, радиус бафов 118 км\nЛунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)\n<https://docs.google.com/spreadsheets/d/1eZ2tIRbpC7FL3mK-TgjzCfF5e29-Rmhy2iPi4fuR1no/edit#gid=1084867218>`;
+    content += `\nКлонилка стоит на **Ore 1**\n\nРадиус сжималки у орки 116 км, радиус бафов 118 км\nЛунная руда облагается **налогом в 10 процентов** от житабая (считается от скомпрессированной руды)\n***[Журнал добычи](https://docs.google.com/spreadsheets/d/1eZ2tIRbpC7FL3mK-TgjzCfF5e29-Rmhy2iPi4fuR1no/edit#gid=1084867218)***`;
         
     return content;
     
