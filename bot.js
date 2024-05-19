@@ -1846,16 +1846,16 @@ function createMoonMessage(date) {
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
     ];
 
-    const moonEmojis = ['🌖', '🌗', '🌘', '🌑'];
+    const moonEmojis = [' 🌖', '🌗', '🌘', '🌑'];
     
-    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕\n**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n`;
+    let content = `**🌕 Луны по четным дням, старт сразу после ДТ** 🌕\n\n**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n\n`;
     
     let emojiIndex = 0;
     for (let day = today; day <= lastDay; day++) {
         if (day % 2 === 0) {
             let emoji;
             if (day === today) {
-                emoji = '🟡'; // Today
+                emoji = ' 🟡'; // Today
             } else {
                 emoji = moonEmojis[emojiIndex] || '🌑';
                 emojiIndex = Math.min(emojiIndex + 1, moonEmojis.length - 1);
