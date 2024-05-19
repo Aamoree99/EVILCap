@@ -486,17 +486,21 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
             }
         },
             async create_category(interaction) {
-        const { channelId, guild } = interaction;
-        if (channelId !== LOG_CHANNEL_ID) {
-            await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
-            return;
-        }
+        try {
+            const { channelId, guild } = interaction;
+            if (channelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+                return;
+            }
 
-        const name = interaction.options.getString('name');
-        const tag = interaction.options.getString('tag');
-        const response = await create_category(guild, name, tag);
-        await interaction.reply(response);
-    }
+            const name = interaction.options.getString('name');
+            const tag = interaction.options.getString('tag');
+            const response = await create_category(guild, name, tag);
+            await interaction.reply(response);
+        } catch (error) {
+            console.error(error);
+            await interaction.reply('Произошла ошибка при обработке команды.');
+        }
     };
 
     if (interaction.isCommand()) {
