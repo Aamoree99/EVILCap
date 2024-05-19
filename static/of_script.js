@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "DonaldKrak", img: "/slides/of1.png", text: "LeaderShip", extra: "Gachi Lover" },
         { name: "Neuron Flax", img: "/slides/of8.png", text: "Officer of the Extraction Department", extra: "Charizard" },
         { name: "Aamoree", img: "/slides/of6.png", text: "CEO of Cosmic Capybara Crew (Professional Training Academy)", extra: "Gengar" },
-        { name: "Mr Filch", img: "/slides/of3.png", text: "CEO Yellow Foxes", extra: "Profitable fleet" },
+        { name: "Mr Filch", img: "/slides/of3.jpg", text: "CEO Yellow Foxes", extra: "Profitable fleet" },
         { name: "Arushia", img: "/slides/of7.png", text: "CEO of Nova Labs (EU Production Wing)", extra: "Bulbasaur" },
         { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Blaziken" },
         { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Umbreon" },
