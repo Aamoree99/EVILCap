@@ -1514,12 +1514,14 @@ async function checkTransactions() {
 
 
 async function processWin(channel, user, winAmount) {
+    const userMention = `<@${user.id}>`;
+
     if (winAmount > 0) {
-        const winMessage = `<@${user.id}> won ${winAmount} ISK! Congratulations! Please contact <@235822777678954496>.`;
-    await channel.send(winMessage);
+        const winMessage = `${userMention} won ${winAmount} ISK! Congratulations! Please contact <@235822777678954496>.`;
+        await channel.send(winMessage);
     } else {
-    const loseMessage = `<@${user.id}> did not win. Better luck next time!`;
-    await channel.send(loseMessage);
+        const loseMessage = `${userMention} did not win. Better luck next time!`;
+        await channel.send(loseMessage);
     }
 
     // Read existing data
@@ -1527,12 +1529,11 @@ async function processWin(channel, user, winAmount) {
     let winners = data.winners || {};
 
     // Update winners with the new win amount
-    const username = user.username; // Assuming `user.username` contains the correct username
     if (winAmount > 0) {
-        if (winners[username]) {
-            winners[username] += winAmount;
+        if (winners[userMention]) {
+            winners[userMention] += winAmount;
         } else {
-            winners[username] = winAmount;
+            winners[userMention] = winAmount;
         }
     }
 
@@ -1540,6 +1541,7 @@ async function processWin(channel, user, winAmount) {
     data.winners = winners;
     await writeData(data);
 }
+
 
 
 
