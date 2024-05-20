@@ -308,20 +308,42 @@ client.on('interactionCreate', async interaction => {
                         await interaction.reply({ content: "Канал не найден.", ephemeral: true });
                     }
                 } else {
-                    const now = new Date();
-                    const nextEvenDay = new Date(now);
-                    nextEvenDay.setUTCHours(11, 0, 0, 0);
-                    if (nextEvenDay <= now || nextEvenDay.getUTCDay() % 2 !== 0) {
-                        nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDay() % 2 === 0 ? 2 : 1));
-                    }
-                    const hoursUntilNextEvenDay = Math.ceil((nextEvenDay - now) / (1000 * 60 * 60));
+    const now = new Date();
+    const currentHourUTC = now.getUTCHours();
+    const currentMinuteUTC = now.getUTCMinutes();
+    let nextEvenDay = new Date(now);
+    nextEvenDay.setUTCHours(11, 15, 0, 0);
 
-                    if (currentChannelId === '1172972375688626276') {
-                        await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов.`);
-                    } else if (currentChannelId === '1212507080934686740') {
-                        await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours.`);
-                    }
-                }
+    const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
+
+    if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
+        // Сегодня четный день, время до 11:15 UTC
+        const timeUntilNextEvenDay = nextEvenDay - now;
+        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
+        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (currentChannelId === '1172972375688626276') {
+            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
+        } else if (currentChannelId === '1212507080934686740') {
+            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
+        }
+    } else {
+        // Сегодня нечетный день или уже прошло 11:15 UTC
+        if (nextEvenDay <= now || !isEvenDay) {
+            nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
+        }
+        const timeUntilNextEvenDay = nextEvenDay - now;
+        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
+        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (currentChannelId === '1172972375688626276') {
+            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
+        } else if (currentChannelId === '1212507080934686740') {
+            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
+        }
+    }
+}
+
             } catch (error) {
                 console.error("Error in moon function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
