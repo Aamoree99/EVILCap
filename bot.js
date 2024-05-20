@@ -33,6 +33,8 @@ const MAIN_CHANNEL_ID= '1172972375688626276';
 const CASINO_CHANNEL_ID= '1239752190986420274';
 const MOON_CHANNEL_ID= '1159193601289490534';
 const EN_MAIN_CHANNEL_ID= '1212507080934686740';
+const TARGET_CHANNEL_ID = '1242246489787334747';
+const chatApi = process.env.OPENAI_API_KEY;
 
 const waitList = new Map();
 const messageMap = new Map();
@@ -54,13 +56,13 @@ client.once('ready', async () => {
         status: 'online'
     });
     logAndSend(`<@235822777678954496>, папа я родился!`);
+    await sendWelcomeMessage();
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     scheduleDailyActivity(client);
     createRoleMessage();
     scheduleTransactionCheck();
-    await sendScheduledPhrase();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
     }, {
@@ -2195,7 +2197,72 @@ client.on('guildMemberRemove', member => {
     }
 });
 
+client.on('messageCreate', async message => {
+    // Игнорируем сообщения от ботов
+    if (message.author.bot) return;
 
+    // Проверяем, что сообщение было отправлено в целевой канал
+    if (message.channel.id === TARGET_CHANNEL_ID) {
+        await respondToMessage(message);
+    } else if (message.channel.id === MAIN_CHANNEL_ID) {
+        if (message.mentions.has(client.user) || message.reference) {
+            await respondToMessage(message);
+        }
+    }
+});
 
+async function respondToMessage(message) {
+    try {
+        // Отправляем запрос к OpenAI API для генерации ответа
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+                model: 'gpt-4',
+                messages: [{ role: 'user', content: message.content }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${chatApi}`
+                }
+            }
+        );
+
+        const botReply = response.data.choices[0].message.content;
+        message.channel.send(botReply);
+    } catch (error) {
+        console.error('Ошибка при обращении к OpenAI API:', error);
+        message.channel.send('Произошла ошибка при генерации ответа.');
+    }
+}
+
+async function sendWelcomeMessage() {
+    try {
+        // Генерируем приветственное сообщение через OpenAI API
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+                model: 'gpt-4',
+                messages: [{ role: 'system', content: 'Please generate a welcome message in russian for users when the bot starts up. The message should be friendly and encourage users to interact with the bot.' }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${chatApi}`
+                }
+            }
+        );
+
+        const welcomeMessage = response.data.choices[0].message.content;
+        const channel = client.channels.cache.get(TARGET_CHANNEL_ID);
+        if (channel) {
+            channel.send(welcomeMessage);
+        } else {
+            console.error('Приветственный канал не найден!');
+        }
+    } catch (error) {
+        console.error('Ошибка при обращении к OpenAI API:', error);
+    }
+}
 
 client.login(token); 
