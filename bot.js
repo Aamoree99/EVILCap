@@ -69,7 +69,7 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
-    setInterval(cleanupOldMessages, 60 * 60 * 1000);
+    //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
 const clientId = '1238628917900738591'; 
@@ -2185,6 +2185,16 @@ async function create_category(guild, name, tag) {
         return 'Произошла ошибка при создании категории и каналов.';
     }
 }
+
+client.on('guildMemberRemove', member => {
+    const logChannel = member.guild.channels.cache.get(LOG_CHANNEL_ID);
+    const mainChannel = member.guild.channels.cache.get(MAIN_CHANNEL_ID);
+    
+    if (logChannel) {
+        logChannel.send(`User ${member.user.tag} (${member.user.id}) has left the server.`);
+    }
+});
+
 
 
 
