@@ -599,7 +599,7 @@ client.on('guildMemberAdd', async member => {
         logAndSend(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
         if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
-            channel.send(`${member.toString()}, добро пожаловать! На нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)". Пожалуйста, напиши сообщение или ответь боту с твоим ником и именем, например: Ник в игре, Реальное имя.`);
+            channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, например: Captain Price, Серега.`);
             waitList.set(member.id, { guildId: member.guild.id, lastPingTime: Date.now() });
         } else {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
@@ -624,7 +624,7 @@ setInterval(async () => {
             const channel = guild.channels.cache.get(W_CHANNEL_ID);
             if (!channel) continue;
 
-            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)". Пожалуйста, напиши сообщение или ответь боту с твоим ником и именем, например: Ник в игре, Реальное имя.`);
+            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, например: Kratos, Олег.`);
             waitList.set(memberId, { guildId, lastPingTime: now });
         }
     }
