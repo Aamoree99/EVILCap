@@ -599,8 +599,8 @@ client.on('guildMemberAdd', async member => {
         logAndSend(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
         if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
-            channel.send(`${member.toString()}, пожалуйста, напиши свой ник и имя через запятую, например: Ник игры, Имя.`);
-            waitList.set(member.id, member.guild.id);
+            channel.send(`${member.toString()}, добро пожаловать! На нашем сервере мы используем формат никнейма "Ник (Имя)". Пожалуйста, напиши свой ник и имя через запятую, например: Ник игры, Имя.`);
+            waitList.set(member.id, { guildId: member.guild.id, lastPingTime: Date.now() });
         } else {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
         }
@@ -608,6 +608,28 @@ client.on('guildMemberAdd', async member => {
         console.error("Error in guildMemberAdd event handler:", error);
     }
 });
+
+const CHECK_INTERVAL = 5 * 60 * 1000; // 5 минут в миллисекундах
+
+setInterval(async () => {
+    const now = Date.now();
+    for (const [memberId, { guildId, lastPingTime }] of waitList.entries()) {
+        if (now - lastPingTime >= CHECK_INTERVAL) {
+            const guild = client.guilds.cache.get(guildId);
+            if (!guild) continue;
+
+            const member = guild.members.cache.get(memberId);
+            if (!member) continue;
+
+            const channel = guild.channels.cache.get(W_CHANNEL_ID);
+            if (!channel) continue;
+
+            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник (Имя)". Пожалуйста, напиши свой ник и имя через запятую, например: Ник игры, Имя.`);
+            waitList.set(memberId, { guildId, lastPingTime: now });
+        }
+    }
+}, CHECK_INTERVAL);
+
 
 client.on('messageCreate', async message => {
     try {
