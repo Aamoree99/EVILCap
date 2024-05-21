@@ -1381,34 +1381,6 @@ async function cleanupOldMessages(before = null) {
     }
 }
 
-
-
-const responses = [
-    "Слышь, ты это, заходи, если что.",
-    "Эй, мужик, есть что пожрать?",
-    "Ну что, сталкер, что нового?",
-    "Здорово, братан!",
-    "Как жизнь, сталкер?",
-    "Не шуми, сталкер.",
-    "Будь осторожен, брат.",
-    "Эй, сталкер, неси артефакты.",
-    "Заходи, сталкер, будь как дома.",
-    "Эй, держись поближе, тут опасно.",
-    "Слушай сюда, сталкер.",
-    "Братан, есть работа для тебя.",
-    "Эй, ты кто такой?",
-    "Сидорович ждет тебя.",
-    "Эй, сталкер, помоги!",
-    "Братан, помоги отбиться!",
-    "Ты это, сталкер, аккуратнее там.",
-    "Удачи тебе в Зоне, сталкер.",
-    "Не забывай, здесь Зона, сталкер.",
-    "Найди Сидоровича, он тебе поможет.",
-    "Ты еще жив? Вот это да!",
-    "Сталкер, будь начеку."
-];
-
-
 const specialResponse = "бобр курва";
 const specialTriggerWord = "боброе утро";
 
@@ -1448,7 +1420,35 @@ async function generateStalkerResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Ты - полезный помощник в корпорации космических путешествий. Отвечай так, как будто ты сталкер из игры S.T.A.L.K.E.R. Общайся в грубом и непринужденном стиле, с характерными фразами из игры. Ответ на русском языке.' },
+            { role: 'system', content: 'Ответь как сталкер из игры S.T.A.L.K.E.R. с атмосферными фразами.' },
+            { role: 'user', content: userMessage }
+        ]
+    };
+
+    try {
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            payload,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${chatApi}`
+                }
+            }
+        );
+
+        return response.data.choices[0].message.content;
+    } catch (error) {
+        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
+        return 'НАЩАЛЬНИКА АЩИБКА';
+    }
+}
+
+async function generateCommanderResponse(userMessage) {
+    const payload = {
+        model: 'gpt-3.5-turbo-0125',
+        messages: [
+            { role: 'system', content: 'Придумай известного персонажа-предводителя и напиши только ответ на его приветствие, будто я его подчиненный. Приветствие может быть типа "Доброе утро", "Привет" и т.д.' },
             { role: 'user', content: userMessage }
         ]
     };
@@ -1473,15 +1473,15 @@ async function generateStalkerResponse(userMessage) {
 }
 
 client.on('messageCreate', async (message) => {
-    // Проверяем, чтобы сообщение не было от бота и было в нужном канале
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
     const messageContent = message.content.toLowerCase();
 
     if (messageContent.includes(specialTriggerWord)) {
         await message.reply(specialResponse);
-    } else if (message.author.id === specialPersonTrigger && triggerWords.some(word => messageContent.includes(word))) {
-        await message.reply(specialPersonResponse);
+    } else if (message.author.id === specialPersonTrigger) {
+        const commanderResponse = await generateCommanderResponse(message.content);
+        await message.reply(commanderResponse);
     } else if (triggerWords.some(word => messageContent.includes(word))) {
         const stalkerResponse = await generateStalkerResponse(message.content);
         await message.reply(stalkerResponse);
@@ -2224,7 +2224,7 @@ async function respondToMessage(message, pingUser = false) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Вы - профессиональный помощник в корпорации космических путешествий. Отвечайте на вопросы с точки зрения эксперта, предоставляя точную и полезную информацию. Ответы должны быть на русском языке и соответствовать профессиональному стилю.' },
+            { role: 'system', content: 'Вы - профессиональный помощник и знаток игры EVE Online. Отвечайте на вопросы с точки зрения эксперта, предоставляя точную и полезную информацию. Ответы должны быть на русском языке и соответствовать профессиональному стилю.' },
             { role: 'user', content: message.content }
         ]
     };
