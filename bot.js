@@ -1476,17 +1476,19 @@ client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
     const messageContent = message.content.toLowerCase();
+    const containsTriggerWord = triggerWords.some(word => messageContent.includes(word));
 
     if (messageContent.includes(specialTriggerWord)) {
         await message.reply(specialResponse);
-    } else if (message.author.id === specialPersonTrigger) {
+    } else if (containsTriggerWord && message.author.id === specialPersonTrigger) {
         const commanderResponse = await generateCommanderResponse(message.content);
         await message.reply(commanderResponse);
-    } else if (triggerWords.some(word => messageContent.includes(word))) {
+    } else if (containsTriggerWord) {
         const stalkerResponse = await generateStalkerResponse(message.content);
         await message.reply(stalkerResponse);
     }
 });
+
 
 async function startCasinoGame(interaction) {
     if (!interaction.isCommand() && !interaction.isButton()) {
