@@ -57,7 +57,6 @@ client.once('ready', async () => {
         status: 'online'
     });
     logAndSend(`<@235822777678954496>, папа я родился!`);
-    sendWelcomeMessage();
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
@@ -2268,32 +2267,4 @@ client.on('messageCreate', async message => {
     }
 });
 
-async function sendWelcomeMessage() {
-    try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                model: 'gpt-3.5-turbo-0125',
-                messages: [{ role: 'system', content: 'Please generate a welcome message in Russian for users when the bot starts up. The message should be friendly and encourage users to interact with the bot.' }]
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${chatApi}`
-                }
-            }
-        );
-
-        const welcomeMessage = response.data.choices[0].message.content;
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
-
-        if (channel) {
-            await channel.send(welcomeMessage);
-        } else {
-            console.error('Приветственный канал не найден!');
-        }
-    } catch (error) {
-        console.error('Ошибка при обращении к OpenAI API:', error);
-    }
-}
 client.login(token); 
