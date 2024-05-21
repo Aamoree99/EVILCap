@@ -36,6 +36,7 @@ const EN_MAIN_CHANNEL_ID= '1212507080934686740';
 const TARGET_CHANNEL_ID = '1242246489787334747';
 const chatApi = process.env.OPENAI_API_KEY;
 
+
 const waitList = new Map();
 const messageMap = new Map();
 
@@ -56,7 +57,7 @@ client.once('ready', async () => {
         status: 'online'
     });
     logAndSend(`<@235822777678954496>, папа я родился!`);
-    await sendWelcomeMessage();
+    sendWelcomeMessage();
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
@@ -1444,6 +1445,34 @@ const triggerWords = [
 const specialPersonTrigger = "739618523076362310"; // Замените на ID нужного пользователя
 const specialPersonResponse = "Здравствуй, мой генерал! Сегодня мы на темной стороне.";
 
+async function generateStalkerResponse(userMessage) {
+    const payload = {
+        model: 'gpt-3.5-turbo-0125',
+        messages: [
+            { role: 'system', content: 'Ты - полезный помощник в корпорации космических путешествий. Отвечай так, как будто ты сталкер из игры S.T.A.L.K.E.R. Общайся в грубом и непринужденном стиле, с характерными фразами из игры. Ответ на русском языке.' },
+            { role: 'user', content: userMessage }
+        ]
+    };
+
+    try {
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            payload,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${chatApi}`
+                }
+            }
+        );
+
+        return response.data.choices[0].message.content;
+    } catch (error) {
+        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
+        return 'НАЩАЛЬНИКА АЩИБКА';
+    }
+}
+
 client.on('messageCreate', async (message) => {
     // Проверяем, чтобы сообщение не было от бота и было в нужном канале
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
@@ -1454,14 +1483,9 @@ client.on('messageCreate', async (message) => {
         await message.reply(specialResponse);
     } else if (message.author.id === specialPersonTrigger && triggerWords.some(word => messageContent.includes(word))) {
         await message.reply(specialPersonResponse);
-    } else {
-        for (const word of triggerWords) {
-            if (messageContent.includes(word)) {
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                await message.reply(randomResponse);
-                break; // Прерываем цикл, если нашли соответствующее слово
-            }
-        }
+    } else if (triggerWords.some(word => messageContent.includes(word))) {
+        const stalkerResponse = await generateStalkerResponse(message.content);
+        await message.reply(stalkerResponse);
     }
 });
 
@@ -2197,29 +2221,19 @@ client.on('guildMemberRemove', member => {
     }
 });
 
-client.on('messageCreate', async message => {
-    // Игнорируем сообщения от ботов
-    if (message.author.bot) return;
+async function respondToMessage(message, pingUser = false) {
+    const payload = {
+        model: 'gpt-3.5-turbo-0125',
+        messages: [
+            { role: 'system', content: 'Ты - полезный помощник в корпорации космических путешествий. Отвечай так, как будто разговариваешь с коллегой по корпорации о космических приключениях. Ответ на русском языке.' },
+            { role: 'user', content: message.content }
+        ]
+    };
 
-    // Проверяем, что сообщение было отправлено в целевой канал
-    if (message.channel.id === TARGET_CHANNEL_ID) {
-        await respondToMessage(message);
-    } else if (message.channel.id === MAIN_CHANNEL_ID) {
-        if (message.mentions.has(client.user) || message.reference) {
-            await respondToMessage(message);
-        }
-    }
-});
-
-async function respondToMessage(message) {
     try {
-        // Отправляем запрос к OpenAI API для генерации ответа
         const response = await axios.post(
             'https://api.openai.com/v1/chat/completions',
-            {
-                model: 'gpt-4',
-                messages: [{ role: 'user', content: message.content }]
-            },
+            payload,
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -2229,21 +2243,38 @@ async function respondToMessage(message) {
         );
 
         const botReply = response.data.choices[0].message.content;
-        message.channel.send(botReply);
+        console.log('Ответ от OpenAI API получен:', botReply);
+
+        const replyContent = pingUser ? `<@${message.author.id}> ${botReply}` : botReply;
+        await message.channel.send(replyContent);
     } catch (error) {
-        console.error('Ошибка при обращении к OpenAI API:', error);
-        message.channel.send('Произошла ошибка при генерации ответа.');
+        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
+        await message.channel.send('НАЩАЛЬНИКА АЩИБКА');
     }
 }
 
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
+
+    if (message.channel.id === TARGET_CHANNEL_ID) {
+        await respondToMessage(message);
+    } else if (message.channel.id === MAIN_CHANNEL_ID) {
+        const botMentioned = message.mentions.has(client.user);
+        const repliedToBot = message.reference && (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
+
+        if (botMentioned || repliedToBot) {
+            await respondToMessage(message, true);
+        }
+    }
+});
+
 async function sendWelcomeMessage() {
     try {
-        // Генерируем приветственное сообщение через OpenAI API
         const response = await axios.post(
             'https://api.openai.com/v1/chat/completions',
             {
-                model: 'gpt-4',
-                messages: [{ role: 'system', content: 'Please generate a welcome message in russian for users when the bot starts up. The message should be friendly and encourage users to interact with the bot.' }]
+                model: 'gpt-3.5-turbo-0125',
+                messages: [{ role: 'system', content: 'Please generate a welcome message in Russian for users when the bot starts up. The message should be friendly and encourage users to interact with the bot.' }]
             },
             {
                 headers: {
@@ -2254,9 +2285,10 @@ async function sendWelcomeMessage() {
         );
 
         const welcomeMessage = response.data.choices[0].message.content;
-        const channel = client.channels.cache.get(TARGET_CHANNEL_ID);
+        const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+
         if (channel) {
-            channel.send(welcomeMessage);
+            await channel.send(welcomeMessage);
         } else {
             console.error('Приветственный канал не найден!');
         }
@@ -2264,5 +2296,4 @@ async function sendWelcomeMessage() {
         console.error('Ошибка при обращении к OpenAI API:', error);
     }
 }
-
 client.login(token); 
