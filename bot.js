@@ -2224,7 +2224,7 @@ async function respondToMessage(message, pingUser = false) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Ты - полезный помощник в корпорации космических путешествий. Отвечай так, как будто разговариваешь с коллегой по корпорации о космических приключениях. Ответ на русском языке.' },
+            { role: 'system', content: 'Вы - профессиональный помощник в корпорации космических путешествий. Отвечайте на вопросы с точки зрения эксперта, предоставляя точную и полезную информацию. Ответы должны быть на русском языке и соответствовать профессиональному стилю.' },
             { role: 'user', content: message.content }
         ]
     };
@@ -2261,10 +2261,11 @@ client.on('messageCreate', async message => {
         const botMentioned = message.mentions.has(client.user);
         const repliedToBot = message.reference && (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
 
-        if (botMentioned || repliedToBot) {
+        if (botMentioned || (repliedToBot && !message.mentions.everyone && message.mentions.users.size === 1)) {
             await respondToMessage(message, true);
         }
     }
 });
+
 
 client.login(token); 
