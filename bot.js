@@ -136,6 +136,13 @@ const commands = [
         .addStringOption(option =>
             option.setName('name')
                 .setDescription('название системы')
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('grav')
+        .setDescription('Создает уведомление о льде.')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('название системы')
                 .setRequired(true))
 ]
     .map(command => command.toJSON());
@@ -575,7 +582,35 @@ await interaction.reply({ content: 'Сообщение отправлено.', e
         console.error(error);
         await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
     }
+},  async grav() {
+    try {
+        
+        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+        const currentChannelId = interaction.channel.id;
+        const name = interaction.options.getString('name');
+        logAndSend(allowedChannels, currentChannelId, name);
+        if (!allowedChannels.includes(currentChannelId)) {
+            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+            return;
+        }
+        const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт. Орка с прессом выставлена.`; 
+        const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+        const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open. The Orca with a press is deployed.`; 
+        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+
+        if (channel && en_channel) {
+            await channel.send(`${baseMessage}`);
+            await en_channel.send(`${en_baseMessage}`);
+            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        } else {
+            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+        }
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+    }
 }
+
     };
 
     if (interaction.isCommand()) {
@@ -1420,7 +1455,7 @@ async function generateStalkerResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Ответь как сталкер из игры S.T.A.L.K.E.R. с атмосферными фразами.' },
+            { role: 'system', content: 'ответь в стиле персонажа из "Звездного пути". Включи атмосферные фразы и элементы научной фантастики, которые ассоциируются с "Звездным путем".' },
             { role: 'user', content: userMessage }
         ]
     };

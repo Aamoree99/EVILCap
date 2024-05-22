@@ -15,22 +15,12 @@
   "Authorization": [
     "Mjk2ZjMwOTZlZDIxNGFmNDliZmE1MTk5NzkxYTM1MDQ6ZlEyQ095elNoZnRzeTJEZ2lQZXlQS05SaFpLZlZxWHJHb1k4MUYweQ=="
   ],
-  "participants": {
-  },
+  "participants": {},
   "eventId": [
     "1240658668370792489"
   ],
   "winners": {},
   "activeGames": {
-   "295528359562051597": {
-      "channelId": "1239752190986420274",
-      "userId": "295528359562051597",
-      "startTime": "2024-05-19T16:02:29.056Z",
-      "initialBalance": 135915123.09,
-      "uniqueCode": "efepswm8h",
-      "messageId": "1241783045510402200",
-      "nickname": "7MER4 (Виталий)"
-    }
   },
   "moonMessage": [
     "1240673539015708803"
