@@ -2313,6 +2313,41 @@ async function create_category(guild, name, tag) {
                 permissionOverwrites: category.permissionOverwrites.cache,
             });
         }
+        
+        const specificCategoryId = '1159112666799951873';
+const specificCategory = guild.channels.cache.get(specificCategoryId);
+
+if (specificCategory && specificCategory.type === ChannelType.GuildCategory) {
+    // Устанавливаем разрешения для категории
+    await specificCategory.permissionOverwrites.create(pilotRole.id, {
+        VIEW_CHANNEL: false,
+    });
+    await specificCategory.permissionOverwrites.create(officerRole.id, {
+        VIEW_CHANNEL: false,
+    });
+    await specificCategory.permissionOverwrites.create(ceoRole.id, {
+        VIEW_CHANNEL: true,
+        CONNECT: true,
+        SPEAK: true,
+        SEND_MESSAGES: true,
+    });
+
+    // Устанавливаем разрешения для всех каналов в категории
+    specificCategory.children.forEach(async (channel) => {
+        await channel.permissionOverwrites.create(pilotRole.id, {
+            VIEW_CHANNEL: false,
+        });
+        await channel.permissionOverwrites.create(officerRole.id, {
+            VIEW_CHANNEL: false,
+        });
+        await channel.permissionOverwrites.create(ceoRole.id, {
+            VIEW_CHANNEL: true,
+            CONNECT: true,
+            SPEAK: true,
+            SEND_MESSAGES: true,
+        });
+    });
+}
 
         const categoryIds = ['1212506201376694342', '1212808485172154449'];
         const roleIds = [pilotRole.id, officerRole.id, ceoRole.id];
