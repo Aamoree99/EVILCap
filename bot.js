@@ -2434,7 +2434,7 @@ async function respondToMessage(message, pingUser = false) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Вы - профессиональный помощник в корпорации EVE Online. Отвечайте на вопросы с точки зрения эксперта, предоставляя точную и полезную информацию. Ответы должны быть на русском языке, краткими и по существу, не более 3-4 предложений.' },
+            { role: 'system', content: 'Вы - профессиональный помощник в корпорации EVE Online. Отвечайте на вопросы с точки зрения эксперта, предоставляя точную и полезную информацию. Ответы должны быть на русском языке, отвечай будто тебя изгнали и ты сидишь тут теперь.' },
             { role: 'user', content: message.content }
         ]
     };
@@ -2467,13 +2467,6 @@ client.on('messageCreate', async message => {
 
     if (message.channel.id === TARGET_CHANNEL_ID) {
         await respondToMessage(message);
-    } else if (message.channel.id === MAIN_CHANNEL_ID) {
-        const botMentioned = message.mentions.has(client.user);
-        const repliedToBot = message.reference && (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
-
-        if (botMentioned || (repliedToBot && !message.mentions.everyone && message.mentions.users.size === 1)) {
-            await respondToMessage(message, true);
-        }
     }
 });
 
