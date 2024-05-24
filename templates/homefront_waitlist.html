@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homefront Waitlist</title>
+    <link rel="stylesheet" href="/hf.css">
+</head>
+<body>
+    <header>
+        <div class="character-info">
+            <img id="character-portrait" src="" alt="Портрет персонажа">
+            <div class="character-name-container">
+                <span id="character-name"></span>
+                <button id="auth-button" class="hidden button">Войти</button>
+                <button id="logout-button" class="hidden button">Выйти</button>
+            </div>
+        </div>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Waitlist</a>
+            <a href="#">Guides</a>
+            <a href="#">Skills</a>
+        </nav>
+    </header>
+    <main>
+        <h1>Welcome to Homefront Waitlist</h1>
+    </main>
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function checkAuth() {
+            const characterName = getQueryParam('characterName');
+            const characterID = getQueryParam('characterID');
+            const accessToken = getQueryParam('accessToken');
+
+            if (characterName && characterID && accessToken) {
+                document.getElementById('character-name').innerText = characterName;
+                fetch(`https://esi.evetech.net/latest/characters/${characterID}/portrait/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('character-portrait').src = data.px128x128;
+                        document.getElementById('auth-button').classList.add('hidden');
+                        document.getElementById('logout-button').classList.remove('hidden');
+                    })
+                    .catch(error => console.error('Ошибка при получении портрета:', error));
+            } else {
+                document.getElementById('auth-button').classList.remove('hidden');
+                document.getElementById('logout-button').classList.add('hidden');
+            }
+        }
+
+        document.getElementById('auth-button').addEventListener('click', () => {
+            window.location.href = '/login'; // Перенаправляем на маршрут логина
+        });
+
+        document.getElementById('logout-button').addEventListener('click', () => {
+            window.location.href = '/'; // Перезагружаем текущую страницу для выхода
+        });
+
+        window.addEventListener('load', checkAuth);
+    </script>
+</body>
+</html>

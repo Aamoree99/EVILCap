@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обработка аутентификации</title>
+    <script>
+        window.addEventListener('load', () => {
+            const hash = window.location.hash;
+            if (hash) {
+                const params = new URLSearchParams(hash.substring(1));
+                const accessToken = params.get('access_token');
+
+                if (accessToken) {
+                    fetch('https://esi.evetech.net/verify/', {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        sessionStorage.setItem('characterName', data.CharacterName);
+                        sessionStorage.setItem('characterID', data.CharacterID);
+                        sessionStorage.setItem('accessToken', accessToken);
+                        window.location.href = '/'; // Перенаправление на главную страницу
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+                } else {
+                    console.error('Access token not found');
+                }
+            } else {
+                console.error('Hash not found in URL');
+            }
+        });
+    </script>
+</head>
+<body>
+    <p>Обработка аутентификации...</p>
+</body>
+</html>
