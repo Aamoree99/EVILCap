@@ -108,6 +108,13 @@ const commands = [
         .setName('moon')
         .setDescription('Создать уведомление о луне.'),
     new SlashCommandBuilder()
+        .setName('evgen')
+        .setDescription('Создать уведомление о белте во имя Евгения.')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Название системы')
+                .setRequired(true)),
+    new SlashCommandBuilder()
         .setName('winners')
         .setDescription('Выплаты казино'),
     new SlashCommandBuilder()
@@ -621,6 +628,29 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
         } else {
             await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+        }
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+    }
+},async evgen() {
+    try {
+        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+        const currentChannelId = interaction.channel.id;
+        if (!allowedChannels.includes(currentChannelId)) {
+            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+            return;
+        }
+        const baseMessage = `Флот отправляется на белт в системе ${interaction.options.getString('name')}!`; 
+
+        const finalMessage = `${baseMessage} Во имя <@350931081194897409>`;
+
+        const channel = client.channels.cache.get(currentChannelId);
+        if (channel) {
+            await channel.send(finalMessage);
+            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        } else {
+            await interaction.reply({ content: "Канал не найден.", ephemeral: true });
         }
     } catch (error) {
         console.error(error);
