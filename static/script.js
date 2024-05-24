@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function () {
             en: { title: "Yellow Foxes" , text: 'Join the "Yellow Foxes" and soar to the stars! We are a vibrant community focused on earning substantial ISK in EVE, offering both support and vast opportunities to our members. Dive into a secure environment with expert guidance, where every pilot is valued and success is within reach.' }
         },
         9: {
+                ru: { title: "Capybara's Legion Lair", text: "Присоединяйтесь к 'Легиону Капибар' и исследуйте вселенную! Мы уникальная раса, созданная древними учеными, способная выживать в экстремальных условиях космоса. Наши капибары путешествуют по галактике, исследуют новые миры и устанавливают контакт с другими формами жизни. Наша специализация - Null-sec. Станьте частью космического сообщества и откройте новые горизонты вместе с нами."},
+                en: { title: "Capybara's Legion Lair", text: "Join the 'Capybara's Legion Lair' and explore the universe! We are a unique race, created by ancient scientists, capable of surviving in extreme space conditions. Our capybaras travel the galaxy, explore new worlds, and establish contact with other life forms. Our specialization is in Null-sec. Become part of the cosmic community and discover new horizons with us."}
+        },
+        10: {
             en: {
                 title: "Join Our Ranks Today!",
                 text: `You've decided to join us — excellent choice! In-game, reach out to <span class="contact-name">DonaldKrak</span> to get started or click the button below to join our Discord and become part of our thriving community. We're excited to welcome you aboard and start our journey together. Let’s achieve greatness!`,

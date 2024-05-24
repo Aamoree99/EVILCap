@@ -9,7 +9,8 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Blaziken" },
         { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Umbreon" },
         { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Gardevoir" },
-        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Lucario" }
+        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Lucario" },
+        { name: "Hell Heim", img: "/slides/of11.jpg", text: "CEO Capybara's Legion Lair", extra: "Null-sec Yoda"}
     ];
 
     const grid = document.getElementById('officer-grid');
