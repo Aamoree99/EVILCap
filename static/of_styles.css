@@ -100,6 +100,7 @@ footer {
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     padding: 20px;
+    row-gap: 20px;
 }
 
 .officer-card {
