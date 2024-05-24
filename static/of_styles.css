@@ -105,8 +105,8 @@ footer {
 .officer-card {
     perspective: 1000px;
     width: 100%;
-    height: 60vh;
     margin-bottom: 50px;
+    height: auto;
 }
 
 .card-inner {
@@ -166,7 +166,13 @@ footer {
     font-weight: bold;
 }
 
-@media (max-width: 768px)  {
+/* Add scrolling for smaller screens */
+.officer-card {
+    min-height: 30vw; /* Set a maximum height for the card */
+    margin-bottom: 30%;
+}
+
+@media (max-width: 768px) or (orientation: portrait)  {
     .officer-grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 10px;
