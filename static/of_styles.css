@@ -159,7 +159,7 @@ footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    heigh: 30vw;
+    min-heigh: 30vw;
 }
 
 .officer-extra {
@@ -196,6 +196,7 @@ footer {
 
     .officer-card {
         height: 250px; /* Adjusted height for even smaller screens */
+        margin-bottom: 80px;
     }
 
     .card-front img {
