@@ -2555,8 +2555,6 @@ async function importantPermissions(roleIds) {
     }
 }
 
-const { PermissionsBitField } = require('discord.js');
-
 async function alliancePermissions(roleIds) {
     const CATEGORY_ID = '1212506201376694342'; // ID категории
 
