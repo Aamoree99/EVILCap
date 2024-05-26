@@ -2305,7 +2305,8 @@ const officerRole = await guild.roles.create({
                         PermissionsBitField.Flags.ModerateMembers,
                         PermissionsBitField.Flags.Stream,
                         PermissionsBitField.Flags.UseEmbeddedActivities,
-                        PermissionsBitField.Flags.CreateInstantInvite
+                        PermissionsBitField.Flags.CreateInstantInvite,
+                        PermissionsBitField.Flags.MoveMembers
                     ],
                     deny: [
                         PermissionsBitField.Flags.KickMembers,
@@ -2345,7 +2346,8 @@ const officerRole = await guild.roles.create({
                         PermissionsBitField.Flags.ModerateMembers,
                         PermissionsBitField.Flags.Stream,
                         PermissionsBitField.Flags.UseEmbeddedActivities,
-                        PermissionsBitField.Flags.CreateInstantInvite
+                        PermissionsBitField.Flags.CreateInstantInvite,
+                        PermissionsBitField.Flags.MoveMembers
                     ],
                     deny: [
                         PermissionsBitField.Flags.KickMembers,
@@ -2553,6 +2555,8 @@ async function importantPermissions(roleIds) {
     }
 }
 
+const { PermissionsBitField } = require('discord.js');
+
 async function alliancePermissions(roleIds) {
     const CATEGORY_ID = '1212506201376694342'; // ID категории
 
@@ -2576,8 +2580,72 @@ async function alliancePermissions(roleIds) {
         }
 
         // Применение разрешений к категории
-        [roleIds[0], roleIds[1], roleIds[2]].forEach(roleId => {
+        category.permissionOverwrites.edit(roleIds[0], {
+            [PermissionsBitField.Flags.ViewChannel]: true,
+            [PermissionsBitField.Flags.CreateInstantInvite]: true,
+            [PermissionsBitField.Flags.SendMessages]: true,
+            [PermissionsBitField.Flags.SendTTSMessages]: false,
+            [PermissionsBitField.Flags.EmbedLinks]: true,
+            [PermissionsBitField.Flags.AttachFiles]: true,
+            [PermissionsBitField.Flags.AddReactions]: true,
+            [PermissionsBitField.Flags.UseExternalEmojis]: true,
+            [PermissionsBitField.Flags.UseExternalStickers]: true,
+            [PermissionsBitField.Flags.MentionEveryone]: false,
+            [PermissionsBitField.Flags.ReadMessageHistory]: true,
+            [PermissionsBitField.Flags.UseApplicationCommands]: true,
+            [PermissionsBitField.Flags.ManageThreads]: false,
+            [PermissionsBitField.Flags.CreatePublicThreads]: false,
+            [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+            [PermissionsBitField.Flags.SendMessagesInThreads]: false,
+            [PermissionsBitField.Flags.Connect]: true,
+            [PermissionsBitField.Flags.Speak]: true,
+            [PermissionsBitField.Flags.Stream]: true,
+            [PermissionsBitField.Flags.UseVAD]: true,
+            [PermissionsBitField.Flags.PrioritySpeaker]: false,
+            [PermissionsBitField.Flags.MuteMembers]: false,
+            [PermissionsBitField.Flags.DeafenMembers]: false,
+            [PermissionsBitField.Flags.MoveMembers]: false,
+            [PermissionsBitField.Flags.ManageRoles]: false,
+            [PermissionsBitField.Flags.ManageChannels]: false
+        });
+
+        [roleIds[1], roleIds[2]].forEach(roleId => {
             category.permissionOverwrites.edit(roleId, {
+                [PermissionsBitField.Flags.ViewChannel]: true,
+                [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                [PermissionsBitField.Flags.SendMessages]: true,
+                [PermissionsBitField.Flags.SendTTSMessages]: false,
+                [PermissionsBitField.Flags.EmbedLinks]: true,
+                [PermissionsBitField.Flags.AttachFiles]: true,
+                [PermissionsBitField.Flags.AddReactions]: true,
+                [PermissionsBitField.Flags.UseExternalEmojis]: true,
+                [PermissionsBitField.Flags.UseExternalStickers]: true,
+                [PermissionsBitField.Flags.MentionEveryone]: false,
+                [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                [PermissionsBitField.Flags.UseApplicationCommands]: true,
+                [PermissionsBitField.Flags.ManageThreads]: true,
+                [PermissionsBitField.Flags.CreatePublicThreads]: true,
+                [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                [PermissionsBitField.Flags.SendMessagesInThreads]: false,
+                [PermissionsBitField.Flags.Connect]: true,
+                [PermissionsBitField.Flags.Speak]: true,
+                [PermissionsBitField.Flags.Stream]: true,
+                [PermissionsBitField.Flags.UseVAD]: true,
+                [PermissionsBitField.Flags.PrioritySpeaker]: false,
+                [PermissionsBitField.Flags.MuteMembers]: false,
+                [PermissionsBitField.Flags.DeafenMembers]: false,
+                [PermissionsBitField.Flags.MoveMembers]: true,
+                [PermissionsBitField.Flags.ManageRoles]: true,
+                [PermissionsBitField.Flags.ManageChannels]: false,
+                [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
+                [PermissionsBitField.Flags.CreateEvents]: true,
+                [PermissionsBitField.Flags.ManageEvents]: true
+            });
+        });
+
+        channels.forEach(channel => {
+            // Установка прав для роли пилота
+            channel.permissionOverwrites.edit(roleIds[0], {
                 [PermissionsBitField.Flags.ViewChannel]: true,
                 [PermissionsBitField.Flags.CreateInstantInvite]: true,
                 [PermissionsBitField.Flags.SendMessages]: true,
@@ -2606,105 +2674,39 @@ async function alliancePermissions(roleIds) {
                 [PermissionsBitField.Flags.ManageChannels]: false
             });
 
-            if (roleId === roleIds[1] || roleId === roleIds[2]) {
-                category.permissionOverwrites.edit(roleId, {
-                    [PermissionsBitField.Flags.CreatePublicThreads]: true,
-                    [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
+            // Установка прав для ролей офицера и CEO
+            [roleIds[1], roleIds[2]].forEach(roleId => {
+                channel.permissionOverwrites.edit(roleId, {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                    [PermissionsBitField.Flags.SendMessages]: true,
+                    [PermissionsBitField.Flags.SendTTSMessages]: false,
+                    [PermissionsBitField.Flags.EmbedLinks]: true,
+                    [PermissionsBitField.Flags.AttachFiles]: true,
+                    [PermissionsBitField.Flags.AddReactions]: true,
+                    [PermissionsBitField.Flags.UseExternalEmojis]: true,
+                    [PermissionsBitField.Flags.UseExternalStickers]: true,
+                    [PermissionsBitField.Flags.MentionEveryone]: false,
+                    [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                    [PermissionsBitField.Flags.UseApplicationCommands]: true,
                     [PermissionsBitField.Flags.ManageThreads]: true,
+                    [PermissionsBitField.Flags.CreatePublicThreads]: true,
+                    [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                    [PermissionsBitField.Flags.SendMessagesInThreads]: false,
+                    [PermissionsBitField.Flags.Connect]: true,
+                    [PermissionsBitField.Flags.Speak]: true,
+                    [PermissionsBitField.Flags.Stream]: true,
+                    [PermissionsBitField.Flags.UseVAD]: true,
+                    [PermissionsBitField.Flags.PrioritySpeaker]: false,
+                    [PermissionsBitField.Flags.MuteMembers]: false,
+                    [PermissionsBitField.Flags.DeafenMembers]: false,
+                    [PermissionsBitField.Flags.MoveMembers]: true,
                     [PermissionsBitField.Flags.ManageRoles]: true,
-                    [PermissionsBitField.Flags.CreateInstantInvite]: true
+                    [PermissionsBitField.Flags.ManageChannels]: false,
+                    [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
+                    [PermissionsBitField.Flags.CreateEvents]: true,
+                    [PermissionsBitField.Flags.ManageEvents]: true
                 });
-            }
-        });
-
-        channels.forEach(channel => {
-            [roleIds[0], roleIds[1], roleIds[2]].forEach(roleId => {
-                if (channel.type === 0) {
-                    channel.permissionOverwrites.edit(roleId, {
-                        [PermissionsBitField.Flags.ViewChannel]: true,
-                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
-                        [PermissionsBitField.Flags.SendMessages]: true,
-                        [PermissionsBitField.Flags.SendTTSMessages]: false,
-                        [PermissionsBitField.Flags.EmbedLinks]: true,
-                        [PermissionsBitField.Flags.AttachFiles]: true,
-                        [PermissionsBitField.Flags.AddReactions]: true,
-                        [PermissionsBitField.Flags.UseExternalEmojis]: true,
-                        [PermissionsBitField.Flags.UseExternalStickers]: true,
-                        [PermissionsBitField.Flags.MentionEveryone]: false,
-                        [PermissionsBitField.Flags.ReadMessageHistory]: true,
-                        [PermissionsBitField.Flags.UseApplicationCommands]: true,
-                        [PermissionsBitField.Flags.ManageThreads]: false,
-                        [PermissionsBitField.Flags.CreatePublicThreads]: false,
-                        [PermissionsBitField.Flags.CreatePrivateThreads]: false,
-                        [PermissionsBitField.Flags.SendMessagesInThreads]: false
-                    });
-
-                    if (roleId === roleIds[1] || roleId === roleIds[2]) {
-                        channel.permissionOverwrites.edit(roleId, {
-                            [PermissionsBitField.Flags.CreatePublicThreads]: true,
-                            [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
-                            [PermissionsBitField.Flags.ManageThreads]: true,
-                            [PermissionsBitField.Flags.ManageRoles]: true,
-                            [PermissionsBitField.Flags.CreateInstantInvite]: true
-                        });
-                    }
-                }
-
-                if (channel.type === 15) {
-                    channel.permissionOverwrites.edit(roleId, {
-                        [PermissionsBitField.Flags.ViewChannel]: true,
-                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
-                        [PermissionsBitField.Flags.SendMessages]: true,
-                        [PermissionsBitField.Flags.EmbedLinks]: true,
-                        [PermissionsBitField.Flags.AttachFiles]: true,
-                        [PermissionsBitField.Flags.AddReactions]: true,
-                        [PermissionsBitField.Flags.UseExternalEmojis]: true,
-                        [PermissionsBitField.Flags.UseExternalStickers]: true,
-                        [PermissionsBitField.Flags.ReadMessageHistory]: true,
-                        [PermissionsBitField.Flags.UseApplicationCommands]: true,
-                        [PermissionsBitField.Flags.ManageThreads]: false,
-                        [PermissionsBitField.Flags.CreatePublicThreads]: false,
-                        [PermissionsBitField.Flags.CreatePrivateThreads]: false,
-                        [PermissionsBitField.Flags.SendMessagesInThreads]: false
-                    });
-
-                    if (roleId === roleIds[1] || roleId === roleIds[2]) {
-                        channel.permissionOverwrites.edit(roleId, {
-                            [PermissionsBitField.Flags.ManageRoles]: true,
-                            [PermissionsBitField.Flags.CreateInstantInvite]: true,
-                            [PermissionsBitField.Flags.CreatePublicThreads]: true,
-                            [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
-                            [PermissionsBitField.Flags.ManageThreads]: true
-                        });
-                    }
-                }
-
-                if (channel.type === 2) {
-                    channel.permissionOverwrites.edit(roleId, {
-                        [PermissionsBitField.Flags.ViewChannel]: true,
-                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
-                        [PermissionsBitField.Flags.Connect]: true,
-                        [PermissionsBitField.Flags.Speak]: true,
-                        [PermissionsBitField.Flags.Stream]: true,
-                        [PermissionsBitField.Flags.UseVAD]: true,
-                        [PermissionsBitField.Flags.PrioritySpeaker]: false,
-                        [PermissionsBitField.Flags.MuteMembers]: false,
-                        [PermissionsBitField.Flags.DeafenMembers]: false,
-                        [PermissionsBitField.Flags.MoveMembers]: false,
-                        [PermissionsBitField.Flags.ManageRoles]: false,
-                        [PermissionsBitField.Flags.ManageChannels]: false
-                    });
-
-                    if (roleId === roleIds[1] || roleId === roleIds[2]) {
-                        channel.permissionOverwrites.edit(roleId, {
-                            [PermissionsBitField.Flags.ManageRoles]: true,
-                            [PermissionsBitField.Flags.CreateInstantInvite]: true,
-                            [PermissionsBitField.Flags.MoveMembers]: true,
-                            [PermissionsBitField.Flags.CreateEvents]: true,
-                            [PermissionsBitField.Flags.ManageEvents]: true
-                        });
-                    }
-                }
             });
         });
 
@@ -2713,6 +2715,7 @@ async function alliancePermissions(roleIds) {
         console.error('Error updating permissions:', error);
     }
 }
+
 
 
 async function respondToMessage(message, pingUser = false) {
