@@ -8,57 +8,75 @@
 </head>
 <body>
     <header>
-        <div class="character-info">
-            <img id="character-portrait" src="" alt="Портрет персонажа">
-            <div class="character-name-container">
-                <span id="character-name"></span>
-                <button id="auth-button" class="hidden button">Войти</button>
-                <button id="logout-button" class="hidden button">Выйти</button>
-            </div>
-        </div>
         <nav>
-            <a href="#">Home</a>
-            <a href="#">Waitlist</a>
-            <a href="#">Guides</a>
-            <a href="#">Skills</a>
+            <a href="/">Home</a>
+            <a href="/hf_waitlist">Waitlist</a>
+            <a href="/hf_guides">Guides</a>
+            <a href="/hf_skills">Skills</a>
         </nav>
+        <div class="character-info">
+            <img id="character-portrait" src="" alt="Портрет персонажа" class="hidden">
+            <span id="character-name" class="hidden"></span>
+            <button id="auth-button" class="button">Log In</button>
+        </div>
     </header>
     <main>
         <h1>Welcome to Homefront Waitlist</h1>
     </main>
+    <div id="logout-modal" class="modal hidden">
+        <div class="modal-content">
+            <p>Do you want to log out?</p>
+            <button id="logout-confirm" class="button">Yes</button>
+            <button id="logout-cancel" class="button">No</button>
+        </div>
+    </div>
     <script>
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        function checkAuth() {
-            const characterName = getQueryParam('characterName');
-            const characterID = getQueryParam('characterID');
-            const accessToken = getQueryParam('accessToken');
-
-            if (characterName && characterID && accessToken) {
-                document.getElementById('character-name').innerText = characterName;
-                fetch(`https://esi.evetech.net/latest/characters/${characterID}/portrait/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('character-portrait').src = data.px128x128;
-                        document.getElementById('auth-button').classList.add('hidden');
-                        document.getElementById('logout-button').classList.remove('hidden');
-                    })
-                    .catch(error => console.error('Ошибка при получении портрета:', error));
-            } else {
-                document.getElementById('auth-button').classList.remove('hidden');
-                document.getElementById('logout-button').classList.add('hidden');
-            }
+function checkAuth() {
+            fetch('/user-info')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Not authenticated');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('character-name').innerText = data.characterName;
+                    fetch(`https://esi.evetech.net/latest/characters/${data.characterID}/portrait/`)
+                        .then(response => response.json())
+                        .then(portraitData => {
+                            document.getElementById('character-portrait').src = portraitData.px128x128;
+                            document.getElementById('character-portrait').classList.remove('hidden');
+                            document.getElementById('character-name').classList.remove('hidden');
+                            document.getElementById('auth-button').classList.add('hidden');
+                        })
+                        .catch(error => console.error('Error fetching portrait:', error));
+                })
+                .catch(error => {
+                    console.log(error.message);
+                    document.getElementById('auth-button').classList.remove('hidden');
+                    document.getElementById('character-portrait').classList.add('hidden');
+                    document.getElementById('character-name').classList.add('hidden');
+                });
         }
 
         document.getElementById('auth-button').addEventListener('click', () => {
-            window.location.href = '/login'; // Перенаправляем на маршрут логина
+            window.location.href = '/login'; // Redirect to login route
         });
 
-        document.getElementById('logout-button').addEventListener('click', () => {
-            window.location.href = '/'; // Перезагружаем текущую страницу для выхода
+        document.getElementById('character-portrait').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('logout-confirm').addEventListener('click', () => {
+            fetch('/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/'; // Redirect to home after logout
+                })
+                .catch(error => console.error('Error logging out:', error));
+        });
+
+        document.getElementById('logout-cancel').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.add('hidden');
         });
 
         window.addEventListener('load', checkAuth);

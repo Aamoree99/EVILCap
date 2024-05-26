@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Plan</title>
+    <link rel="stylesheet" href="/hf.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/hf_waitlist">Waitlist</a>
+            <a href="/hf_guides">Guides</a>
+            <a href="/hf_skills">Skills</a>
+        </nav>
+        <div class="character-info">
+            <img id="character-portrait" src="" alt="Портрет персонажа" class="hidden">
+            <span id="character-name" class="hidden"></span>
+            <button id="auth-button" class="button">Log In</button>
+        </div>
+    </header>
+    <main>
+        <div class="skills-wrapper">
+            <div id="missions-container" class="missions"></div>
+            <div id="skills-grid" class="skills-grid"></div>
+            <button class="copy-button" onclick="copySkillPlan()">Copy Skill Plan</button>
+        </div>
+    </main>
+    <div id="logout-modal" class="modal hidden">
+        <div class="modal-content">
+            <p>Do you want to log out?</p>
+            <button id="logout-confirm" class="button">Yes</button>
+            <button id="logout-cancel" class="button">No</button>
+        </div>
+    </div>
+    <script>
+        let userSkills = null;
+
+        function checkAuth() {
+            fetch('/user-info')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Not authenticated');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('character-name').innerText = data.characterName;
+                    fetch(`https://esi.evetech.net/latest/characters/${data.characterID}/portrait/`)
+                        .then(response => response.json())
+                        .then(portraitData => {
+                            document.getElementById('character-portrait').src = portraitData.px128x128;
+                            document.getElementById('character-portrait').classList.remove('hidden');
+                            document.getElementById('character-name').classList.remove('hidden');
+                            document.getElementById('auth-button').classList.add('hidden');
+                            // Получение скиллов пользователя
+                            fetch('/user-skills')
+                                .then(response => response.json())
+                                .then(skillsData => {
+                                    userSkills = skillsData.skills.reduce((acc, skill) => {
+                                        acc[skill.name] = skill.level;
+                                        return acc;
+                                    }, {});
+                                    createMissionButtons();
+                                })
+                                .catch(error => console.error('Error fetching skills:', error));
+                        })
+                        .catch(error => console.error('Error fetching portrait:', error));
+                })
+                .catch(error => {
+                    console.log(error.message);
+                    document.getElementById('auth-button').classList.remove('hidden');
+                    document.getElementById('character-portrait').classList.add('hidden');
+                    document.getElementById('character-name').classList.add('hidden');
+                    createMissionButtons(); // Инициализируем кнопки миссий без скиллов пользователя
+                });
+        }
+
+        document.getElementById('auth-button').addEventListener('click', () => {
+            window.location.href = '/login'; // Redirect to login route
+        });
+
+        document.getElementById('character-portrait').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('logout-confirm').addEventListener('click', () => {
+            fetch('/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/'; // Redirect to home after logout
+                })
+                .catch(error => console.error('Error logging out:', error));
+        });
+
+        document.getElementById('logout-cancel').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.add('hidden');
+        });
+
+        const missions = [
+            {
+                title: 'Skill Plan 1',
+                content: `Spaceship Command 1
+Gallente Frigate 1
+Gallente Frigate 2
+Gallente Frigate 3
+Power Grid Management 1
+Shield Operation 1
+Gunnery 1
+Small Projectile Turret 1
+Drones 1
+Light Drone Operation 1
+Drone Avionics 1
+Drone Avionics 2
+Drones 2
+Drones 3
+Drones 4
+Drone Durability 1
+Drone Durability 2
+Drone Durability 3
+Drones 5
+Drone Interfacing 1
+Drone Interfacing 2
+Drone Interfacing 3
+Drone Navigation 1
+Drone Navigation 2
+Drone Sharpshooting 1
+Shield Operation 2
+Shield Operation 3
+Shield Compensation 1
+Drone Sharpshooting 2
+Drone Sharpshooting 3
+Power Grid Management 2
+Power Grid Management 3
+Shield Management 1
+Shield Management 2
+Shield Management 3
+Shield Management 4
+Shield Compensation 2
+Science 1
+Science 2
+Science 3
+Science 4
+Capacitor Management 1
+Capacitor Management 2
+Capacitor Management 3
+Power Grid Management 4
+Thermodynamics 1
+Thermodynamics 2
+Drone Avionics 3
+Drone Durability 4
+Drone Navigation 3
+Drone Navigation 4
+Drone Sharpshooting 4
+Light Drone Operation 2
+Light Drone Operation 3
+Light Drone Operation 4
+Shield Operation 4
+Shield Compensation 3
+Light Drone Operation 5
+Shield Compensation 4`
+            },
+            {
+                title: 'Skill Plan 2',
+                content: `Spaceship Command 1
+Gallente Frigate 1
+Power Grid Management 1
+Shield Operation 1
+Gunnery 1
+Drones 1`
+            }
+        ];
+
+        function createMissionButtons() {
+            const missionsContainer = document.getElementById('missions-container');
+            missionsContainer.innerHTML = ''; // Очистить контейнер перед добавлением новых кнопок
+
+            missions.forEach((mission, index) => {
+                const missionButton = document.createElement('div');
+                missionButton.className = 'mission';
+                if (index === 0) {
+                    missionButton.classList.add('active');
+                }
+                missionButton.textContent = mission.title;
+                missionButton.onclick = () => showMissionContent(index);
+                missionsContainer.appendChild(missionButton);
+            });
+
+            // Инициализация первой миссии
+            showMissionContent(0);
+        }
+
+        function showMissionContent(index) {
+            const missionButtons = document.querySelectorAll('.mission');
+            missionButtons.forEach((button, i) => {
+                if (i === index) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            const skillsGrid = document.getElementById('skills-grid');
+            skillsGrid.innerHTML = ''; // Очистить сетку перед добавлением новых скиллов
+
+            const skillPlan = missions[index].content.split('\n').reduce((acc, line) => {
+                const lastSpaceIndex = line.lastIndexOf(' ');
+                const skill = line.substring(0, lastSpaceIndex);
+                const level = line.substring(lastSpaceIndex + 1);
+                acc[skill] = Math.max(acc[skill] || 0, parseInt(level, 10));
+                return acc;
+            }, {});
+
+            Object.keys(skillPlan).forEach(skill => {
+                const skillItem = document.createElement('div');
+                skillItem.className = 'skill-item';
+
+                const skillName = document.createElement('span');
+                skillName.textContent = skill;
+
+                const skillLevel = document.createElement('span');
+                skillLevel.className = 'skill-level';
+                if (userSkills) {
+                    const userSkillLevel = userSkills[skill] || 0;
+                    skillLevel.textContent = `${userSkillLevel}/${skillPlan[skill]}`;
+                    if (userSkillLevel >= skillPlan[skill]) {
+                        skillItem.classList.add('green');
+                    } else {
+                        skillItem.classList.add('yellow');
+                    }
+                } else {
+                    skillLevel.textContent = skillPlan[skill];
+                }
+
+                skillItem.appendChild(skillName);
+                skillItem.appendChild(skillLevel);
+
+                skillsGrid.appendChild(skillItem);
+            });
+        }
+
+        function copySkillPlan() {
+            const activeMission = document.querySelector('.mission.active').textContent;
+            const skillPlan = missions.find(mission => mission.title === activeMission).content;
+            navigator.clipboard.writeText(skillPlan).then(() => {
+                alert('Skill plan copied to clipboard!');
+            }, () => {
+                alert('Failed to copy skill plan.');
+            });
+        }
+
+        window.addEventListener('load', () => {
+            checkAuth();
+        });
+    </script>
+</body>
+</html>

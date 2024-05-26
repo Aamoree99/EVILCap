@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guides</title>
+    <link rel="stylesheet" href="/hf.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/hf_waitlist">Waitlist</a>
+            <a href="/hf_guides">Guides</a>
+            <a href="/hf_skills">Skills</a>
+        </nav>
+        <div class="character-info">
+            <img id="character-portrait" src="" alt="Портрет персонажа" class="hidden">
+            <span id="character-name" class="hidden"></span>
+            <button id="auth-button" class="button">Log In</button>
+        </div>
+    </header>
+    <main>
+        <div class="content-wrapper">
+            <div class="missions" id="missions-container"></div>
+            <div class="mission-title" id="mission-title"></div>
+            <div class="mission-content" id="mission-content"></div>
+        </div>
+    </main>
+    <div id="logout-modal" class="modal hidden">
+        <div class="modal-content">
+            <p>Do you want to log out?</p>
+            <button id="logout-confirm" class="button">Yes</button>
+            <button id="logout-cancel" class="button">No</button>
+        </div>
+    </div>
+    <script>
+function checkAuth() {
+            fetch('/user-info')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Not authenticated');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('character-name').innerText = data.characterName;
+                    fetch(`https://esi.evetech.net/latest/characters/${data.characterID}/portrait/`)
+                        .then(response => response.json())
+                        .then(portraitData => {
+                            document.getElementById('character-portrait').src = portraitData.px128x128;
+                            document.getElementById('character-portrait').classList.remove('hidden');
+                            document.getElementById('character-name').classList.remove('hidden');
+                            document.getElementById('auth-button').classList.add('hidden');
+                        })
+                        .catch(error => console.error('Error fetching portrait:', error));
+                })
+                .catch(error => {
+                    console.log(error.message);
+                    document.getElementById('auth-button').classList.remove('hidden');
+                    document.getElementById('character-portrait').classList.add('hidden');
+                    document.getElementById('character-name').classList.add('hidden');
+                });
+        }
+
+        document.getElementById('auth-button').addEventListener('click', () => {
+            window.location.href = '/login'; // Redirect to login route
+        });
+
+        document.getElementById('character-portrait').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('logout-confirm').addEventListener('click', () => {
+            fetch('/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/'; // Redirect to home after logout
+                })
+                .catch(error => console.error('Error logging out:', error));
+        });
+
+        document.getElementById('logout-cancel').addEventListener('click', () => {
+            document.getElementById('logout-modal').classList.add('hidden');
+        });
+
+
+        window.addEventListener('load', checkAuth);
+
+        const missions = document.querySelectorAll('.mission');
+        const missionTitle = document.getElementById('mission-title');
+        const missionContent = document.getElementById('mission-content');
+        const missionDescriptions = [
+    {
+        title: 'Join Fleet',
+        content: '<p>Description of joining the fleet mission.</p>'
+    },
+    {
+        title: 'Metaliminal Meteoroid',
+        content: `
+            <h2>Metaliminal Meteoroid</h2>
+            <p>These homefronts have extremely low requirements for 4 ships (Ventures), but the fifth needs 1 logistics on an Osprey. They are profitable, simple, and suitable for AFK play, but they are often occupied by bots and bad actors who steal money. As a rule, they are the most competitive.</p>
+            <p><strong>Earnings:</strong> 50-100 million ISK per hour net</p>
+            <p><strong>Requirements:</strong> Just your presence. We will explain everything to beginners.</p>
+            <p><strong>Fitting:</strong> Venture T1 or T2 (see corporate bulletins). T1 can be flown by anyone, including alpha accounts. The ship is provided. For the T1 version, a new account only needs to train Mining Equipment Upgrade to level 1.</p>
+            <p><strong>When and Where:</strong> Fleet commander of homefronts is DonaldKrak. Homefronts are conducted in the evenings when enough people (5) are gathered, no fixed schedule.</p>
+            <p><strong>How it works:</strong></p>
+            <p>For experienced players: Fly to destinations, Ventures mine ore, Osprey supports Ventures.</p>
+            <p>For newbies: Everyone gathers in the system announced by the FC (usually the home system, Pashanai). Join Discord. The destination is posted in the fleet chat. Right-click it - Set Destination. Fly there (the needed gate icons on autopilot will be highlighted in yellow on the overview, no need to look at the map). Please fly manually, not on autopilot, as autopilot takes twice as long. Upon arrival in the system, open the Probe Scanner, look for Metaliminal Asteroid in the anomaly list, right-click it, and warp there (if there are multiple, FC will announce the required number, which is in the anomaly name, e.g., DEW-209). You will arrive at the acceleration gate. Wait until the FC on Osprey enters first. If unsure whether they are inside, ask in Discord voice chat. After Osprey enters, activate your shield and follow. Inside, you will see a large piece of asteroid, start mining it, ignore the NPCs. After 6-8 minutes, the anomaly is completed, listen to the FC for the next steps - either you go to the station, unload the ore, and contract it to the FC, or fly to the next destination. Each anomaly grants you 17 million ISK immediately. The ore remains with the FC for corporate needs (if flying with Donald. If organizing yourself, do as you see fit, e.g., transfer ore to the logistics FC to compensate for their effort).</p>
+            <p><strong>Small tips and nuances:</strong></p>
+            <ul>
+                <li>There should be strictly 5 people in the homefront, so each gets 17 million ISK. More/less people - and you will get less ISK.</li>
+                <li>You can check if the homefront is occupied without entering directly. Either mark competitors with a negative standing when you encounter them, and if they are in the local system, the homefront is likely occupied, or set a directional scanner to 1 AU, PVP mode at the gate. If Ventures and logistics appear, the homefront is occupied, look for another one.</li>
+                <li>Homefronts can be found in Opportunities or Agency - Rear Areas. In Opportunities, you can set filters to show only metaliminals on one page, but it has a range limit, seemingly not showing beyond 5-7 jumps. In Agency, you need to click each system and check for the required homefront, but it has no range limit. I recommend primarily using Opportunities, and when those are exhausted, check Agency.</li>
+                <li>Bots sometimes operate in homefronts. Their characteristics include not responding, entering and starting to mine your homefront ignoring you, flying in 5 Augorors, having identical delay in actions, created on the same day. Report them. They will be banned by your report. Yes, in 2-4 days, but still banned. There are no other ways to deal with them. Report by clicking pilot info - three vertical dots icon on the top right - Report Bot.</li>
+            </ul>
+        `
+    },
+    {
+        title: 'Emergency Assistance: Automated Factory',
+        content: `
+            <h2>Emergency Assistance: Automated Factory</h2>
+            <p>One of the simplest and most profitable homefronts. It is not demanding in terms of fitting, skills, or attention.</p>
+            <p><strong>Pros:</strong> Minimum costs, highest ISK/hour</p>
+            <p><strong>Cons:</strong> Very popular among pilots and bots.</p>
+            <p><strong>Earnings:</strong> 120 million ISK per hour net</p>
+            <p><strong>Requirements:</strong> <a href="https://www.eveworkbench.com/fitting/augoror/08a77782-3bdb-4a25-1d72-08dc095f6940" target="_blank">Fitting Link</a></p>
+            <p><strong>Process:</strong> Pilots arrive at the beacon and wait for the others. Entry to the anomaly is done strictly with the full group of pilots. Before entering the anomaly, pilots are distributed—each pilot must target and repair the chosen pilot with 2 reps to form a chain. The remaining reps are directed to the station located in the center of the anomaly. After entering the anomaly and forming the chain, the fleet stays in place for exactly 15 minutes. Minimum attention is required, there are no jammers, no neuters, only damage switching from the pilot to the station and back. After 15 minutes, the anomaly closes, and each pilot receives 30 million ISK in their account.</p>
+        `
+    },
+    {
+        title: 'Dreadnought Attack',
+        content: `
+            <h2>Dreadnought Attack</h2>
+            <p>This homefront requires a fitting, with ships costing around 200 million ISK each, and it is not suitable for AFK play. On the plus side, it is not frequented by bots or money-grabbing griefers, and it is not very popular overall. Also, the fit is the same for all pilots, so you don't need to wait for specific people like logistics for meta. Mobs will jam.</p>
+            <p><strong>Earnings:</strong> 50-90 million ISK per hour net</p>
+            <p><strong>Requirements:</strong> Check the bulletins (Neocom menu - Communications - Corporation - For Corporation Members - Bulletins) + the ship itself</p>
+            <p><strong>When and Where:</strong> Fits are the same for all pilots, and you don't need an FC, so you can assemble them yourself just by asking in chat for volunteers. Currently, there is no permanent organizer for these homefronts, so you can become one yourself. For questions, you can contact me.</p>
+            <p><strong>Process:</strong> You need to transfer capacitor energy to the allied dreadnought (marked blue in the overview) in 3 phases. Activate your shields, enter through the acceleration gate, lock the dreadnought, and activate the capacitor transmitters. You need to transfer 30,000 in one go, after which the dread will fire a beautiful beam and enter siege mode, during which it cannot be recharged. Wait 1.5 minutes until the siege mode ends (visible in the anomaly tracking on the left). After the siege mode ends, you can recharge again. This needs to be done 3 times (based on the number of red bars in the anomaly tracking).</p>
+            <p><strong>Mobs:</strong></p>
+            <ul>
+                <li>Jamming (breaking your lock and preventing you from locking the dread again) everyone at random. You can't do anything, just wait until the jam wears off or fails and recharge the dread again.</li>
+                <li>Targeting one person, attacking, and draining capacitor. If you see the mobs switch to you, turn off the capacitor transmitters and turn on the armor repairers (Meditation Medium Armor repairer) to heal the incoming damage. It's best not to do both, as you won't have enough capacitor and risk running out, leading to death.</li>
+            </ul>
+        `
+    },
+    {
+        title: 'Abyssal Homefronts',
+        content: `
+            <h2>Abyssal Homefronts</h2>
+            <p>These homefronts are slightly less profitable activities in high-sec for 5 and a half people (a free window for Miasmos is needed). They are demanding in terms of skills and fittings, serving as an optimal alternative to mining homefronts when those are not available.</p>
+            <p><strong>Earnings:</strong> 70-90 million ISK per hour per pilot</p>
+            <p><strong>Requirements:</strong> This is an activity demanding pilot skills, particularly medium-level (3-4) engineering training, and sometimes an implant.</p>
+            <p><strong>Fittings:</strong></p>
+            <ul>
+                <li>Logistic Osprey: <a href="https://www.eveworkbench.com/fitting/osprey/adb702e3-f742-4d44-1833-08dbccd5ffb2" target="_blank">Fitting Link</a></li>
+                <li>Miner Moa: <a href="https://www.eveworkbench.com/fitting/moa/9f56dbe3-8e0e-4777-1830-08dbccd5ffb2" target="_blank">Fitting Link</a></li>
+            </ul>
+            <p><strong>When and Where:</strong> Abyssal fleet commander is DonaldKrak. Homefronts are held when enough people are gathered, there is no fixed schedule.</p>
+            <p><strong>How it works:</strong></p>
+            <p>For experienced players: Fly to destinations, Moa mines ore, Osprey supports Moa.</p>
+            <p>For newbies: The fleet gathers in the system indicated by the fleet commander, with strictly specified ship fittings. Any deviation from the fitting without notifying the fleet commander threatens the death of the entire group. The total fleet fit cost is 1.2 billion ISK, complicating quick assembly. After receiving the destination, the fleet gathers in the designated system and strictly follows the fleet commander's instructions. After entering the anomaly, mine 12 rocks around the beacon as quickly as possible. Each Moa must mine 4 rocks, and 2 Ospreys support the Moas and each other. After completing the anomaly, the mined ore is collected by the Miasmos (the sixth window).</p>
+        `
+    }
+];
+
+
+        function showMissionContent(index) {
+            missions.forEach((mission, i) => {
+                if (i === index) {
+                    mission.classList.add('active');
+                } else {
+                    mission.classList.remove('active');
+                }
+            });
+            missionTitle.textContent = missionDescriptions[index].title;
+            missionContent.innerHTML = missionDescriptions[index].content;
+        }
+        function createMissionButtons() {
+    const missionsContainer = document.getElementById('missions-container');
+    missionsContainer.innerHTML = ''; // Очистить контейнер перед добавлением новых кнопок
+
+    missionDescriptions.forEach((mission, index) => {
+        const missionButton = document.createElement('div');
+        missionButton.className = 'mission';
+        if (index === 0) {
+            missionButton.classList.add('active');
+        }
+        missionButton.textContent = mission.title;
+        missionButton.onclick = () => showMissionContent(index);
+        missionsContainer.appendChild(missionButton);
+    });
+
+    // Инициализация первой миссии
+    showMissionContent(0);
+}
+
+function showMissionContent(index) {
+    const missions = document.querySelectorAll('.mission');
+    missions.forEach((mission, i) => {
+        if (i === index) {
+            mission.classList.add('active');
+        } else {
+            mission.classList.remove('active');
+        }
+    });
+
+    document.getElementById('mission-content').innerHTML = missionDescriptions[index].content;
+}
+
+// Вызов функции для создания кнопок при загрузке страницы
+window.onload = createMissionButtons;
+    </script>
+</body>
+</html>

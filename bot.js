@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ActivityType, PermissionsBitField, ChannelType  } = require('discord.js');
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ActivityType, PermissionsBitField, ChannelType, AutoModerationRuleKeywordPresetType  } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
+const { log } = require('console');
 
 const client = new Client({
     intents: [
@@ -150,6 +151,13 @@ const commands = [
         .addStringOption(option =>
             option.setName('name')
                 .setDescription('название системы')
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('channel_info')
+        .setDescription('TEST')
+        .addStringOption(option =>
+            option.setName('id')
+                .setDescription('ID категории')
                 .setRequired(true))
 ]
     .map(command => command.toJSON());
@@ -191,6 +199,48 @@ client.on('interactionCreate', async interaction => {
             data.ignoreList.push(username);
             await writeData(data);
             await interaction.reply({ content: `${username} добавлен в игнор-лист.`, ephemeral: true });
+        },        async channel_info() {
+            const categoryId = options.getString('id');
+            console.log(`Получен ID категории: ${categoryId}`); // Отладочная информация
+            const category = await interaction.guild.channels.fetch(categoryId);
+
+            if (!category) {
+                console.error(`Категория не найдена по ID: ${categoryId}`);
+                await interaction.reply({ content: "Неверный ID категории или категория не найдена.", ephemeral: true });
+                return;
+            }
+
+            console.log(`Тип канала: ${category.type}`);
+
+            if (category.type !== 4) { // 4 соответствует GUILD_CATEGORY
+                console.error(`Канал по ID: ${categoryId} не является категорией`);
+                await interaction.reply({ content: "Неверный ID категории или категория не найдена.", ephemeral: true });
+                return;
+            }
+
+            const channels = category.children.cache;
+            if (!channels.size) {
+                console.error(`В категории по ID: ${categoryId} нет дочерних каналов`);
+                await interaction.reply({ content: "В категории нет дочерних каналов.", ephemeral: true });
+                return;
+            }
+
+            let channelList = "Список каналов в категории:\n";
+            channels.forEach(channel => {
+                channelList += `ID: ${channel.id}, Имя: ${channel.name}, Тип: ${channel.type}\n`;
+            });
+
+            console.log(`Список каналов в категории ${categoryId}:\n${channelList}`); // Отладочная информация
+
+            const logChannel = await interaction.guild.channels.fetch(LOG_CHANNEL_ID);
+            if (!logChannel) {
+                console.error(`Лог-канал не найден по ID: ${LOG_CHANNEL_ID}`);
+                await interaction.reply({ content: "Лог-канал не найден.", ephemeral: true });
+                return;
+            }
+
+            await logChannel.send(channelList);
+            await interaction.reply({ content: "Список каналов отправлен в лог-канал.", ephemeral: true });
         },
         async removeignore() {
             if (channelId !== LOG_CHANNEL_ID) {
@@ -2107,46 +2157,29 @@ function getRandomInt(min, max) {
 
 async function createСategory(guild, name, tag) {
     try {
-        function findMaxPosition(roles, baseName) {
-            let minPosition = Infinity;
-            roles.forEach(role => {
-                if (role.name.startsWith(baseName)) {
-                    if (role.position < minPosition) {
-                        minPosition = role.position;
-                    }
-                }
-            });
-            return minPosition === Infinity ? 1 : minPosition;
-        }
-
-        const roles = guild.roles.cache;
-
-        const pilotRoleMaxPosition = findMaxPosition(roles, 'Пилот');
-        const officerRoleMaxPosition = findMaxPosition(roles, 'Офицер');
-        const ceoRoleMaxPosition = findMaxPosition(roles, 'CEO');
+        const pilotRolePosition = guild.roles.cache.filter(role => role.name.startsWith('Пилот')).sort((a, b) => a.position - b.position).first()?.position || 1;
+        const officerRolePosition = guild.roles.cache.filter(role => role.name.startsWith('Офицер')).sort((a, b) => a.position - b.position).first()?.position + 1 || 1;
+        const ceoRolePosition = guild.roles.cache.filter(role => role.name.startsWith('CEO')).sort((a, b) => a.position - b.position).first()?.position + 2 || 1;
 
         const pilotRole = await guild.roles.create({
             name: `Пилот ${tag}`,
-            permissions: [],
             color: '#3498DB', // Цвет роли
             hoist: true, // Выделение в списках
-            position: pilotRoleMaxPosition - 1 // Позиция в иерархии
+            position: pilotRolePosition
         });
 
         const officerRole = await guild.roles.create({
             name: `Офицер ${tag}`,
-            permissions: [],
             color: '#9B59B6', // Цвет роли
             hoist: true, // Выделение в списках
-            position: officerRoleMaxPosition - 1 // Позиция в иерархии
+            position: officerRolePosition
         });
 
         const ceoRole = await guild.roles.create({
             name: `CEO ${tag}`,
-            permissions: [],
             color: '#E91E63', // Цвет роли
             hoist: true, // Выделение в списках
-            position: ceoRoleMaxPosition - 1 // Позиция в иерархии
+            position: ceoRolePosition
         });
 
 
@@ -2337,72 +2370,13 @@ async function createСategory(guild, name, tag) {
                 permissionOverwrites: category.permissionOverwrites.cache,
             });
         }
-        
-        const specificCategoryId = '1159112666799951873';
-        const specificCategory = guild.channels.cache.get(specificCategoryId);
 
-        if (specificCategory && specificCategory.type === ChannelType.GuildCategory) {
-            // Устанавливаем разрешения для категории
-            await specificCategory.permissionOverwrites.create(pilotRole.id, {
-                [PermissionsBitField.Flags.ViewChannel]: false,
-            });
-            await specificCategory.permissionOverwrites.create(officerRole.id, {
-                [PermissionsBitField.Flags.ViewChannel]: true,
-                    [PermissionsBitField.Flags.Connect]: true,
-                    [PermissionsBitField.Flags.Speak]: true,
-                    [PermissionsBitField.Flags.SendMessages]: true,
-            });
-            await specificCategory.permissionOverwrites.create(ceoRole.id, {
-                [PermissionsBitField.Flags.ViewChannel]: true,
-                [PermissionsBitField.Flags.Connect]: true,
-                [PermissionsBitField.Flags.Speak]: true,
-                [PermissionsBitField.Flags.SendMessages]: true,
-            });
-
-            // Получаем все каналы внутри категории
-            const childrenChannels = specificCategory.children.cache;
-
-            // Устанавливаем разрешения для всех каналов в категории
-            for (const channel of childrenChannels.values()) {
-                if (channel.id === '1159385918285824010') {
-                    // Убедитесь, что у этого канала нет разрешений на просмотр
-                    await channel.permissionOverwrites.create(pilotRole.id, {
-                        [PermissionsBitField.Flags.ViewChannel]: false,
-                    });
-                    await channel.permissionOverwrites.create(officerRole.id, {
-                        [PermissionsBitField.Flags.ViewChannel]: false,
-                    });
-                    await channel.permissionOverwrites.create(ceoRole.id, {
-                        [PermissionsBitField.Flags.ViewChannel]: false,
-                    });
-                    continue; // Переходим к следующему каналу
-                }
-            
-                // Устанавливаем разрешения для остальных каналов в категории
-                await channel.permissionOverwrites.create(pilotRole.id, {
-                    [PermissionsBitField.Flags.ViewChannel]: false,
-                });
-                await channel.permissionOverwrites.create(officerRole.id, {
-                    [PermissionsBitField.Flags.ViewChannel]: true,
-                    [PermissionsBitField.Flags.Connect]: true,
-                    [PermissionsBitField.Flags.Speak]: true,
-                    [PermissionsBitField.Flags.SendMessages]: true,
-                });
-                await channel.permissionOverwrites.create(ceoRole.id, {
-                    [PermissionsBitField.Flags.ViewChannel]: true,
-                    [PermissionsBitField.Flags.Connect]: true,
-                    [PermissionsBitField.Flags.Speak]: true,
-                    [PermissionsBitField.Flags.SendMessages]: true,
-                });
-        }
-    }
-
-        const categoryIds = ['1212506201376694342', '1212808485172154449'];
         const roleIds = [pilotRole.id, officerRole.id, ceoRole.id];
-        const referenceRoleId = '1159108454972133436';
 
-        await add_roles_to_existing_categories(roleIds, categoryIds, referenceRoleId);
-        logAndSend(`Категория "${name}" с тегом "${tag}" успешно создана!`);
+        await welcomePermissions(roleIds);
+        await importantPermissions(roleIds);
+        await alliancePermissions(roleIds);
+        logAndSend(`Категория "${name}" с тегом "${tag}" успешно создана! Слава <@235822777678954496>!`);
         return;
     } catch (error) {
         console.error(error);
@@ -2410,125 +2384,256 @@ async function createСategory(guild, name, tag) {
     }
 }
 
-async function add_roles_to_existing_categories(roleIds, categoryIds, referenceRoleId, officerRoleId, ceoRoleId) {
+async function welcomePermissions(roleIds) {
     try {
-        const guild = await client.guilds.fetch(GUILD_ID);
-        const referenceRole = guild.roles.cache.get(referenceRoleId);
-        if (!referenceRole) {
-            throw new Error('Reference role not found');
+        const guild = client.guilds.cache.get(GUILD_ID);
+        if (!guild) {
+            console.error('Guild not found.');
+            return;
         }
 
-        for (const categoryId of categoryIds) {
-            const category = guild.channels.cache.get(categoryId);
-            if (!category || category.type !== ChannelType.GuildCategory) {
-                throw new Error(`Category with ID ${categoryId} not found or not a category`);
+        const category = await guild.channels.fetch('1159112666799951873');
+        if (!category || category.type !== 4) {
+            console.error('Invalid category ID or category not found.');
+            return;
+        }
+
+        const channels = guild.channels.cache.filter(channel => channel.parentId === category.id);
+        if (!channels.size) {
+            console.error('No channels found in the category.');
+            return;
+        }
+
+        channels.forEach(channel => {
+            // Запретить роли пилота видеть каналы в категории
+            channel.permissionOverwrites.edit(roleIds[0], {
+                [PermissionsBitField.Flags.ViewChannel]: false
+            });
+
+            // Разрешить ролям офицера и CEO полные права
+            [roleIds[1], roleIds[2]].forEach(roleId => {
+                channel.permissionOverwrites.edit(roleId, {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.SendMessages]: true,
+                    [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                    [PermissionsBitField.Flags.ManageRoles]: true,
+                    [PermissionsBitField.Flags.Connect]: true,
+                    [PermissionsBitField.Flags.Speak]: true,
+                    [PermissionsBitField.Flags.MoveMembers]: true,
+                    [PermissionsBitField.Flags.EmbedLinks]: true
+                });
+            });
+        });
+
+        logAndSend('Welcome permissions updated successfully.');
+    } catch (error) {
+        console.error('Error updating permissions:', error);
+    }
+}
+
+async function importantPermissions(roleIds) {
+    const IMPORTANT_ID = '1212808485172154449'; // ID категории
+
+    try {
+        const guild = client.guilds.cache.get(GUILD_ID);
+        if (!guild) {
+            console.error('Guild not found.');
+            return;
+        }
+
+        const category = await guild.channels.fetch(IMPORTANT_ID);
+        if (!category || category.type !== 4) {
+            console.error('Invalid category ID or category not found.');
+            return;
+        }
+
+        const channels = guild.channels.cache.filter(channel => channel.parentId === category.id);
+        if (!channels.size) {
+            console.error('No channels found in the category.');
+            return;
+        }
+
+        channels.forEach(channel => {
+            // Пилоты видят каналы и могут смотреть историю, но на все остальное запрет
+            roleIds.forEach(roleId => {
+                channel.permissionOverwrites.edit(roleId, {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                    [PermissionsBitField.Flags.SendMessages]: false,
+                    [PermissionsBitField.Flags.CreateInstantInvite]: false,
+                    [PermissionsBitField.Flags.AttachFiles]: false,
+                    [PermissionsBitField.Flags.EmbedLinks]: false,
+                    [PermissionsBitField.Flags.SendTTSMessages]: false,
+                    [PermissionsBitField.Flags.AddReactions]: false,
+                    [PermissionsBitField.Flags.UseExternalEmojis]: false,
+                    [PermissionsBitField.Flags.UseExternalStickers]: false,
+                    [PermissionsBitField.Flags.MentionEveryone]: false,
+                    [PermissionsBitField.Flags.ManageMessages]: false,
+                    [PermissionsBitField.Flags.ManageChannels]: false,
+                    [PermissionsBitField.Flags.ManageWebhooks]: false,
+                    [PermissionsBitField.Flags.ManageRoles]: false,
+                    [PermissionsBitField.Flags.ManageThreads]: false,
+                    [PermissionsBitField.Flags.CreatePublicThreads]: false,
+                    [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                    [PermissionsBitField.Flags.SendMessagesInThreads]: false,
+                    [PermissionsBitField.Flags.UseApplicationCommands]: false
+                });
+            });
+
+            // Дополнительные права для офицеров и CEO
+            if (channel.type === 15) { // Предположим, что 15 - это тип каналов, где нужны дополнительные права
+                [roleIds[1], roleIds[2]].forEach(roleId => {
+                    channel.permissionOverwrites.edit(roleId, {
+                        [PermissionsBitField.Flags.ViewChannel]: true,
+                        [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                        [PermissionsBitField.Flags.SendMessages]: true,
+                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                        [PermissionsBitField.Flags.AttachFiles]: true,
+                        [PermissionsBitField.Flags.EmbedLinks]: true,
+                        [PermissionsBitField.Flags.SendMessagesInThreads]: true,
+                        [PermissionsBitField.Flags.SendTTSMessages]: false,
+                        [PermissionsBitField.Flags.AddReactions]: false,
+                        [PermissionsBitField.Flags.UseExternalEmojis]: false,
+                        [PermissionsBitField.Flags.UseExternalStickers]: false,
+                        [PermissionsBitField.Flags.MentionEveryone]: false,
+                        [PermissionsBitField.Flags.ManageMessages]: false,
+                        [PermissionsBitField.Flags.ManageChannels]: false,
+                        [PermissionsBitField.Flags.ManageWebhooks]: false,
+                        [PermissionsBitField.Flags.ManageRoles]: false,
+                        [PermissionsBitField.Flags.ManageThreads]: false,
+                        [PermissionsBitField.Flags.CreatePublicThreads]: false,
+                        [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                        [PermissionsBitField.Flags.UseApplicationCommands]: true
+                    });
+                });
             }
+        });
 
-            const categoryPermissions = category.permissionOverwrites.cache.get(referenceRoleId);
+        logAndSend('Impoertant permissions updated successfully.');
+    } catch (error) {
+        console.error('Error updating permissions:', error);
+    }
+}
 
-            if (!categoryPermissions) {
-                console.warn(`Permissions for reference role not found in category with ID ${categoryId}`);
-                continue;
-            }
+async function alliancePermissions(roleIds) {
+    const CATEGORY_ID = '1212506201376694342'; // ID категории
 
-            for (const roleId of roleIds) {
-                await category.permissionOverwrites.edit(roleId, {
-                    ViewChannel: categoryPermissions.allow.has(PermissionsBitField.Flags.ViewChannel),
-                    SendMessages: categoryPermissions.allow.has(PermissionsBitField.Flags.SendMessages),
-                    ReadMessageHistory: categoryPermissions.allow.has(PermissionsBitField.Flags.ReadMessageHistory),
-                    Connect: categoryPermissions.allow.has(PermissionsBitField.Flags.Connect),
-                    Speak: categoryPermissions.allow.has(PermissionsBitField.Flags.Speak),
-                    AddReactions: categoryPermissions.allow.has(PermissionsBitField.Flags.AddReactions),
-                    ManageMessages: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageMessages),
-                    ManageRoles: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageRoles),
-                    ManageChannels: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageChannels),
-                    ManageWebhooks: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageWebhooks),
-                    CreatePublicThreads: categoryPermissions.allow.has(PermissionsBitField.Flags.CreatePublicThreads),
-                    CreatePrivateThreads: categoryPermissions.allow.has(PermissionsBitField.Flags.CreatePrivateThreads),
-                    UseExternalEmojis: categoryPermissions.allow.has(PermissionsBitField.Flags.UseExternalEmojis),
-                    UseExternalStickers: categoryPermissions.allow.has(PermissionsBitField.Flags.UseExternalStickers),
-                    AttachFiles: categoryPermissions.allow.has(PermissionsBitField.Flags.AttachFiles),
-                    EmbedLinks: categoryPermissions.allow.has(PermissionsBitField.Flags.EmbedLinks),
-                    UseApplicationCommands: categoryPermissions.allow.has(PermissionsBitField.Flags.UseApplicationCommands),
-                    SendTTSMessages: categoryPermissions.allow.has(PermissionsBitField.Flags.SendTTSMessages),
-                    MentionEveryone: categoryPermissions.allow.has(PermissionsBitField.Flags.MentionEveryone),
-                    ManageNicknames: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageNicknames),
-                    KickMembers: categoryPermissions.allow.has(PermissionsBitField.Flags.KickMembers),
-                    BanMembers: categoryPermissions.allow.has(PermissionsBitField.Flags.BanMembers),
-                    Administrator: categoryPermissions.allow.has(PermissionsBitField.Flags.Administrator),
-                    ManageEmojisAndStickers: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageEmojisAndStickers),
-                    ViewAuditLog: categoryPermissions.allow.has(PermissionsBitField.Flags.ViewAuditLog),
-                    PrioritySpeaker: categoryPermissions.allow.has(PermissionsBitField.Flags.PrioritySpeaker),
-                    RequestToSpeak: categoryPermissions.allow.has(PermissionsBitField.Flags.RequestToSpeak),
-                    ManageThreads: categoryPermissions.allow.has(PermissionsBitField.Flags.ManageThreads),
-                    UseEmbeddedActivities: categoryPermissions.allow.has(PermissionsBitField.Flags.UseEmbeddedActivities),
-                    ModerateMembers: categoryPermissions.allow.has(PermissionsBitField.Flags.ModerateMembers)
+    try {
+        const guild = client.guilds.cache.get(GUILD_ID);
+        if (!guild) {
+            console.error('Guild not found.');
+            return;
+        }
+
+        const category = await guild.channels.fetch(CATEGORY_ID);
+        if (!category || category.type !== 4) {
+            console.error('Invalid category ID or category not found.');
+            return;
+        }
+
+        const channels = guild.channels.cache.filter(channel => channel.parentId === category.id);
+        if (!channels.size) {
+            console.error('No channels found in the category.');
+            return;
+        }
+
+        channels.forEach(channel => {
+            // Права для текстовых каналов для пилотов
+            if (channel.type === 0) {
+                channel.permissionOverwrites.edit(roleIds[0], {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                    [PermissionsBitField.Flags.SendMessages]: true,
+                    [PermissionsBitField.Flags.SendTTSMessages]: false,
+                    [PermissionsBitField.Flags.EmbedLinks]: true,
+                    [PermissionsBitField.Flags.AttachFiles]: true,
+                    [PermissionsBitField.Flags.AddReactions]: true,
+                    [PermissionsBitField.Flags.UseExternalEmojis]: true,
+                    [PermissionsBitField.Flags.UseExternalStickers]: true,
+                    [PermissionsBitField.Flags.MentionEveryone]: false,
+                    [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                    [PermissionsBitField.Flags.UseApplicationCommands]: true,
+                    [PermissionsBitField.Flags.ManageThreads]: false,
+                    [PermissionsBitField.Flags.CreatePublicThreads]: false,
+                    [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                    [PermissionsBitField.Flags.SendMessagesInThreads]: false
                 });
 
-                for (const channel of category.children.cache.values()) {
-                    const channelPermissions = channel.permissionOverwrites.cache.get(referenceRoleId);
-
-                    if (!channelPermissions) {
-                        console.warn(`Permissions for reference role not found in channel with ID ${channel.id}`);
-                        continue;
-                    }
-
-                    await channel.permissionOverwrites.edit(roleId, {
-                        ViewChannel: channelPermissions.allow.has(PermissionsBitField.Flags.ViewChannel),
-                        SendMessages: channelPermissions.allow.has(PermissionsBitField.Flags.SendMessages),
-                        ReadMessageHistory: channelPermissions.allow.has(PermissionsBitField.Flags.ReadMessageHistory),
-                        Connect: channelPermissions.allow.has(PermissionsBitField.Flags.Connect),
-                        Speak: channelPermissions.allow.has(PermissionsBitField.Flags.Speak),
-                        AddReactions: channelPermissions.allow.has(PermissionsBitField.Flags.AddReactions),
-                        ManageMessages: channelPermissions.allow.has(PermissionsBitField.Flags.ManageMessages),
-                        ManageRoles: channelPermissions.allow.has(PermissionsBitField.Flags.ManageRoles),
-                        ManageChannels: channelPermissions.allow.has(PermissionsBitField.Flags.ManageChannels),
-                        ManageWebhooks: channelPermissions.allow.has(PermissionsBitField.Flags.ManageWebhooks),
-                        CreatePublicThreads: channelPermissions.allow.has(PermissionsBitField.Flags.CreatePublicThreads),
-                        CreatePrivateThreads: channelPermissions.allow.has(PermissionsBitField.Flags.CreatePrivateThreads),
-                        UseExternalEmojis: channelPermissions.allow.has(PermissionsBitField.Flags.UseExternalEmojis),
-                        UseExternalStickers: channelPermissions.allow.has(PermissionsBitField.Flags.UseExternalStickers),
-                        AttachFiles: channelPermissions.allow.has(PermissionsBitField.Flags.AttachFiles),
-                        EmbedLinks: channelPermissions.allow.has(PermissionsBitField.Flags.EmbedLinks),
-                        UseApplicationCommands: channelPermissions.allow.has(PermissionsBitField.Flags.UseApplicationCommands),
-                        SendTTSMessages: channelPermissions.allow.has(PermissionsBitField.Flags.SendTTSMessages),
-                        MentionEveryone: channelPermissions.allow.has(PermissionsBitField.Flags.MentionEveryone),
-                        ManageNicknames: channelPermissions.allow.has(PermissionsBitField.Flags.ManageNicknames),
-                        KickMembers: channelPermissions.allow.has(PermissionsBitField.Flags.KickMembers),
-                        BanMembers: channelPermissions.allow.has(PermissionsBitField.Flags.BanMembers),
-                        Administrator: channelPermissions.allow.has(PermissionsBitField.Flags.Administrator),
-                        ManageEmojisAndStickers: channelPermissions.allow.has(PermissionsBitField.Flags.ManageEmojisAndStickers),
-                        ViewAuditLog: channelPermissions.allow.has(PermissionsBitField.Flags.ViewAuditLog),
-                        PrioritySpeaker: channelPermissions.allow.has(PermissionsBitField.Flags.PrioritySpeaker),
-                        RequestToSpeak: channelPermissions.allow.has(PermissionsBitField.Flags.RequestToSpeak),
-                        ManageThreads: channelPermissions.allow.has(PermissionsBitField.Flags.ManageThreads),
-                        UseEmbeddedActivities: channelPermissions.allow.has(PermissionsBitField.Flags.UseEmbeddedActivities),
-                        ModerateMembers: channelPermissions.allow.has(PermissionsBitField.Flags.ModerateMembers)
+                // Дополнительные права для Officer и CEO
+                [roleIds[1], roleIds[2]].forEach(roleId => {
+                    channel.permissionOverwrites.edit(roleId, {
+                        [PermissionsBitField.Flags.CreatePublicThreads]: true,
+                        [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
+                        [PermissionsBitField.Flags.ManageThreads]: true,
+                        [PermissionsBitField.Flags.ManageRoles]: true,
+                        [PermissionsBitField.Flags.CreateInstantInvite]: true
                     });
-
-                    if (categoryId === '1212808485172154449' && channel.id === '1211698477151817789') {
-                        if ([officerRoleId, ceoRoleId].includes(roleId)) {
-                            await channel.permissionOverwrites.edit(roleId, {
-                                CreatePublicThreads: true,
-                                CreatePrivateThreads: true,
-                                SendMessages: true,
-                                EmbedLinks: true,
-                                AttachFiles: true,
-                                AddReactions: true,
-                                UseExternalEmojis: true,
-                                UseExternalStickers: true,
-                                ReadMessageHistory: true
-                            });
-                        }
-                    }
-                }
+                });
             }
-        }
-        console.log('Роли успешно добавлены во все категории и каналы указанных категорий!');
-        return;
+
+            // Права для торговых каналов для пилотов
+            if (channel.type === 15) {
+                channel.permissionOverwrites.edit(roleIds[0], {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                    [PermissionsBitField.Flags.SendMessages]: true,
+                    [PermissionsBitField.Flags.EmbedLinks]: true,
+                    [PermissionsBitField.Flags.AttachFiles]: true,
+                    [PermissionsBitField.Flags.AddReactions]: true,
+                    [PermissionsBitField.Flags.UseExternalEmojis]: true,
+                    [PermissionsBitField.Flags.UseExternalStickers]: true,
+                    [PermissionsBitField.Flags.ReadMessageHistory]: true,
+                    [PermissionsBitField.Flags.UseApplicationCommands]: true,
+                    [PermissionsBitField.Flags.ManageThreads]: false,
+                    [PermissionsBitField.Flags.CreatePublicThreads]: false,
+                    [PermissionsBitField.Flags.CreatePrivateThreads]: false,
+                    [PermissionsBitField.Flags.SendMessagesInThreads]: false
+                });
+                // Дополнительные права для Officer и CEO
+                [roleIds[1], roleIds[2]].forEach(roleId => {
+                    channel.permissionOverwrites.edit(roleId, {
+                        [PermissionsBitField.Flags.ManageRoles]: true,
+                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                        [PermissionsBitField.Flags.CreatePublicThreads]: true,
+                        [PermissionsBitField.Flags.UseEmbeddedActivities]: true,
+                        [PermissionsBitField.Flags.ManageThreads]: true
+                    });
+                });
+            }
+
+            // Права для голосовых каналов для пилотов
+            if (channel.type === 2) {
+                channel.permissionOverwrites.edit(roleIds[0], {
+                    [PermissionsBitField.Flags.ViewChannel]: true,
+                    [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                    [PermissionsBitField.Flags.Connect]: true,
+                    [PermissionsBitField.Flags.Speak]: true,
+                    [PermissionsBitField.Flags.Stream]: true,
+                    [PermissionsBitField.Flags.UseVAD]: true,
+                    [PermissionsBitField.Flags.PrioritySpeaker]: false,
+                    [PermissionsBitField.Flags.MuteMembers]: false,
+                    [PermissionsBitField.Flags.DeafenMembers]: false,
+                    [PermissionsBitField.Flags.MoveMembers]: false,
+                    [PermissionsBitField.Flags.ManageRoles]: false,
+                    [PermissionsBitField.Flags.ManageChannels]: false
+                });
+
+                // Дополнительные права для Officer и CEO
+                [roleIds[1], roleIds[2]].forEach(roleId => {
+                    channel.permissionOverwrites.edit(roleId, {
+                        [PermissionsBitField.Flags.ManageRoles]: true,
+                        [PermissionsBitField.Flags.CreateInstantInvite]: true,
+                        [PermissionsBitField.Flags.MoveMembers]: true,
+                        [PermissionsBitField.Flags.CreateEvents]: true,
+                        [PermissionsBitField.Flags.ManageEvents]: true
+                    });
+                });
+            }
+        });
+
+        logAndSend('Alliance permissions updated successfully.');
     } catch (error) {
-        console.error('Произошла ошибка при добавлении ролей в категории и каналы:', error);
-        return 'Произошла ошибка при добавлении ролей в категории и каналы.';
+        console.error('Error updating permissions:', error);
     }
 }
 
