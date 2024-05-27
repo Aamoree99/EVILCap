@@ -728,8 +728,8 @@ client.on('guildMemberAdd', async member => {
         logAndSend(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
         if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
-            channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем разделенными запятой, например: Captain Price, Серега.`);
-            waitList.set(member.id, { guildId: member.guild.id, lastPingTime: Date.now() });
+            channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Captain Price, Серега.`);
+            waitList.set(member.id, Date.now());
         } else {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
         }
@@ -742,58 +742,57 @@ const CHECK_INTERVAL = 5 * 60 * 1000; // 5 минут в миллисекунд�
 
 setInterval(async () => {
     const now = Date.now();
-    for (const [memberId, { guildId, lastPingTime }] of waitList.entries()) {
+    for (const [memberId, lastPingTime] of waitList.entries()) {
         if (now - lastPingTime >= CHECK_INTERVAL) {
-            const guild = client.guilds.cache.get(guildId);
-            if (!guild) continue;
-
-            const member = guild.members.cache.get(memberId);
+            const member = await client.users.fetch(memberId);
             if (!member) continue;
+
+            const guild = client.guilds.cache.get(member.guild.id);
+            if (!guild) continue;
 
             const channel = guild.channels.cache.get(W_CHANNEL_ID);
             if (!channel) continue;
 
-            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем разделенными запятой, например: Kratos, Олег.`);
-            waitList.set(memberId, { guildId, lastPingTime: now });
+            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Kratos, Олег.`);
+            waitList.set(memberId, now);
         }
     }
 }, CHECK_INTERVAL);
-
 
 client.on('messageCreate', async message => {
     try {
         if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !message.content.trim() || !waitList.has(message.author.id)) return;
 
-        if (waitList.get(message.author.id) === message.guild.id) {
-            let content = message.content;
+        let content = message.content;
 
-            // Удаляем упоминания из содержимого сообщения
-            content = content.replace(/<@!?\d+>/g, '').trim();
+        content = content.replace(/<@!?\d+>/g, '').trim();
 
-            if (content.includes(',')) {
-                const parts = content.split(',', 2);
-                if (parts.length === 2) {
-                    const newNick = `${parts[0].trim()} (${parts[1].trim()})`;
-                    try {
-                        await message.member.setNickname(newNick);
-                        const responseMessage = await message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}. Ты по поводу какой корпорации? Нажми реакцию 1 для Cosmic Capybara Crew или реакцию 2 для других.`);
-                        await responseMessage.react('1️⃣');
-                        await responseMessage.react('2️⃣');
+        if (content.includes(',')) {
+            const parts = content.split(',', 2);
+            if (parts.length === 2) {
+                const newNick = `${parts[0].trim()} (${parts[1].trim()})`;
+                try {
+                    // Попытка изменить никнейм пользователя
+                    await message.member.setNickname(newNick);
+                    const responseMessage = await message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}. Ты по поводу какой корпорации? Нажми реакцию 1 для Cosmic Capybara Crew, реакцию 2 для Yellow Foxes или реакцию 3 для другой корпорации.`);
+                    await responseMessage.react('1️⃣');
+                    await responseMessage.react('2️⃣');
+                    await responseMessage.react('3️⃣');
 
-                        waitList.delete(message.author.id);
+                    // Удаляем пользователя из списка ожидания
+                    waitList.delete(message.author.id);
 
-                        // Запоминаем ID сообщения для обработки реакций
-                        messageMap.set(responseMessage.id, message.author.id);
-                    } catch (error) {
-                        message.channel.send("У меня недостаточно прав для изменения никнеймов.");
-                        console.error("Permission denied to change nickname:", error);
-                    }
-                } else {
-                    message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
+                    // Запоминаем ID сообщения для обработки реакций
+                    messageMap.set(responseMessage.id, message.author.id);
+                } catch (error) {
+                    message.channel.send("У меня недостаточно прав для изменения никнеймов.");
+                    console.error("Permission denied to change nickname:", error);
                 }
             } else {
                 message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
             }
+        } else {
+            message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
         }
     } catch (error) {
         console.error("Error in messageCreate event handler:", error);
@@ -811,8 +810,18 @@ client.on('messageReactionAdd', async (reaction, user) => {
         if (reaction.emoji.name === '1️⃣') {
             logAndSend(`Пользователь <@${user.id}> выбрал корпорацию Cosmic Capybara Crew.`);
             try {
-                const role = reaction.message.guild.roles.cache.find(role => role.id === '1239714360503308348');
+                const role = reaction.message.guild.roles.cache.get('1239714360503308348');
+                if (!role) {
+                    logAndSend(`Role with ID '1239714360503308348' not found in guild ${reaction.message.guild.id}`);
+                    return;
+                }
+
                 const member = reaction.message.guild.members.cache.get(user.id);
+                if (!member) {
+                    logAndSend(`Member with ID ${user.id} not found in guild ${reaction.message.guild.id}`);
+                    return;
+                }
+
                 await member.roles.add(role);
                 logAndSend(`Роль <@&${role.id}> была успешно добавлена пользователю <@${user.id}>.`);
 
@@ -825,14 +834,16 @@ client.on('messageReactionAdd', async (reaction, user) => {
             } catch (error) {
                 console.error('Ошибка при добавлении роли:', error);
             }
+        } else if (reaction.emoji.name === '3️⃣') {
+                reaction.message.channel.send(`${user.toString()}, ты выбрал другие корпорации. <@739618523076362310>, пожалуйста, помоги!`);
         } else if (reaction.emoji.name === '2️⃣') {
-            const targetUser = reaction.message.guild.members.cache.get('739618523076362310'); // Подставьте реальный ID
-            reaction.message.channel.send(`${user.toString()}, ты выбрал другие корпорации. ${targetUser.toString()}, пожалуйста, помоги!`);
+                reaction.message.channel.send(`${user.toString()}, ты выбрал вторую опцию. <@&1244286820292755466> и <@&1244286817344159755>, пожалуйста, помогите!`);
         }
     } catch (error) {
         console.error("Error in messageReactionAdd event handler:", error);
     }
 });
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     try {
