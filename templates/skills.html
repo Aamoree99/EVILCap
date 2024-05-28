@@ -17,14 +17,16 @@
         <div class="character-info">
             <img id="character-portrait" src="" alt="Портрет персонажа" class="hidden">
             <span id="character-name" class="hidden"></span>
-            <button id="auth-button" class="button">Log In</button>
+            <button id="auth-button" class="button pulse">Log In</button>
         </div>
     </header>
     <main>
         <div class="skills-wrapper">
             <div id="missions-container" class="missions"></div>
+            <div><h1><b>Minimal</b> skills required for ships</h1></div>
             <div id="skills-grid" class="skills-grid"></div>
             <button class="copy-button" onclick="copySkillPlan()">Copy Skill Plan</button>
+            <button class="copy-button" onclick="copyFit()">Copy Fit</button>
         </div>
     </main>
     <div id="logout-modal" class="modal hidden">
@@ -35,7 +37,7 @@
         </div>
     </div>
     <script>
-        let userSkills = null;
+        let userSkills = [];
 
         function checkAuth() {
             fetch('/user-info')
@@ -58,13 +60,13 @@
                             fetch('/user-skills')
                                 .then(response => response.json())
                                 .then(skillsData => {
-                                    userSkills = skillsData.skills.reduce((acc, skill) => {
-                                        acc[skill.name] = skill.level;
-                                        return acc;
-                                    }, {});
-                                    createMissionButtons();
-                                })
-                                .catch(error => console.error('Error fetching skills:', error));
+                                userSkills = skillsData.skills.map(skill => ({
+                                    name: skill.name,
+                                    level: skill.level
+                                }));
+                                createMissionButtons(); // Обновление интерфейса после обработки скиллов
+                            })
+                            .catch(error => console.error('Error fetching skills:', error));
                         })
                         .catch(error => console.error('Error fetching portrait:', error));
                 })
@@ -73,12 +75,12 @@
                     document.getElementById('auth-button').classList.remove('hidden');
                     document.getElementById('character-portrait').classList.add('hidden');
                     document.getElementById('character-name').classList.add('hidden');
-                    createMissionButtons(); // Инициализируем кнопки миссий без скиллов пользователя
+                    createMissionButtons(); 
                 });
         }
 
         document.getElementById('auth-button').addEventListener('click', () => {
-            window.location.href = '/login'; // Redirect to login route
+            window.location.href = '/login'; 
         });
 
         document.getElementById('character-portrait').addEventListener('click', () => {
@@ -88,7 +90,7 @@
         document.getElementById('logout-confirm').addEventListener('click', () => {
             fetch('/logout', { method: 'POST' })
                 .then(() => {
-                    window.location.href = '/'; // Redirect to home after logout
+                    window.location.href = '/hf_waitlist'; // Redirect to home after logout
                 })
                 .catch(error => console.error('Error logging out:', error));
         });
@@ -99,7 +101,7 @@
 
         const missions = [
             {
-                title: 'Venture Meteoroid',
+                title: 'Venture Meteoroid T2',
                 content: `Mining Upgrades 4
                         Mining 3
                         Shield Upgrades 1
@@ -112,34 +114,187 @@
                         Power Grid Management 2
                         Mining 4
                         Mining Frigate 1
-                        Spaceship Command 1`
+                        Spaceship Command 1`,
+                fit: `[Venture, HF_T2]
+                        Mining Laser Upgrade II
+
+                        Small F-S9 Regolith Compact Shield Extender
+                        Compact EM Shield Hardener
+                        Medium Shield Extender II
+
+                        Miner II
+                        Miner II
+
+                        Small EM Shield Reinforcer I
+                        Small Thermal Shield Reinforcer I
+                        Small Thermal Shield Reinforcer I`
             },
             {
-                title: 'Emergency Assistance: Automated Factory',
+                title: 'Venture Meteoroid T1',
+                content: `Mining Upgrades 1
+                            Mining 3
+                            Shield Upgrades 1
+                            Science 1
+                            Power Grid Management 2
+                            Shield Upgrades 1
+                            Science 1
+                            Power Grid Management 2
+                            Tactical Shield Manipulation 1
+                            Power Grid Management 3
+                            Mining 1
+                            Mining Frigate 1
+                            Spaceship Command 1`,
+                fit: `[Venture, HF_T1]
+                    Mining Laser Upgrade I
+
+                    Small Azeotropic Restrained Shield Extender
+                    Medium Shield Extender I
+                    Compact EM Shield Hardener
+
+                    Miner I
+                    Miner I
+
+                    Small EM Shield Reinforcer I
+                    Small Thermal Shield Reinforcer I
+                    Small Thermal Shield Reinforcer I`
+            },
+            {
+                title: 'Ospey Meteoroid T2',
                 content: `Hull Upgrades 4
-Mechanics 1
-Energy Grid Upgrades 4
-Science 1
-Power Grid Management 2
-Hull Upgrades 3
-Mechanics 1
-Energy Grid Upgrades 3
-Science 1
-Power Grid Management 2
-Energy Grid Upgrades 3
-Science 1
-Power Grid Management 2
-Remote Armor Repair Systems 2
-Mechanics 3
-Repair Systems 2
-Mechanics 1
-Amarr Cruiser 1
-Spaceship Command 2
-Amarr Destroyer 3
-Amarr Frigate 3
-Spaceship Command 1
-`
-            }
+                        Mechanics 1
+                        Energy Grid Upgrades 4
+                        Science 1
+                        Power Grid Management 2
+                        Tactical Shield Manipulation 4
+                        Power Grid Management 3
+                        Shield Operation 4
+                        Power Grid Management 1
+                        Tactical Shield Manipulation 1
+                        Power Grid Management 3
+                        Shield Management 1
+                        Power Grid Management 3
+                        Tactical Shield Manipulation 4
+                        Power Grid Management 3
+                        Shield Emission Systems 3
+                        Science 2
+                        Power Grid Management 3
+                        Drones 5
+                        Caldari Drone Specialization 1
+                        Drones 5
+                        Light Drone Operation 5
+                        Drones 1
+                        Caldari Cruiser 1
+                        Spaceship Command 2
+                        Caldari Destroyer 3
+                        Caldari Frigate 3
+                        Spaceship Command 1`,
+                fit: `[Osprey, HF_LOGI]
+                        Damage Control II
+                        Capacitor Power Relay II
+                        Capacitor Power Relay II
+
+                        Multispectrum Shield Hardener II
+                        Large Shield Booster II
+                        Dread Guristas Thermal Shield Hardener
+                        Copasetic Compact Shield Boost Amplifier
+                        EM Shield Hardener II
+
+                        Small Remote Shield Booster II
+                        Small Remote Shield Booster II
+                        Small Remote Shield Booster II
+                        Small Remote Shield Booster II
+
+                        Medium EM Shield Reinforcer II
+                        Medium Capacitor Control Circuit II
+                        Medium Capacitor Control Circuit II`
+            },
+            {
+                title: 'Augoror Emergency Assistance',
+                content: `Hull Upgrades 4
+                            Mechanics 1
+                            Energy Grid Upgrades 4
+                            Science 1
+                            Power Grid Management 2
+                            Hull Upgrades 3
+                            Mechanics 1
+                            Energy Grid Upgrades 3
+                            Science 1
+                            Power Grid Management 2
+                            Energy Grid Upgrades 3
+                            Science 1
+                            Power Grid Management 2
+                            Remote Armor Repair Systems 2
+                            Mechanics 3
+                            Repair Systems 2
+                            Mechanics 1
+                            Amarr Cruiser 1
+                            Spaceship Command 2
+                            Amarr Destroyer 3
+                            Amarr Frigate 3
+                            Spaceship Command 1`,
+                fit: `[Augoror, Augoror]
+                        Damage Control II
+                        Capacitor Power Relay II
+                        Capacitor Power Relay II
+                        Capacitor Power Relay II
+                        Compact Multispectrum Energized Membrane
+
+                        Medium Cap Battery II
+                        Cap Recharger II
+                        Cap Recharger II
+
+                        Medium Coaxial Compact Remote Armor Repairer
+                        Medium Coaxial Compact Remote Armor Repairer
+                        Medium Coaxial Compact Remote Armor Repairer
+                        Medium Coaxial Compact Remote Armor Repairer
+                        Medium Coaxial Compact Remote Armor Repairer
+
+                        Medium Capacitor Control Circuit I
+                        Medium Capacitor Control Circuit I
+                        Medium Targeting System Subcontroller I`
+            }, 
+            {
+                title: 'Dreadnought Attack',
+                content: `Hull Upgrades 3
+                        Mechanics 1
+                        Hull Upgrades 3
+                        Mechanics 1
+                        Mechanics 2
+                        Repair Systems 1
+                        Mechanics 1
+                        Energy Grid Upgrades 2
+                        Science 1
+                        Power Grid Management 2
+                        Energy Grid Upgrades 3
+                        Science 1
+                        Power Grid Management 2
+                        Capacitor Emission Systems 1
+                        Science 2
+                        Power Grid Management 3
+                        Amarr Cruiser 1
+                        Spaceship Command 2
+                        Amarr Destroyer 3
+                        Amarr Frigate 3
+                        Spaceship Command 1`,
+                fit: `[Augoror, Dreadnought]
+                        Corpus C-Type Explosive Armor Hardener
+                        Corpus C-Type Explosive Armor Hardener
+                        Reactive Armor Hardener
+                        'Meditation' Medium Armor Repairer I
+                        'Meditation' Medium Armor Repairer I
+
+                        Republic Fleet Large Cap Battery
+                        Cap Recharger II
+                        Cap Recharger II
+
+                        Medium Inductive Compact Remote Capacitor Transmitter
+                        Medium Inductive Compact Remote Capacitor Transmitter
+                        Medium Inductive Compact Remote Capacitor Transmitter
+
+                        Medium Capacitor Control Circuit I
+                        Medium Semiconductor Memory Cell II
+                        Medium Semiconductor Memory Cell II`            
+        }
         ];
 
         function createMissionButtons() {
@@ -162,53 +317,57 @@ Spaceship Command 1
         }
 
         function showMissionContent(index) {
-            const missionButtons = document.querySelectorAll('.mission');
-            missionButtons.forEach((button, i) => {
-                if (i === index) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-
-            const skillsGrid = document.getElementById('skills-grid');
-            skillsGrid.innerHTML = ''; // Очистить сетку перед добавлением новых скиллов
-
-            const skillPlan = missions[index].content.split('\n').reduce((acc, line) => {
-                const lastSpaceIndex = line.lastIndexOf(' ');
-                const skill = line.substring(0, lastSpaceIndex);
-                const level = line.substring(lastSpaceIndex + 1);
-                acc[skill] = Math.max(acc[skill] || 0, parseInt(level, 10));
-                return acc;
-            }, {});
-
-            Object.keys(skillPlan).forEach(skill => {
-                const skillItem = document.createElement('div');
-                skillItem.className = 'skill-item';
-
-                const skillName = document.createElement('span');
-                skillName.textContent = skill;
-
-                const skillLevel = document.createElement('span');
-                skillLevel.className = 'skill-level';
-                if (userSkills) {
-                    const userSkillLevel = userSkills[skill] || 0;
-                    skillLevel.textContent = `${userSkillLevel}/${skillPlan[skill]}`;
-                    if (userSkillLevel >= skillPlan[skill]) {
-                        skillItem.classList.add('green');
-                    } else {
-                        skillItem.classList.add('yellow');
-                    }
-                } else {
-                    skillLevel.textContent = skillPlan[skill];
-                }
-
-                skillItem.appendChild(skillName);
-                skillItem.appendChild(skillLevel);
-
-                skillsGrid.appendChild(skillItem);
-            });
+    const missionButtons = document.querySelectorAll('.mission');
+    missionButtons.forEach((button, i) => {
+        if (i === index) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
         }
+    });
+
+    const skillsGrid = document.getElementById('skills-grid');
+    skillsGrid.innerHTML = ''; // Очистить сетку перед добавлением новых скиллов
+
+    const skillPlan = missions[index].content.split('\n').reduce((acc, line) => {
+        const lastSpaceIndex = line.lastIndexOf(' ');
+        const skill = line.substring(0, lastSpaceIndex).trim();
+        const level = line.substring(lastSpaceIndex + 1).trim();
+        acc[skill] = Math.max(acc[skill] || 0, parseInt(level, 10));
+        return acc;
+    }, {});
+
+
+    Object.keys(skillPlan).forEach(skill => {
+        const skillItem = document.createElement('div');
+        skillItem.className = 'skill-item';
+
+        const skillName = document.createElement('span');
+        skillName.textContent = skill;
+
+        const skillLevel = document.createElement('span');
+        skillLevel.className = 'skill-level';
+
+        if (userSkills) {
+            const userSkill = userSkills.find(s => s.name === skill);
+            const userSkillLevel = userSkill ? userSkill.level : 0;
+            skillLevel.textContent = `${userSkillLevel}/${skillPlan[skill]}`;
+            if (userSkillLevel >= skillPlan[skill]) {
+                skillItem.classList.add('green');
+            } else {
+                skillItem.classList.add('yellow');
+            }
+        } else {
+            skillLevel.textContent = skillPlan[skill];
+        }
+
+        skillItem.appendChild(skillName);
+        skillItem.appendChild(skillLevel);
+
+        skillsGrid.appendChild(skillItem);
+
+    });
+}
 
         function copySkillPlan() {
             const activeMission = document.querySelector('.mission.active').textContent;
@@ -217,6 +376,16 @@ Spaceship Command 1
                 alert('Skill plan copied to clipboard!');
             }, () => {
                 alert('Failed to copy skill plan.');
+            });
+        }
+
+        function copyFit() {
+            const activeMission = document.querySelector('.mission.active').textContent;
+            const fit = missions.find(mission => mission.title === activeMission).fit;
+            navigator.clipboard.writeText(fit).then(() => {
+                alert('Fit copied to clipboard!');
+            }, () => {
+                alert('Failed to copy fit.');
             });
         }
 

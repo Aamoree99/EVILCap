@@ -6,6 +6,10 @@ body {
     padding: 0;
 }
 
+.Mainpage {
+    padding: 20px;
+}
+
 header {
     background-color: #444;
     padding: 20px;
@@ -59,8 +63,6 @@ header nav a {
 header nav a:hover {
     text-decoration: underline;
 }
-
-
 
 .modal {
     position: fixed;
@@ -237,4 +239,325 @@ header nav a:hover {
 }
 .skill-item.green {
     background-color: rgba(3, 194, 3, 0.5); /* Зеленый с прозрачностью 50% */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+#submit-fit,
+#cancel-fit,
+#approve-fit,
+#reject-fit,
+#create-room-form .button,
+.join-button,
+.close-button{
+    background-color: #bbb;
+    color: #000;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+#submit-fit:hover,
+#cancel-fit:hover,
+#approve-fit:hover,
+#reject-fit:hover,
+#create-room-form .button:hover,
+.join-button:hover,
+.close-button:hover{
+    background-color: #999;
+}
+
+/* Стиль для выбора опций */
+#event-type,
+[name="language"] {
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    width: auto;
+}
+
+#event-type option,
+[name="language"] option {
+    background-color: #333;
+    color: #fff;
+}
+
+/* Стиль для выделения опций при наведении */
+#event-type:hover,
+[name="language"]:hover {
+    background-color: #555;
+}
+
+#event-type:focus,
+[name="language"]:focus {
+    border-color: #888;
+}
+
+/* Flexbox для формы создания комнаты */
+#create-room-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#create-room-form label {
+    margin: 0;
+}
+
+#create-room-form select,
+#create-room-form div,
+#create-room-form button {
+    margin: 0;
+}
+
+/* Стили для флотов */
+.fleet-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.fleet {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-direction: column; /* added to stack items vertically */
+    align-items: flex-start; /* added to align items to the start */
+}
+
+.fleet-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.fleet-type,
+.fleet-language,
+.fleet-fc {
+    font-size: 16px;
+    color: #fff;
+}
+
+.fleet-participants {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.fleet-expanded {
+    max-height: 400px;
+}
+
+.fleet-details {
+    display: none;
+    padding-top: 20px;
+    flex-direction: row; /* added to align buttons horizontally */
+    gap: 10px; /* added to create space between buttons */
+}
+
+.fleet-details.show {
+    display: flex;
+}
+
+.fit-modal,
+.approval-modal,
+.invite-modal {
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+}
+
+.fit-modal.open,
+.approval-modal.open,
+.invite-modal.open {
+    display: flex;
+}
+
+.fit-modal-content,
+.approval-modal-content,
+.invite-modal-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.fit-modal-header,
+.approval-modal-header,
+.invite-modal-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.fit-modal-header img,
+.approval-modal-header img,
+.invite-modal-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.fit-modal-header .character-name,
+.approval-modal-header .character-name,
+.invite-modal-header .character-name {
+    font-size: 18px;
+    color: #fff;
+}
+
+.fit-modal-body,
+.approval-modal-body,
+.invite-modal-body {
+    width: 100%;
+    height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    background-color: #333;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.fit-modal-body textarea,
+.approval-modal-body pre,
+.invite-modal-body pre {
+    width: 100%;
+    height: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    resize: none;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.fit-modal-body textarea:focus,
+.approval-modal-body pre:focus,
+.invite-modal-body pre:focus {
+    outline: none;
+}
+
+.fit-modal-footer,
+.approval-modal-footer,
+.invite-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.fit-modal-footer .button,
+.approval-modal-footer .button,
+.invite-modal-footer .button {
+    flex: 1;
+    margin: 0 5px;
+    background-color: #bbb;
+    color: #000;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.fit-modal-footer .button:hover,
+.approval-modal-footer .button:hover,
+.invite-modal-footer .button:hover {
+    background-color: #999;
+}
+
+.waitlist-member {
+    background-color: #444;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    width: 100%; /* изменено на 100% */
+    box-sizing: border-box; /* добавлено для учета бордера */
+}
+
+.waitlist-member span {
+    flex-grow: 1; /* добавлено для автоматического расширения имени */
+    text-align: center; /* выравнивание текста по центру */
+}
+
+.waitlist-member-yellow {
+    border: 2px solid orange;
+}
+
+.waitlist-member-green {
+    border: 2px solid green;
+}
+
+.waitlist {
+    display: none;
+}
+
+.waitlist.open {
+    display: block;
+}
+
+.tooltip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #444;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+    display: none;
+    text-align: center; /* Центрируем текст внутри тултипа */
+}
+
+.tooltip.show {
+    display: block;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0) scale(1); }
+    25% { transform: translateX(-5px) scale(1.1); }
+    50% { transform: translateX(5px) scale(1); }
+    75% { transform: translateX(-5px) scale(1.1); }
+    100% { transform: translateX(0) scale(1); }
+}
+
+.shake {
+    animation: shake 0.5s infinite;
 }

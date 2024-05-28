@@ -35,6 +35,7 @@ const CASINO_CHANNEL_ID= '1239752190986420274';
 const MOON_CHANNEL_ID= '1159193601289490534';
 const EN_MAIN_CHANNEL_ID= '1212507080934686740';
 const TARGET_CHANNEL_ID = '1242246489787334747';
+const HOMEFRONTS_ID='1243701044157091860';
 const chatApi = process.env.OPENAI_API_KEY;
 
 
@@ -2766,5 +2767,55 @@ client.on('messageCreate', async message => {
     }
 });
 
+async function fleetNotify(fc, eventType) {
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const category = guild.channels.cache.get(HOMEFRONTS_ID);
+    const textChannel = category.children.cache.find(channel => channel.type === 0);
+
+    const member = guild.members.cache.find(member => member.displayName.includes(fc));
+    const userTag = member ? `<@${member.id}>` : fc;
+
+    await textChannel.send({
+        content: `<@&1163379884039618641> Fleet led by ${userTag} for ${eventType} has been launched. Join here: <http://evil-capybara.space/hf_waitlist>`
+    });
+
+    await category.children.create({
+        name: `Fleet ${fc}`,
+        type: 2,
+        permissionOverwrites: [
+            {
+                id: guild.id,
+                allow: [
+                    PermissionsBitField.Flags.ViewChannel,
+                    PermissionsBitField.Flags.Connect,
+                    PermissionsBitField.Flags.Speak
+                ]
+            },
+            {
+                id: '1163379884039618641',
+                allow: [
+                    PermissionsBitField.Flags.ViewChannel,
+                    PermissionsBitField.Flags.Connect,
+                    PermissionsBitField.Flags.Speak
+                ]
+            }
+        ],
+    });
+
+    return { success: true };
+}
+
+
+async function deleteVoiceChannelByFc(fc) {
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const category = guild.channels.cache.get(HOMEFRONTS_ID);
+    const voiceChannel = category.children.cache.find(channel => channel.type === 2 && channel.name.includes(`Fleet ${fc}`));
+    
+    if (voiceChannel) {
+        await voiceChannel.delete();
+    }
+}
 
 client.login(token); 
+
+module.exports = { fleetNotify, deleteVoiceChannelByFc };

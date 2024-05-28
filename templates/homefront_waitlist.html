@@ -17,12 +17,90 @@
         <div class="character-info">
             <img id="character-portrait" src="" alt="Портрет персонажа" class="hidden">
             <span id="character-name" class="hidden"></span>
-            <button id="auth-button" class="button">Log In</button>
+            <button id="auth-button" class="button pulse">Log In</button>
         </div>
     </header>
-    <main>
+    <div class="Mainpage">
         <h1>Welcome to Homefront Waitlist</h1>
-    </main>
+        <form id="create-room-form" class="hidden">
+            <h2>Create a Room</h2>
+            <label for="event-type">Event Type:</label>
+            <select id="event-type" required>
+                <option value="" disabled selected>Select an event type</option>
+                <option value="Metaliminal Meteoroid">Metaliminal Meteoroid</option>
+                <option value="Emergency Assistance">Emergency Assistance</option>
+                <option value="Dreadnought Attack">Dreadnought Attack</option>
+                <option value="Abyssal Homefronts">Abyssal Homefronts</option>
+            </select>
+            <label for="language">Language:</label>
+            <div>
+                <label><input type="checkbox" name="language" value="EN"> EN</label>
+                <label><input type="checkbox" name="language" value="RU"> RU</label>
+                <label><input type="checkbox" name="language" value="CZ"> CZ</label>
+            </div>
+            <button type="submit" class="button">Create Room</button>
+        </form>
+        
+        <div id="rooms-container">
+            <h2>Active Rooms</h2>
+            <div id="rooms-list" class="fleet-container">NO ACTIVE FLEETS</div>
+        </div>
+        <div id="waitlist-container">
+        </div>
+        
+        <div id="fit-modal" class="fit-modal">
+            <div class="fit-modal-content">
+                <div class="fit-modal-header">
+                    <img id="modal-character-portrait" src="" alt="Портрет персонажа">
+                    <span id="modal-character-name" class="character-name"></span>
+                </div>
+                <div class="fit-modal-body">
+                    <textarea id="fit-input" placeholder="Paste your fit here"></textarea>
+                </div>
+                <div class="fit-modal-footer">
+                    <button id="submit-fit" class="button">Submit</button>
+                    <button id="cancel-fit" class="button">Cancel</button>
+                </div>
+            </div>
+        </div>       
+        
+        <div id="approval-modal" class="approval-modal">
+            <div class="approval-modal-content">
+                <div class="approval-modal-header">
+                    <img id="modal-approval-character-portrait" src="" alt="Портрет персонажа">
+                    <span id="modal-approval-character-name" class="character-name"></span>
+                </div>
+                <div class="approval-modal-body">
+                    <pre id="approval-fit-display"></pre>
+                </div>
+                <div class="approval-modal-footer">
+                    <button id="approve-fit" class="button">Approve</button>
+                    <button id="reject-fit" class="button">Reject</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="invite-modal" class="invite-modal hidden">
+            <div class="invite-modal-content">
+                <div class="invite-modal-header">
+                    <img id="modal-invite-character-portrait" src="" alt="Портрет персонажа">
+                    <span id="modal-invite-character-name" class="character-name"></span>
+                </div>
+                <div class="invite-modal-body">
+                    <pre id="invite-fit-display"></pre>
+                </div>
+                <div class="invite-modal-footer">
+                    <button id="confirm-invite" class="button">Invite</button>
+                    <button id="cancel-invite" class="button">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+
+        <div id="tooltip" class="tooltip hidden">Please log in to join the fleet.</div>
+
+        
+    </div>
     <div id="logout-modal" class="modal hidden">
         <div class="modal-content">
             <p>Do you want to log out?</p>
@@ -31,7 +109,9 @@
         </div>
     </div>
     <script>
-function checkAuth() {
+        const allowedUsers = ['Aamoree', 'User2', 'User3']; 
+
+        function checkAuth() {
             fetch('/user-info')
                 .then(response => {
                     if (!response.ok) {
@@ -48,6 +128,10 @@ function checkAuth() {
                             document.getElementById('character-portrait').classList.remove('hidden');
                             document.getElementById('character-name').classList.remove('hidden');
                             document.getElementById('auth-button').classList.add('hidden');
+
+                            if (allowedUsers.includes(data.characterName)) {
+                                document.getElementById('create-room-form').classList.remove('hidden');
+                            }
                         })
                         .catch(error => console.error('Error fetching portrait:', error));
                 })
@@ -60,7 +144,7 @@ function checkAuth() {
         }
 
         document.getElementById('auth-button').addEventListener('click', () => {
-            window.location.href = '/login'; // Redirect to login route
+            window.location.href = '/login'; 
         });
 
         document.getElementById('character-portrait').addEventListener('click', () => {
@@ -70,7 +154,7 @@ function checkAuth() {
         document.getElementById('logout-confirm').addEventListener('click', () => {
             fetch('/logout', { method: 'POST' })
                 .then(() => {
-                    window.location.href = '/'; // Redirect to home after logout
+                    window.location.href = '/hf_waitlist'; // Redirect to home after logout
                 })
                 .catch(error => console.error('Error logging out:', error));
         });
@@ -79,7 +163,277 @@ function checkAuth() {
             document.getElementById('logout-modal').classList.add('hidden');
         });
 
-        window.addEventListener('load', checkAuth);
+        document.getElementById('create-room-form').addEventListener('submit', event => {
+            event.preventDefault();
+            const eventType = document.getElementById('event-type').value;
+            const languages = Array.from(document.querySelectorAll('input[name="language"]:checked')).map(checkbox => checkbox.value);
+            const fc = document.getElementById('character-name').innerText;
+            createRoom(eventType, languages, fc);
+        });
+
+        function createRoom(eventType, languages, fc) {
+            console.log(JSON.stringify({ eventType, languages, fc }));
+            fetch('/create-room', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ eventType, languages, fc })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadRooms();
+                } else {
+                    console.error('Error creating room:', data.message);
+                }
+            })
+            .catch(error => console.error('Error creating room:', error));
+        }
+
+        function loadRooms() {
+    fetch('/get-rooms')
+        .then(response => response.json())
+        .then(data => {
+            const roomsList = document.getElementById('rooms-list');
+            roomsList.innerHTML = '';
+            if (data.rooms.length === 0) {
+                roomsList.innerText = 'NO ACTIVE FLEETS';
+            } else {
+                data.rooms.forEach(room => {
+                    const roomElement = document.createElement('div');
+                    roomElement.classList.add('fleet');
+                    roomElement.dataset.fc = room.fc;
+                    roomElement.innerHTML = `
+                        <div class="fleet-info">
+                            <div class="fleet-fc">FC: ${room.fc}</div>
+                            <div class="fleet-type">Type: ${room.eventType}</div>
+                            <div class="fleet-language">Language: ${room.languages.join(', ')}</div>
+                            <div class="fleet-id" style="display: none;">${room.fleetId}</div>
+                        </div>
+                        <div class="fleet-details hidden" id="fleet-details-${room.id}">
+                            <button class="join-button" onclick="event.stopPropagation(); openFitModal('${room.id}')">Join Fleet</button>
+                            ${document.getElementById('character-name').innerText === room.fc ? `<button class="close-button" onclick="closeFleet('${room.id}')">Close Fleet</button>` : ''}
+                        </div>
+                        <div class="waitlist hidden" id="waitlist-${room.id}">
+                            <h3>Waitlist</h3>
+                            <div class="waitlist-left" id="waitlist-left-${room.id}"></div>
+                            <div class="waitlist-right" id="waitlist-right-${room.id}"></div>
+                        </div>
+                    `;
+                    roomElement.addEventListener('click', () => {
+                        toggleFleetDetails(room.id, room.fc);
+                        loadWaitlist(room.id, room.fc);
+                    });
+                    roomsList.appendChild(roomElement);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading rooms:', error));
+}
+
+function loadWaitlist(roomId, fc) {
+    fetch(`/get-waitlist?roomId=${roomId}`)
+        .then(response => response.json())
+        .then(data => {
+            const waitlistLeft = document.getElementById(`waitlist-left-${roomId}`);
+            const waitlistRight = document.getElementById(`waitlist-right-${roomId}`);
+            waitlistLeft.innerHTML = '';
+            waitlistRight.innerHTML = '';
+
+            const currentUser = document.getElementById('character-name').innerText;
+
+            data.waitlist.forEach(member => {
+                const memberElement = document.createElement('div');
+                memberElement.classList.add('waitlist-member');
+                memberElement.innerText = member.name;
+
+                if (member.status === 'yellow') {
+                    memberElement.classList.add('waitlist-member-yellow');
+                    if (currentUser === fc) {
+                        memberElement.onclick = () => openApprovalModal(member, roomId);
+                    }
+                    waitlistLeft.appendChild(memberElement);
+                } else if (member.status === 'green') {
+                    memberElement.classList.add('waitlist-member-green');
+                    if (currentUser === fc) {
+                        memberElement.onclick = () => inviteToFleet(member, roomId);
+                    }
+                    waitlistRight.appendChild(memberElement);
+                }
+            });
+
+            document.getElementById(`waitlist-${roomId}`).classList.remove('hidden');
+        })
+        .catch(error => console.error('Error loading waitlist:', error));
+}
+
+function toggleFleetDetails(roomId, fc) {
+    const fleetDetails = document.getElementById(`fleet-details-${roomId}`);
+    fleetDetails.classList.toggle('show');
+    const waitlist = document.getElementById(`waitlist-${roomId}`);
+    waitlist.classList.toggle('open');
+    const fleetElement = fleetDetails.closest('.fleet');
+    fleetElement.classList.toggle('fleet-expanded');
+}
+
+
+function openFitModal(roomId) {
+    const characterName = document.getElementById('character-name').innerText;
+
+    if (!characterName) {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.classList.add('show');
+
+        const authButton = document.getElementById('auth-button');
+        authButton.classList.remove('pulse');
+        authButton.classList.add('shake');
+
+        setTimeout(() => {
+            tooltip.classList.remove('show');
+            authButton.classList.remove('shake');
+            authButton.classList.add('pulse');
+        }, 3000);
+
+        return;
+    }
+
+    const fitModal = document.getElementById('fit-modal');
+    fitModal.classList.toggle('open');
+
+    const characterPortrait = document.getElementById('character-portrait').src;
+
+    document.getElementById('modal-character-portrait').src = characterPortrait;
+    document.getElementById('modal-character-name').innerText = characterName;
+
+    document.getElementById('submit-fit').onclick = () => submitFit(roomId);
+    document.getElementById('cancel-fit').onclick = () => fitModal.classList.toggle('open');
+}
+
+function submitFit(roomId) {
+    const fit = document.getElementById('fit-input').value;
+    fetch('/submit-fit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ roomId, fit })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadRooms();
+            document.getElementById('fit-modal').classList.toggle('open');
+        } else {
+            console.error('Error submitting fit:', data.message);
+        }
+    })
+    .catch(error => console.error('Error submitting fit:', error));
+}
+
+function openApprovalModal(member, roomId) {
+    const approvalModal = document.getElementById('approval-modal');
+    approvalModal.classList.toggle('open');
+
+    document.getElementById('modal-approval-character-portrait').src = `https://images.evetech.net/characters/${member.id}/portrait?tenant=tranquility&size=128`;
+    document.getElementById('modal-approval-character-name').innerText = member.name;
+    document.getElementById('approval-fit-display').innerText = member.fit;
+
+    document.getElementById('approve-fit').onclick = () => approveMember(member, roomId);
+    document.getElementById('reject-fit').onclick = () => rejectMember(member, roomId);
+}
+
+function approveMember(member, roomId) {
+    fetch('/approve-member', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ roomId, memberId: member.id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('approval-modal').classList.remove('open');
+            loadWaitlist(roomId); // Refresh the waitlist
+        } else {
+            console.error('Error approving member:', data.message);
+        }
+    })
+    .catch(error => console.error('Error approving member:', error));
+}
+
+function rejectMember(member, roomId) {
+    fetch('/reject-member', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ roomId, memberId: member.id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('approval-modal').classList.remove('open');
+            loadWaitlist(roomId); // Refresh the waitlist
+        } else {
+            console.error('Error rejecting member:', data.message);
+        }
+    })
+    .catch(error => console.error('Error rejecting member:', error));
+}
+
+function inviteToFleet(member, roomId) {
+    const inviteModal = document.getElementById('invite-modal');
+    inviteModal.classList.add('open');
+
+    document.getElementById('modal-invite-character-portrait').src = `https://images.evetech.net/characters/${member.id}/portrait?tenant=tranquility&size=128`;
+    document.getElementById('modal-invite-character-name').innerText = member.name;
+    document.getElementById('invite-fit-display').innerText = member.fit;
+
+    document.getElementById('confirm-invite').onclick = () => confirmInvite(member, roomId);
+    document.getElementById('cancel-invite').onclick = () => inviteModal.classList.remove('open');
+}
+
+function confirmInvite(member, roomId) {
+    const inviteModal = document.getElementById('invite-modal');
+    inviteModal.classList.remove('open');
+
+    fetch('/invite-to-fleet', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ roomId, memberId: member.id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadWaitlist(roomId); // Refresh the waitlist
+        } else {
+            console.error('Error inviting member to fleet:', data.message);
+        }
+    })
+    .catch(error => console.error('Error inviting member to fleet:', error));
+}
+
+        function closeFleet(roomId) {
+    fetch(`/close-fleet?roomId=${roomId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadRooms(); // Обновить список флотов
+            } else {
+                console.error('Error closing fleet:', data.message);
+            }
+        })
+        .catch(error => console.error('Error closing fleet:', error));
+    }
+
+        window.addEventListener('load', () => {
+            checkAuth();
+            loadRooms();
+        });
     </script>
 </body>
 </html>
