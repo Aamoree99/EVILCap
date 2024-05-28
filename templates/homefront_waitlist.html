@@ -22,41 +22,49 @@
     </header>
     <div class="Mainpage">
         <h1>Welcome to Homefront Waitlist</h1>
-        <form id="create-room-form" class="hidden">
-            <h2>Create a Room</h2>
-            <p>To create a room for your fleet, please follow the instructions below:</p>
-            <ol>
-                <li><strong>Create a fleet in the game.</strong></li>
-                <li><strong>Select an Event Type:</strong> Choose the type of Homefront your fleet will participate in from the dropdown menu.</li>
-                <li><strong>Select Languages:</strong> Check the boxes for the languages your fleet supports.</li>
-                <li><strong>Click "Create Room".</strong> This will create a room for your fleet on the website.</li>
-            </ol>
-            <p>Once the room is created:</p>
-            <ol>
-                <li>When people appear in the waitlist:
-                    <ul>
-                        <li>If they are marked yellow, click on them to see their fit for verification.</li>
-                        <li>If they are marked green, click on them to see their fit and the "Invite" button.</li>
-                    </ul>
-                </li>
-                <li>After successful operations, don't forget to delete the fleet from the website.</li>
-            </ol>
-            <label for="event-type">Event Type:</label>
-            <select id="event-type" required>
-                <option value="" disabled selected>Select an event type</option>
-                <option value="Metaliminal Meteoroid">Metaliminal Meteoroid</option>
-                <option value="Emergency Assistance">Emergency Assistance</option>
-                <option value="Dreadnought Attack">Dreadnought Attack</option>
-                <option value="Abyssal Homefronts">Abyssal Homefronts</option>
-            </select>
-            <label for="language">Language:</label>
-            <div>
-                <label><input type="checkbox" name="language" value="EN"> EN</label>
-                <label><input type="checkbox" name="language" value="RU"> RU</label>
-                <label><input type="checkbox" name="language" value="CZ"> CZ</label>
+        <form id="create-room-form" class="">
+            <div class="form-container">
+                <h2>Create a Room</h2>
+                <div class="form-group">
+                    <label for="event-type">Event Type:</label>
+                    <select id="event-type" required>
+                        <option value="" disabled selected>Select an event type</option>
+                        <option value="Metaliminal Meteoroid">Metaliminal Meteoroid</option>
+                        <option value="Emergency Assistance">Emergency Assistance</option>
+                        <option value="Dreadnought Attack">Dreadnought Attack</option>
+                        <option value="Abyssal Homefronts">Abyssal Homefronts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="language">Language:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="language" value="EN"> EN</label>
+                        <label><input type="checkbox" name="language" value="RU"> RU</label>
+                        <label><input type="checkbox" name="language" value="CZ"> CZ</label>
+                    </div>
+                </div>
+                <button type="submit" class="button">Create Room</button>
             </div>
-            <button type="submit" class="button">Create Room</button>
-        </form>        
+            <div class="instructions">
+                <p>To create a room for your fleet, please follow the instructions below:</p>
+                <ol>
+                    <li><strong>Create a fleet in the game.</strong></li>
+                    <li><strong>Select an Event Type:</strong> Choose the type of Homefront your fleet will participate in from the dropdown menu.</li>
+                    <li><strong>Select Languages:</strong> Check the boxes for the languages your fleet supports.</li>
+                    <li><strong>Click "Create Room".</strong> This will create a room for your fleet on the website.</li>
+                </ol>
+                <p>Once the room is created:</p>
+                <ol>
+                    <li>When people appear in the waitlist:
+                        <ul>
+                            <li>If they are marked yellow, click on them to see their fit for verification.</li>
+                            <li>If they are marked green, click on them to see their fit and the "Invite" button.</li>
+                        </ul>
+                    </li>
+                    <li>After successful operations, don't forget to delete the fleet from the website.</li>
+                </ol>
+            </div>
+        </form>
         
         <div id="rooms-container">
             <h2>Active Rooms</h2>
@@ -149,7 +157,7 @@
                             if (allowedUsers.includes(data.characterName)) {
                                 document.getElementById('create-room-form').classList.add('open');
                             } else {
-                                document.getElementById('create-room-form').classList.remove('open');
+                                //document.getElementById('create-room-form').classList.remove('open');
                             }
                         })
                         .catch(error => console.error('Error fetching portrait:', error));
@@ -159,7 +167,7 @@
                     document.getElementById('auth-button').classList.remove('hidden');
                     document.getElementById('character-portrait').classList.add('hidden');
                     document.getElementById('character-name').classList.add('hidden');
-                    document.getElementById('create-room-form').classList.remove('open');
+                    //document.getElementById('create-room-form').classList.remove('open');
                 });
         }
 
