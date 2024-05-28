@@ -312,11 +312,14 @@ header nav a:hover {
     border-color: #888;
 }
 
-/* Flexbox для формы создания комнаты */
 #create-room-form {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 10px;
+}
+
+#create-room-form.open {
+    display: flex;
 }
 
 #create-room-form label {
