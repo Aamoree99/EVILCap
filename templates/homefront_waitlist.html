@@ -24,6 +24,23 @@
         <h1>Welcome to Homefront Waitlist</h1>
         <form id="create-room-form" class="hidden">
             <h2>Create a Room</h2>
+            <p>To create a room for your fleet, please follow the instructions below:</p>
+            <ol>
+                <li><strong>Create a fleet in the game.</strong></li>
+                <li><strong>Select an Event Type:</strong> Choose the type of Homefront your fleet will participate in from the dropdown menu.</li>
+                <li><strong>Select Languages:</strong> Check the boxes for the languages your fleet supports.</li>
+                <li><strong>Click "Create Room".</strong> This will create a room for your fleet on the website.</li>
+            </ol>
+            <p>Once the room is created:</p>
+            <ol>
+                <li>When people appear in the waitlist:
+                    <ul>
+                        <li>If they are marked yellow, click on them to see their fit for verification.</li>
+                        <li>If they are marked green, click on them to see their fit and the "Invite" button.</li>
+                    </ul>
+                </li>
+                <li>After successful operations, don't forget to delete the fleet from the website.</li>
+            </ol>
             <label for="event-type">Event Type:</label>
             <select id="event-type" required>
                 <option value="" disabled selected>Select an event type</option>
@@ -39,8 +56,7 @@
                 <label><input type="checkbox" name="language" value="CZ"> CZ</label>
             </div>
             <button type="submit" class="button">Create Room</button>
-        </form>
-        
+        </form>        
         <div id="rooms-container">
             <h2>Active Rooms</h2>
             <div id="rooms-list" class="fleet-container">NO ACTIVE FLEETS</div>
