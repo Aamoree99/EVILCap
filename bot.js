@@ -2484,7 +2484,8 @@ async function welcomePermissions(roleIds) {
 
 
 async function importantPermissions(roleIds) {
-    const IMPORTANT_ID = '1212808485172154449'; // ID категории
+    const IMPORTANT_ID = '1212808485172154449'; // ID первой категории
+    const ADDITIONAL_CATEGORY_ID = '1213972508722724864'; // ID дополнительной категории
 
     try {
         const guild = client.guilds.cache.get(GUILD_ID);
@@ -2494,20 +2495,19 @@ async function importantPermissions(roleIds) {
         }
 
         const category = await guild.channels.fetch(IMPORTANT_ID);
-        if (!category || category.type !== 4) {
+        const additionalCategory = await guild.channels.fetch(ADDITIONAL_CATEGORY_ID);
+
+        if (!category || category.type !== 4 || !additionalCategory || additionalCategory.type !== 4) {
             console.error('Invalid category ID or category not found.');
             return;
         }
 
         const channels = guild.channels.cache.filter(channel => channel.parentId === category.id);
-        if (!channels.size) {
-            console.error('No channels found in the category.');
-            return;
-        }
+        const additionalChannels = guild.channels.cache.filter(channel => channel.parentId === additionalCategory.id);
 
-        channels.forEach(channel => {
+        const updatePermissions = (channel, roles) => {
             // Пилоты видят каналы и могут смотреть историю, но на все остальное запрет
-            roleIds.forEach(roleId => {
+            roles.forEach(roleId => {
                 channel.permissionOverwrites.edit(roleId, {
                     [PermissionsBitField.Flags.ViewChannel]: true,
                     [PermissionsBitField.Flags.ReadMessageHistory]: true,
@@ -2534,7 +2534,7 @@ async function importantPermissions(roleIds) {
 
             // Дополнительные права для офицеров и CEO
             if (channel.type === 15) { // Предположим, что 15 - это тип каналов, где нужны дополнительные права
-                [roleIds[1], roleIds[2]].forEach(roleId => {
+                [roles[1], roles[2]].forEach(roleId => {
                     channel.permissionOverwrites.edit(roleId, {
                         [PermissionsBitField.Flags.ViewChannel]: true,
                         [PermissionsBitField.Flags.ReadMessageHistory]: true,
@@ -2559,13 +2559,23 @@ async function importantPermissions(roleIds) {
                     });
                 });
             }
-        });
+        };
 
-        logAndSend('Impoertant permissions updated successfully.');
+        // Обновление прав для всех каналов в основной категории
+        channels.forEach(channel => updatePermissions(channel, roleIds));
+
+        // Обновление прав для всех каналов в дополнительной категории только для ролей с индексами 1 и 2
+        additionalChannels.forEach(channel => updatePermissions(channel, [roleIds[1], roleIds[2]]));
+
+        // Обновление прав для самой дополнительной категории
+        updatePermissions(additionalCategory, [roleIds[1], roleIds[2]]);
+
+        logAndSend('Important permissions updated successfully.');
     } catch (error) {
         console.error('Error updating permissions:', error);
     }
 }
+
 
 async function alliancePermissions(roleIds) {
     const CATEGORY_ID = '1212506201376694342'; // ID категории
