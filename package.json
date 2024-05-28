@@ -5,8 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"node app.js\" \"node bot.js\"",
-    "dev": "node app.js",
+    "_start_concurrently": "concurrently \"node app.js\" \"node bot.js\"",
+    "start": "node app.js",
     "bot": "node bot.js"
   },
   "keywords": [],
