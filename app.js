@@ -11,7 +11,7 @@ const app = express();
 const port = 8080; // Порт, на котором будет запущен сервер
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
-const redirectUri = 'https://evil-capybara/callback';
+const redirectUri = 'https://evil-capybara.space/callback';
 const scope = 'publicData esi-skills.read_skills.v1 esi-fleets.read_fleet.v1 esi-fleets.write_fleet.v1';
 
 const stateStore = new Map();
