@@ -121,7 +121,6 @@ app.post('/submit-fit', (req, res) => {
             status: 'pending'
         };
 
-        // Проверка фита в зависимости от типа флота
         if (isValidFit(fit, room.eventType)) {
             member.status = 'approved';
         } else {
