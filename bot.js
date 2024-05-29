@@ -2800,6 +2800,54 @@ async function deleteVoiceChannelByFc(fc) {
     }
 }
 
+client.on('messageCreate', async message => {
+    if (message.channel.id !== '1245452568818356308' || message.author.bot) return;
+
+    const hasImage = message.attachments.some(attachment => attachment.contentType.startsWith('image/'));
+
+    if (hasImage) {
+        const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
+        const response = await fetch(randomGifUrl);
+        const buffer = await response.buffer();
+        const filePath = path.join(__dirname, 'random.gif');
+
+        fs.writeFile(filePath, buffer, async () => {
+            console.log('Downloaded GIF');
+            await message.channel.send({
+                files: [filePath]
+            });
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    console.error('Error deleting file:', err);
+                }
+                console.log('Deleted GIF');
+            });
+        });
+    }
+});
+
+const GIF_ARRAY = [
+    'https://media.giphy.com/media/cS8BiSoG0AZLa/giphy.gif',
+    'https://media.giphy.com/media/tHIRLHtNwxpjIFqPdV/giphy.gif',
+    'https://media.giphy.com/media/W2zkTjEn4kv9BTeNdF/giphy.gif',
+    'https://media.giphy.com/media/8c1SH3KQGyWOBa9XvK/giphy.gif',
+    'https://media.giphy.com/media/Vl4OUrJVseW94TMvov/giphy.gif',
+    'https://media.giphy.com/media/dmvodzjX8wU7icE3TL/giphy.gif',
+    'https://media.giphy.com/media/UbCIDXVKaB8kpgxlCa/giphy.gif',
+    'https://media.giphy.com/media/65DegL2mRps2Ru03cl/giphy.gif',
+    'https://media.giphy.com/media/bLhHnPAY2qZPFOgend/giphy.gif',
+    'https://media.giphy.com/media/dZS6VBPvhoJhkdi1RG/giphy.gif',
+    'https://media.giphy.com/media/Z5xk7fGO5FjjTElnpT/giphy.gif',
+    'https://media.giphy.com/media/jFGpEfirTeNZxY5k5I/giphy.gif',
+    'https://giphy.com/gifs/shaq-shimmy-UO5elnTqo4vSg',
+    'https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif?cid=ecf05e474eg1v9llab7nx0agmwpnfp9tt1hqhph94lnzofia&ep=v1_gifs_related&rid=giphy.gif&ct=g',
+    'https://media.giphy.com/media/l2SpXyO9TOJCrCbo4/giphy.gif?cid=ecf05e474eg1v9llab7nx0agmwpnfp9tt1hqhph94lnzofia&ep=v1_gifs_related&rid=giphy.gif&ct=g',
+    'https://media.giphy.com/media/oF5oUYTOhvFnO/giphy.gif?cid=ecf05e474eg1v9llab7nx0agmwpnfp9tt1hqhph94lnzofia&ep=v1_gifs_related&rid=giphy.gif&ct=g',
+    'https://media.giphy.com/media/BQCsG0FBYjeYkmQ5bs/giphy.gif?cid=ecf05e474eg1v9llab7nx0agmwpnfp9tt1hqhph94lnzofia&ep=v1_gifs_related&rid=giphy.gif&ct=g',
+    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDNuY3NweXJqZHdmaWRpd2cwdXZwamhmeXMzNnF1bm1kaXZsNDNlcSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/f3e3vLxB7TOuIxDVrX/giphy.gif'
+];
+
+
 client.login(token); 
 
 module.exports = { fleetNotify, deleteVoiceChannelByFc };
