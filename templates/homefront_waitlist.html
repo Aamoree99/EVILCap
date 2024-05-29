@@ -22,6 +22,7 @@
     </header>
     <div class="Mainpage">
         <h1>Welcome to Homefront Waitlist</h1>
+        <p onclick="copyText()" style="cursor: pointer;">In-game channel: <strong>Capybara HF</strong></p>
         <form id="create-room-form" class="">
             <div class="form-container">
                 <h2>Create a Room</h2>
@@ -457,6 +458,27 @@ function confirmInvite(member, roomId) {
         })
         .catch(error => console.error('Error closing fleet:', error));
     }
+
+    function copyText() {
+            const textToCopy = 'Capybara HF';
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                const notification = document.createElement('div');
+                notification.innerText = 'Text copied to clipboard!';
+                notification.style.position = 'fixed';
+                notification.style.top = '40px';
+                notification.style.right = '40vw';
+                notification.style.backgroundColor = 'green';
+                notification.style.color = 'white';
+                notification.style.padding = '10px';
+                notification.style.borderRadius = '5px';
+                document.body.appendChild(notification);
+                setTimeout(function() {
+                    document.body.removeChild(notification);
+                }, 3000);
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
 
         window.addEventListener('load', () => {
             checkAuth();
