@@ -2806,8 +2806,9 @@ client.on('messageCreate', async message => {
         
         if (hasImage) {
             const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
-            await message.reply(randomGifUrl);
+            const botMessage = await message.reply(randomGifUrl);
             reactionsMeme(message);
+            deleteMessageAfterDelay(botMessage, 60000);
         }
     }
 
@@ -2854,6 +2855,17 @@ async function checkForLinkImageOrFile(message) {
     if (hasLink || hasImage || hasFile) {
         await reactionsMeme(message);
     }
+}
+
+async function deleteMessageAfterDelay(message, delay) {
+    setTimeout(async () => {
+        try {
+            await message.delete();
+            console.log('Bot message deleted');
+        } catch (error) {
+            console.error('Failed to delete bot message:', error);
+        }
+    }, delay);
 }
 
 
