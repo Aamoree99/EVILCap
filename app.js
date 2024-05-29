@@ -111,7 +111,6 @@ app.post('/close-fleet', async (req, res) => {
 
 app.post('/submit-fit', (req, res) => {
     const { roomId, fit } = req.body;
-    console.log(req.body);
     const room = rooms.get(roomId);
     if (room) {
         const member = {
@@ -128,7 +127,6 @@ app.post('/submit-fit', (req, res) => {
         }
 
         room.waitlist.push(member);
-        console.log(room.waitlist);
         res.send({ success: true });
     } else {
         res.status(404).send({ success: false, message: 'Room not found' });
