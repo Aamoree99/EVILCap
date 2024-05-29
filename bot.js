@@ -2765,6 +2765,7 @@ async function fleetNotify(fc, eventType) {
     await category.children.create({
         name: `Fleet ${fc}`,
         type: 2,
+        userLimit: 5,
         permissionOverwrites: [
             {
                 id: guild.id,
