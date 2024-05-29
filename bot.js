@@ -1715,23 +1715,23 @@ async function fetchTransactions() {
         }
     });
     const data = await response.json();
-
     if (Array.isArray(data)) {
         const now = new Date();
         const eveTimeNow = new Date(now.toISOString().slice(0, 19) + 'Z'); // Преобразуем текущее время в UTC (EVE time)
-        const twoHoursAgo = new Date(eveTimeNow.getTime() - 2 * 60 * 60 * 1000); // 2 часа назад по EVE time
+        const threeHoursAgo = new Date(eveTimeNow.getTime() - 3 * 60 * 60 * 1000); // 3 часа назад по EVE time
 
-        transactionsCache = data.filter(tx => {
+        const recentTransactions = data.filter(tx => {
             const txDate = new Date(tx.date);
-            return tx.ref_type === "player_donation" && txDate >= twoHoursAgo;
+            return txDate >= threeHoursAgo && tx.ref_type === 'player_donation';
         });
 
+        transactionsCache = recentTransactions; // Сохраняем транзакции в cache
+        console.log(transactionsCache);
     } else {
         console.error('Ошибка: Ожидался массив транзакций');
         transactionsCache = [];
     }
 }
-
 
 async function checkTransactions() {
     if (isProcessing) return;
@@ -1899,7 +1899,6 @@ function generateUniqueCode() {
 }
 
 async function scheduleTransactionCheck() {
-    await deleteOldSessions();
     await loadActiveGames();
     await fetchTransactions();
     logAndSend('Активные игры загружены. Планирование проверки транзакций.');
@@ -1907,7 +1906,6 @@ async function scheduleTransactionCheck() {
 
     cron.schedule('*/5 * * * *', async () => {
         console.log(`Время проверки транзакций: ${new Date().toISOString()}`);
-        await deleteOldSessions();
         await fetchTransactions();
         await checkTransactions();
     }, {
@@ -1962,23 +1960,6 @@ async function loadActiveGames() {
         console.error('Ошибка при загрузке активных игр:', error);
         activeGames = {};
     }
-}
-
-async function deleteOldSessions() {
-    const data = await readData();
-    const activeGames = data.activeGames || {};
-    const currentTime = new Date();
-
-    for (const [userId, gameInfo] of Object.entries(activeGames)) {
-        const startTime = new Date(gameInfo.startTime);
-        const ageInHours = (currentTime - startTime) / (1000 * 60 * 60);
-
-        if (ageInHours > 3) {
-            delete activeGames[userId];
-        }
-    }
-
-    await writeData(data);
 }
 
 const phrases = [
