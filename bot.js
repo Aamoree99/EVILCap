@@ -73,6 +73,7 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
+    findTopMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
@@ -2808,7 +2809,7 @@ client.on('messageCreate', async message => {
             const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
             const botMessage = await message.reply(randomGifUrl);
             reactionsMeme(message);
-            deleteMessageAfterDelay(botMessage, 60000);
+            deleteMessageAfterDelay(botMessage, 600000);
         }
     }
 
@@ -2866,6 +2867,37 @@ async function deleteMessageAfterDelay(message, delay) {
             console.error('Failed to delete bot message:', error);
         }
     }, delay);
+}
+
+async function findTopMessage() {
+    const channel = await client.channels.fetch('1245452568818356308');
+    const oneWeekAgo = moment().subtract(7, 'days').toDate();
+    let topMessage = null;
+    let bestRatio = -1;
+
+    // Получаем все сообщения за последнюю неделю
+    const messages = await channel.messages.fetch({ limit: 100 });
+    const recentMessages = messages.filter(msg => msg.createdAt >= oneWeekAgo && msg.attachments.size > 0);
+
+    recentMessages.forEach(msg => {
+        const likes = msg.reactions.cache.get('👍')?.count || 0;
+        const dislikes = msg.reactions.cache.get('👎')?.count || 0;
+        const ratio = likes - dislikes; 
+
+        if (ratio > bestRatio) {
+            bestRatio = ratio;
+            topMessage = msg;
+        }
+    });
+
+    if (topMessage) {
+        const topImage = topMessage.attachments.first();
+        const author = topMessage.author;
+        const channel = await client.channels.fetch('1245452568818356308');
+        await channel.send({
+            content: `The best image of the week is from ${author}!\n${topImage.url}`
+        });
+    }
 }
 
 
