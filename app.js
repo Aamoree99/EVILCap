@@ -181,16 +181,26 @@ app.get('/hf_waitlist', (req, res) => {
 app.post('/create-room', async (req, res) => {
     const { eventType, languages, fc } = req.body;
     try {
-        const fleetResponse = await axios.get(`https://esi.evetech.net/latest/characters/${req.session.characterID}/fleet/?datasource=tranquility`, {
-            headers: {
-                'Authorization': `Bearer ${req.session.accessToken}`
+        let fleetId;
+
+        try {
+            const fleetResponse = await axios.get(`https://esi.evetech.net/latest/characters/${req.session.characterID}/fleet/?datasource=tranquility`, {
+                headers: {
+                    'Authorization': `Bearer ${req.session.accessToken}`
+                }
+            });
+
+            fleetId = fleetResponse.data.fleet_id;
+
+            if (!fleetId) {
+                return res.status(400).send({ success: false, message: 'You need to create a fleet first.' });
             }
-        });
-
-        const fleetId = fleetResponse.data.fleet_id;
-
-        if (!fleetId) {
-            return res.status(400).send({ success: false, message: 'You need to create a fleet first.' });
+        } catch (error) {
+            if (error.response && error.response.status === 404) {
+                return res.status(404).send({ success: false, message: 'You need to create a fleet first.' });
+            } else {
+                throw error;
+            }
         }
 
         const motd = `<font size="14" color="#bfffffff"><br>Welcome to </font>
