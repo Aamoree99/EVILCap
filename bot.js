@@ -2801,13 +2801,18 @@ async function deleteVoiceChannelByFc(fc) {
 }
 
 client.on('messageCreate', async message => {
-    if (message.channel.id !== '1245452568818356308' || message.author.bot) return;
+    if (message.channel.id === '1245452568818356308' && !message.author.bot) {
+        const hasImage = message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/'));
+        
+        if (hasImage) {
+            const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
+            await message.reply(randomGifUrl);
+            reactionsMeme(message);
+        }
+    }
 
-    const hasImage = message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/'));
-
-    if (hasImage) {
-        const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
-        await message.reply(randomGifUrl);
+    if (message.channel.id === '1159948735183327265' && !message.author.bot) {
+        checkForLinkImageOrFile(message);
     }
 });
 
@@ -2831,6 +2836,25 @@ const GIF_ARRAY = [
     'https://media.giphy.com/media/BQCsG0FBYjeYkmQ5bs/giphy.gif?cid=ecf05e474eg1v9llab7nx0agmwpnfp9tt1hqhph94lnzofia&ep=v1_gifs_related&rid=giphy.gif&ct=g',
     'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDNuY3NweXJqZHdmaWRpd2cwdXZwamhmeXMzNnF1bm1kaXZsNDNlcSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/f3e3vLxB7TOuIxDVrX/giphy.gif'
 ];
+
+async function reactionsMeme(message) {
+    try {
+        await message.react('👍'); // Палец вверх
+        await message.react('👎'); // Палец вниз
+    } catch (error) {
+        console.error('Failed to add reactions:', error);
+    }
+}
+
+async function checkForLinkImageOrFile(message) {
+    const hasLink = message.content.includes('http');
+    const hasImage = message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/'));
+    const hasFile = message.attachments.size > 0;
+
+    if (hasLink || hasImage || hasFile) {
+        await reactionsMeme(message);
+    }
+}
 
 
 client.login(token); 
