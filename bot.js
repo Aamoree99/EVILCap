@@ -2765,28 +2765,16 @@ async function fleetNotify(fc, eventType) {
         content: `<@&1163379884039618641> Fleet led by ${userTag} for ${eventType} has been launched. Join here: <http://evil-capybara.space/hf_waitlist>`
     });
 
-    await category.children.create({
+    await guild.channels.create({
         name: `Fleet ${fc}`,
-        type: 2,
+        type: 2, 
         userLimit: 5,
-        permissionOverwrites: [
-            {
-                id: guild.id,
-                allow: [
-                    PermissionsBitField.Flags.ViewChannel,
-                    PermissionsBitField.Flags.Connect,
-                    PermissionsBitField.Flags.Speak
-                ]
-            },
-            {
-                id: '1163379884039618641',
-                allow: [
-                    PermissionsBitField.Flags.ViewChannel,
-                    PermissionsBitField.Flags.Connect,
-                    PermissionsBitField.Flags.Speak
-                ]
-            }
-        ],
+        parent: category, 
+        permissionOverwrites: category.permissionOverwrites.cache.map(overwrite => ({
+            id: overwrite.id,
+            allow: overwrite.allow,
+            deny: overwrite.deny
+        }))
     });
 
     return { success: true };
