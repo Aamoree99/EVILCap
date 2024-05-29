@@ -2803,26 +2803,11 @@ async function deleteVoiceChannelByFc(fc) {
 client.on('messageCreate', async message => {
     if (message.channel.id !== '1245452568818356308' || message.author.bot) return;
 
-    const hasImage = message.attachments.some(attachment => attachment.contentType.startsWith('image/'));
+    const hasImage = message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/'));
 
     if (hasImage) {
         const randomGifUrl = GIF_ARRAY[Math.floor(Math.random() * GIF_ARRAY.length)];
-        const response = await fetch(randomGifUrl);
-        const buffer = await response.buffer();
-        const filePath = path.join(__dirname, 'random.gif');
-
-        fs.writeFile(filePath, buffer, async () => {
-            console.log('Downloaded GIF');
-            await message.channel.send({
-                files: [filePath]
-            });
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    console.error('Error deleting file:', err);
-                }
-                console.log('Deleted GIF');
-            });
-        });
+        await message.reply(randomGifUrl);
     }
 });
 
