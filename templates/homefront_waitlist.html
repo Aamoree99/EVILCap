@@ -21,6 +21,7 @@
         </div>
     </header>
     <div class="Mainpage">
+        <div id="notification"></div>
         <h1>Welcome to Homefront Waitlist</h1>
         <p onclick="copyText()" style="cursor: pointer;">In-game channel: <strong>Capybara HF</strong></p>
         <form id="create-room-form" class="">
@@ -193,32 +194,46 @@
         });
 
         document.getElementById('create-room-form').addEventListener('submit', event => {
-            event.preventDefault();
-            const eventType = document.getElementById('event-type').value;
-            const languages = Array.from(document.querySelectorAll('input[name="language"]:checked')).map(checkbox => checkbox.value);
-            const fc = document.getElementById('character-name').innerText;
-            createRoom(eventType, languages, fc);
-        });
+    event.preventDefault();
+    const eventType = document.getElementById('event-type').value;
+    const languages = Array.from(document.querySelectorAll('input[name="language"]:checked')).map(checkbox => checkbox.value);
+    const fc = document.getElementById('character-name').innerText;
+    createRoom(eventType, languages, fc);
+});
 
-        function createRoom(eventType, languages, fc) {
-            console.log(JSON.stringify({ eventType, languages, fc }));
-            fetch('/create-room', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ eventType, languages, fc })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadRooms();
-                } else {
-                    console.error('Error creating room:', data.message);
-                }
-            })
-            .catch(error => console.error('Error creating room:', error));
+function createRoom(eventType, languages, fc) {
+    console.log(JSON.stringify({ eventType, languages, fc }));
+    fetch('/create-room', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ eventType, languages, fc })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadRooms();
+        } else {
+            showNotification(data.message);
+            console.error('Error creating room:', data.message);
         }
+    })
+    .catch(error => {
+        showNotification('An error occurred while creating the room.');
+        console.error('Error creating room:', error);
+    });
+}
+
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 5000); 
+}
+
 
         function loadRooms() {
     fetch('/get-rooms')

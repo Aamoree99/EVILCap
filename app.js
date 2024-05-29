@@ -152,14 +152,14 @@ function isValidFit(fit, eventType) {
 
     if (!validFits[eventType]) return false;
 
-    const fitLines = fit.trim().split(/\s*[\r\n]+\s*/).map(line => line.trim()).filter(line => line);
+    const fitLines = fit.trim().split('\n').map(line => line.trim()).filter(line => line);
     const firstLine = fitLines.shift();
-    const fitShipType = firstLine.split(',')[0].trim();
+    const fitShipType = firstLine.split(',')[0].trim().toLowerCase();
 
     return validFits[eventType].some(validFit => {
-        const validFitLines = validFit.trim().split(/\s*[\r\n]+\s*/).map(line => line.trim()).filter(line => line);
+        const validFitLines = validFit.trim().split('\n').map(line => line.trim()).filter(line => line);
         const validFirstLine = validFitLines.shift();
-        const validShipType = validFirstLine.split(',')[0].trim();
+        const validShipType = validFirstLine.split(',')[0].trim().toLowerCase();
 
         if (fitShipType !== validShipType) return false;
 
@@ -181,22 +181,38 @@ app.get('/hf_waitlist', (req, res) => {
 app.post('/create-room', async (req, res) => {
     const { eventType, languages, fc } = req.body;
     try {
-    const fleetResponse = await axios.get(`https://esi.evetech.net/latest/characters/${req.session.characterID}/fleet/?datasource=tranquility`, {
-        headers: {
-            'Authorization': `Bearer ${req.session.accessToken}`
-        }
-    });
+        const fleetResponse = await axios.get(`https://esi.evetech.net/latest/characters/${req.session.characterID}/fleet/?datasource=tranquility`, {
+            headers: {
+                'Authorization': `Bearer ${req.session.accessToken}`
+            }
+        });
 
-    const fleetId = fleetResponse.data.fleet_id;
-    
-    if (!fleetId) {
-        return res.status(400).send({ success: false, message: 'No fleet ID found.' });
-    }
-    if (!eventType || !languages || !languages.length) {
-        return res.status(400).send({ success: false, message: 'Event Type and Languages are required.' });
-    }
-    const roomId = crypto.randomBytes(16).toString('hex');
-    const result = await fleetNotify(fc, eventType);
+        const fleetId = fleetResponse.data.fleet_id;
+
+        if (!fleetId) {
+            return res.status(400).send({ success: false, message: 'You need to create a fleet first.' });
+        }
+
+        const motd = `<font size="14" color="#bfffffff"><br>Welcome to </font>
+                      <font size="14" color="#ffffe400"><loc><a href="http://discord.gg/mnbdwprRf9">Discord</a><br><br></font>
+                      <font size="14" color="#ff6868e1"><a href="joinChannel:player_c0e784e11ca311efa2de00109bd0f828">Capybara HF</a></font>`;
+
+        await axios.put(`https://esi.evetech.net/latest/fleets/${fleetId}/`, {
+            is_free_move: true,
+            motd: motd
+        }, {
+            headers: {
+                'Authorization': `Bearer ${req.session.accessToken}`
+            }
+        });
+
+        if (!eventType || !languages || !languages.length) {
+            return res.status(400).send({ success: false, message: 'Event Type and Languages are required.' });
+        }
+
+        const roomId = crypto.randomBytes(16).toString('hex');
+        const result = await fleetNotify(fc, eventType);
+
         if (result.success) {
             rooms.set(roomId, { id: roomId, eventType, languages, fc, fleetId, waitlist: [] });
             res.send({ success: true });

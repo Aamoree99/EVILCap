@@ -604,3 +604,18 @@ button {
 .shake {
     animation: shake 0.5s infinite;
 }
+
+
+#notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #f44336; /* Красный цвет фона */
+    color: white; /* Белый цвет текста */
+    text-align: center;
+    padding: 15px;
+    font-size: 18px;
+    z-index: 1000; /* Чтобы контейнер был выше других элементов */
+    display: none; /* Скрываем контейнер по умолчанию */
+}
