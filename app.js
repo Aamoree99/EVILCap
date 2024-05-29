@@ -203,9 +203,7 @@ app.post('/create-room', async (req, res) => {
             }
         }
 
-        const motd = `<font size="14" color="#bfffffff"><br>Welcome to </font>
-                      <font size="14" color="#ffffe400"><loc><a href="http://discord.gg/mnbdwprRf9">Discord</a><br><br></font>
-                      <font size="14" color="#ff6868e1"><a href="joinChannel:player_c0e784e11ca311efa2de00109bd0f828">Capybara HF</a></font>`;
+        const motd = `<font size="14" color="#bfffffff"><br>Welcome!</font><br><br><font size="14" color="#ffffe400"><a href="http://discord.gg/mnbdwprRf9">Discord</a><br><br></font><font size="14" color="#ff6868e1"><a href="joinChannel:player_c0e784e11ca311efa2de00109bd0f828">Capybara HF</a></font>`;
 
         await axios.put(`https://esi.evetech.net/latest/fleets/${fleetId}/`, {
             is_free_move: true,

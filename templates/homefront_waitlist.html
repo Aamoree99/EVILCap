@@ -298,7 +298,7 @@ function loadWaitlist(roomId, fc) {
                         memberElement.onclick = () => openApprovalModal(member, roomId);
                     }
                     waitlistLeft.appendChild(memberElement);
-                } else if (member.status === 'green') {
+                } else if (member.status === 'aaproved') {
                     memberElement.classList.add('waitlist-member-green');
                     if (currentUser === fc) {
                         memberElement.onclick = () => inviteToFleet(member, roomId);
