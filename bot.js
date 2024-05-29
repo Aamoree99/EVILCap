@@ -12,6 +12,7 @@ const path = require('path');
 const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
 const { log } = require('console');
+const moment = require('moment');
 
 const client = new Client({
     intents: [
@@ -71,9 +72,11 @@ client.once('ready', async () => {
         scheduled: true,
         timezone: "UTC"
     });
+    cron.schedule('0 0 * * 1', async () => {
+        await findTopMessage();
+    });
     await updateMoonMessage();
     scheduleDailyMessage();
-    findTopMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
@@ -1727,7 +1730,6 @@ async function fetchTransactions() {
         });
 
         transactionsCache = recentTransactions; // Сохраняем транзакции в cache
-        console.log(transactionsCache);
     } else {
         console.error('Ошибка: Ожидался массив транзакций');
         transactionsCache = [];
@@ -1924,12 +1926,12 @@ async function saveActiveGames() {
             const game = activeGames[userId];
             simplifiedActiveGames[userId] = {
                 channelId: game.channel.id,
-                userId: game.user.id, // Still keep userId for reference
+                userId: game.user.id, 
                 startTime: game.startTime,
                 initialBalance: game.initialBalance,
                 uniqueCode: game.uniqueCode,
                 messageId: game.messageId,
-                nickname: game.nickname // Save the nickname
+                nickname: game.nickname 
             };
         }
         await writeData({ activeGames: simplifiedActiveGames });
@@ -2895,7 +2897,7 @@ async function findTopMessage() {
         const author = topMessage.author;
         const channel = await client.channels.fetch('1245452568818356308');
         await channel.send({
-            content: `The best image of the week is from ${author}!\n${topImage.url}`
+            content: `Лучшее изображение недели от ${author}!\n${topImage.url}`
         });
     }
 }
