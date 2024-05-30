@@ -171,7 +171,14 @@ const commands = [
         .addStringOption(option => 
             option.setName('date')
                     .setDescription('Введите дату в формате ДД.ММ.ГГГГ или ДД.ММ')
-                    .setRequired(true))
+                    .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('addtowaitlist')
+        .setDescription('Add to waitlist')
+        .addStringOption(option => 
+            option.setName('id')
+                .setDescription('People ID')
+                .setRequired(true))
 ]
     .map(command => command.toJSON());
 
@@ -735,6 +742,12 @@ client.on('interactionCreate', async interaction => {
             console.error('Error saving birthday:', error);
             interaction.reply({ content: 'Произошла ошибка при сохранении вашего дня рождения. Попробуйте позже.', ephemeral: true });
         }
+}, async addtowaitlist() {
+    const memberId = interaction.options.getString('id');
+
+        waitList.set(memberId, Date.now());
+        console.log(waitList);
+        await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
 }
 
     };
@@ -802,6 +815,7 @@ client.on('guildMemberAdd', async member => {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
             channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Captain Price, Серега.`);
             waitList.set(member.id, Date.now());
+            console.log(waitList);
         } else {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
         }
@@ -819,7 +833,7 @@ setInterval(async () => {
             const member = await client.users.fetch(memberId);
             if (!member) continue;
 
-            const guild = client.guilds.cache.get(member.guild.id);
+            const guild = await client.guilds.fetch(GUILD_ID);
             if (!guild) continue;
 
             const channel = guild.channels.cache.get(W_CHANNEL_ID);
