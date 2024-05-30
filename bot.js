@@ -56,10 +56,10 @@ let isProcessing = false;
 
 client.once('ready', async () => {
     client.user.setPresence({
-        activities: [{ name: 'анализирование Гачи', type: ActivityType.Playing }],
+        activities: [{ name: 'Гачи с Дональдом', type: ActivityType.Watching }],
         status: 'online'
     });
-    logAndSend(`<@235822777678954496>, папа я родился!`);
+    logAndSend(`<@235822777678954496>, я восстал из пепла!`);
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
