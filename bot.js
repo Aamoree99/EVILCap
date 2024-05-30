@@ -68,6 +68,7 @@ client.once('ready', async () => {
     scheduleTransactionCheck();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
+        checkBirthdays();
     }, {
         scheduled: true,
         timezone: "UTC"
@@ -163,7 +164,14 @@ const commands = [
         .addStringOption(option =>
             option.setName('id')
                 .setDescription('ID категории')
-                .setRequired(true))
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('birthday')
+        .setDescription('Добавить дату вашего дня рождения')
+        .addStringOption(option => 
+            option.setName('date')
+                    .setDescription('Введите дату в формате ДД.ММ.ГГГГ или ДД.ММ')
+                    .setRequired(true))
 ]
     .map(command => command.toJSON());
 
@@ -706,6 +714,27 @@ client.on('interactionCreate', async interaction => {
         console.error(error);
         await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
     }
+}, async birthday() {
+    const date = interaction.options.getString('date');
+        const dateRegexWithYear = /^\d{2}\.\d{2}\.\d{4}$/;
+        const dateRegexWithoutYear = /^\d{2}\.\d{2}$/;
+
+        if (!dateRegexWithYear.test(date) && !dateRegexWithoutYear.test(date)) {
+            return interaction.reply({ content: 'Неправильный формат даты. Используйте ДД.ММ.ГГГГ или ДД.ММ. Пример: 25.12.1990 или 25.12', ephemeral: true });
+        }
+
+        try {
+            const data = await readData();
+            if (!data.birthdays) {
+                data.birthdays = {};
+            }
+            data.birthdays[interaction.user.id] = date;
+            await writeData(data);
+            interaction.reply({ content: 'Ваш день рождения успешно добавлен!', ephemeral: true });
+        } catch (error) {
+            console.error('Error saving birthday:', error);
+            interaction.reply({ content: 'Произошла ошибка при сохранении вашего дня рождения. Попробуйте позже.', ephemeral: true });
+        }
 }
 
     };
@@ -720,6 +749,44 @@ client.on('interactionCreate', async interaction => {
         await confirmTransaction(interaction);
     }
 });
+
+async function checkBirthdays() {
+    try {
+        const data = await readData();
+        if (!data.birthdays) return;
+
+        const today = new Date();
+        const todayStr = today.toISOString().slice(5, 10).replace('-', '.');
+        const todayStrWithYear = today.toISOString().slice(0, 10).split('-').reverse().join('.');
+
+        const birthdayUsers = Object.keys(data.birthdays).filter(userId => {
+            const birthday = data.birthdays[userId];
+            return birthday.slice(0, 5) === todayStr || birthday === todayStrWithYear;
+        });
+
+        if (birthdayUsers.length > 0) {
+            const messages = birthdayUsers.map(userId => {
+                const birthday = data.birthdays[userId];
+                let ageMessage = '';
+                if (birthday.length === 10) {
+                    const birthYear = parseInt(birthday.slice(6, 10));
+                    const currentYear = today.getFullYear();
+                    const age = currentYear - birthYear;
+                    ageMessage = `, ему исполнилось ${age} лет`;
+                }
+                return `<@${userId}>${ageMessage}`;
+            }).join(', ');
+
+            const message = birthdayUsers.length === 1 
+                ? `🎉 Поздравляем ${messages}! У него сегодня день рождения! 🎉`
+                : `🎉 Сегодня особый день для ${messages}! Поздравляем их с днем рождения! 🎉`;
+
+            client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
+        }
+    } catch (error) {
+        console.error('Error checking birthdays:', error);
+    }
+}
 
 
 client.on('guildMemberAdd', async member => {
