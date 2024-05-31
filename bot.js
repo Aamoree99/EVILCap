@@ -102,19 +102,23 @@ async function sendMemoryMessage() {
     const diffTime = Math.abs(currentDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const prompt = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. Расскажи историю о том, что изменилось в коллективе с тех пор, когда Едена покинула нас.`;
-
-    try {
-        const response = await axios.post(chatApi, {
-            prompt: prompt,
-            max_tokens: 150
-        });
-
-        const message = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. ${response.data.choices[0].text.trim()}`;
-        await channel.send(message);
-        console.log('Сообщение отправлено:', message);
-    } catch (error) {
-        console.error('Ошибка при отправке сообщения:', error);
+    const userMessage = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. Расскажи историю о том, что изменилось в коллективе с тех пор.`; 
+    const payload = { 
+        model: 'gpt-3.5-turbo-0125', 
+        messages: [{ role: 'user', content: userMessage } ] 
+    }; 
+    try { 
+        const response = await axios.post( 'https://api.openai.com/v1/chat/completions', payload, { 
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${chatApi}` 
+            } 
+        } 
+        ); 
+            const message = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. ${response.data.choices[0].message.content.trim()}`;
+            await channel.send(message); 
+    } catch (error) { 
+        console.error('Ошибка при отправке сообщения:', error); 
     }
 }
 
