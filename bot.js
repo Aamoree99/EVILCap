@@ -78,8 +78,27 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
+    await getAndLogKillboardChannels(GUILD_ID);
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
+
+async function getAndLogKillboardChannels(guildId) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        logAndSend('Гильдия не найдена.');
+        return;
+    }
+
+    const channels = guild.channels.cache.filter(channel => channel.name.includes('killboard'));
+    
+    if (channels.size === 0) {
+        logAndSend('Каналов с "killboard" в названии не найдено.');
+        return;
+    }
+
+    const channelList = channels.map(channel => `${channel.name} (ID: ${channel.id})`).join('\n');
+    logAndSend(`Найдены каналы:\n${channelList}`);
+}
 
 const clientId = '1238628917900738591'; 
 const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения
