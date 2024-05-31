@@ -1689,10 +1689,14 @@ async function generateCommanderResponse(userMessage) {
             }
         );
 
-        return response.data.choices[0].message.content;
+        const originalResponse = response.data.choices[0].message.content;
+        const overheatingPercentage = Math.floor(Math.random() * 1001); // Генерирует случайное число от 0 до 100
+        const finalResponse = `${originalResponse} Бот перегрет на ${overheatingPercentage}%.`;
+
+        return finalResponse;
     } catch (error) {
         console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
-        return 'НАЩАЛЬНИКА АЩИБКА';
+        return 'НАЧАЛЬНИКА ОШИБКА';
     }
 }
 
