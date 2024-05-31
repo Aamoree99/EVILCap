@@ -37,6 +37,7 @@ const MOON_CHANNEL_ID= '1159193601289490534';
 const EN_MAIN_CHANNEL_ID= '1212507080934686740';
 const TARGET_CHANNEL_ID = '1242246489787334747';
 const HOMEFRONTS_ID='1243701044157091860';
+const MEMORIES_ID='1246127461662720071';
 const chatApi = process.env.OPENAI_API_KEY;
 
 
@@ -69,6 +70,7 @@ client.once('ready', async () => {
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
         checkBirthdays();
+        sendMemoryMessage();
     }, {
         scheduled: true,
         timezone: "UTC"
@@ -78,9 +80,43 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
-    await getAndLogKillboardChannels(GUILD_ID);
+    sendMemoryMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
+
+async function sendMemoryMessage() {
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (!guild) {
+        console.log('Гильдия не найдена.');
+        return;
+    }
+
+    const channel = guild.channels.cache.get(MEMORIES_ID);
+    if (!channel) {
+        console.log('Канал не найден.');
+        return;
+    }
+
+    const currentDate = new Date();
+    const startDate = new Date('2023-12-15');
+    const diffTime = Math.abs(currentDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const prompt = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. Расскажи историю о том, что изменилось в коллективе с тех пор, когда Едена покинула нас.`;
+
+    try {
+        const response = await axios.post(chatApi, {
+            prompt: prompt,
+            max_tokens: 150
+        });
+
+        const message = `Сегодня ${diffDays} день, как Елена покинула наш коллектив. ${response.data.choices[0].text.trim()}`;
+        await channel.send(message);
+        console.log('Сообщение отправлено:', message);
+    } catch (error) {
+        console.error('Ошибка при отправке сообщения:', error);
+    }
+}
 
 async function getAndLogKillboardChannels(guildId) {
     const guild = client.guilds.cache.get(guildId);
