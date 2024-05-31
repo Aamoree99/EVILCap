@@ -160,7 +160,7 @@ footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-heigh: 30vw;
+    height: 100%;
 }
 
 .officer-extra {

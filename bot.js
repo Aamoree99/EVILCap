@@ -81,24 +81,6 @@ client.once('ready', async () => {
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
-async function getAndLogKillboardChannels(guildId) {
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-        logAndSend('Гильдия не найдена.');
-        return;
-    }
-
-    const channels = guild.channels.cache.filter(channel => channel.name.includes('killboard'));
-    
-    if (channels.size === 0) {
-        logAndSend('Каналов с "killboard" в названии не найдено.');
-        return;
-    }
-
-    const channelList = channels.map(channel => `${channel.name} (ID: ${channel.id})`).join('\n');
-    logAndSend(`Найдены каналы:\n${channelList}`);
-}
-
 const clientId = '1238628917900738591'; 
 const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения
 const guildId = GUILD_ID; 
@@ -832,7 +814,7 @@ client.on('guildMemberAdd', async member => {
         if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
             channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Captain Price, Серега.`);
-            waitList.set(member.id, Date.now());
+            waitList.set(member.id, { joinedAt: Date.now(), reminded: false });
             console.log(waitList);
         } else {
             logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
@@ -846,19 +828,25 @@ const CHECK_INTERVAL = 5 * 60 * 1000; // 5 минут в миллисекунд�
 
 setInterval(async () => {
     const now = Date.now();
-    for (const [memberId, lastPingTime] of waitList.entries()) {
-        if (now - lastPingTime >= CHECK_INTERVAL) {
-            const member = await client.users.fetch(memberId);
-            if (!member) continue;
+    for (const [memberId, data] of waitList.entries()) {
+        const { joinedAt, reminded } = data;
 
-            const guild = await client.guilds.fetch(GUILD_ID);
-            if (!guild) continue;
+        if (!reminded && now - joinedAt >= CHECK_INTERVAL) {
+            try {
+                const member = await client.users.fetch(memberId);
+                if (!member) continue;
 
-            const channel = guild.channels.cache.get(W_CHANNEL_ID);
-            if (!channel) continue;
+                const guild = await client.guilds.fetch(GUILD_ID);
+                if (!guild) continue;
 
-            channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Kratos, Олег.`);
-            waitList.set(memberId, now);
+                const channel = guild.channels.cache.get(W_CHANNEL_ID);
+                if (!channel) continue;
+
+                channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Kratos, Олег.`);
+                waitList.set(memberId, { joinedAt, reminded: true });
+            } catch (error) {
+                console.error(`Error reminding member ${memberId}:`, error);
+            }
         }
     }
 }, CHECK_INTERVAL);

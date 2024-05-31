@@ -1,17 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
     const officers = [
-        { name: "DonaldKrak", img: "/slides/of1.png", text: "LeaderShip", extra: "Gachi Lover" },
-        { name: "Neuron Flax", img: "/slides/of8.png", text: "Officer of the Extraction Department", extra: "Charizard" },
-        { name: "Aamoree", img: "/slides/of6.png", text: "CEO of Cosmic Capybara Crew (Professional Training Academy)", extra: "Gengar" },
-        { name: "Mr Filch", img: "/slides/of3.jpg", text: "CEO Yellow Foxes", extra: "Profitable fleet" },
-        { name: "Nataly78 Arkaral ", img: "/slides/of10.jpg", text: "CEO Amar mining and industrial Corp", extra: "Bulbasaur" },
-        { name: "Arushia", img: "/slides/of7.png", text: "CEO of Nova Labs (EU Production Wing)", extra: "Bulbasaur" },
-        { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Blaziken" },
-        { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Umbreon" },
-        { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Gardevoir" },
-        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Lucario" },
-        { name: "Hell Heim", img: "/slides/of11.jpg", text: "CEO Capybara's Legion Lair", extra: "Null-sec Yoda"}
-    ];
+        { name: "DonaldKrak", img: "/slides/of1.png", text: "Leadership", extra: "Visionary Strategist" },
+        { name: "Neuron Flax", img: "/slides/of8.png", text: "Officer of the Extraction Department", extra: "Master of Efficiency" },
+        { name: "Aamoree", img: "/slides/of6.png", text: "CEO of Cosmic Capybara Crew (Professional Training Academy)", extra: "Training Guru" },
+        { name: "Mr Filch", img: "/slides/of3.jpg", text: "CEO Yellow Foxes", extra: "Tactical Genius" },
+        { name: "Nataly78 Arkaral", img: "/slides/of10.jpg", text: "CEO Amar Mining and Industrial Corp", extra: "Resourceful Leader" },
+        { name: "Arushia", img: "/slides/of7.png", text: "CEO of Nova Labs (EU Production Wing)", extra: "Innovative Pioneer" },
+        { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Forge Master" },
+        { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Fearless Commander" },
+        { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Dark Strategist" },
+        { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Expert Diplomat" },
+        { name: "Hell Heim", img: "/slides/of11.jpg", text: "CEO Capybara's Legion Lair", extra: "Null-Sec Conqueror" }
+    ];    
 
     const grid = document.getElementById('officer-grid');
 
