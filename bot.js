@@ -1644,13 +1644,12 @@ const triggerWords = [
 
 
 const specialPersonTrigger = "739618523076362310"; // Замените на ID нужного пользователя
-const specialPersonResponse = "Здравствуй, мой генерал! Сегодня мы на темной стороне.";
 
 async function generateStalkerResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'ответь в стиле персонажа из "Звездного пути". Включи атмосферные фразы и элементы научной фантастики, которые ассоциируются с "Звездным путем". твой ответ не должен превышать 60 символов.' },
+            { role: 'system', content: 'Ответь в стиле персонажа из "Звездного пути". Включи атмосферные фразы и элементы научной фантастики, которые ассоциируются с "Звездным путем". твой ответ не должен превышать 60 символов. Начни сообщение с извинений за то, что бот заебывает.' },
             { role: 'user', content: userMessage }
         ]
     };
@@ -1670,7 +1669,7 @@ async function generateStalkerResponse(userMessage) {
         return response.data.choices[0].message.content;
     } catch (error) {
         console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
-        return 'НАЩАЛЬНИКА АЩИБКА';
+        return 'НАЧАЛЬНИКА ОШИБКА';
     }
 }
 
@@ -1678,7 +1677,7 @@ async function generateCommanderResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Придумай известного персонажа-предводителя и напиши только ответ на его приветствие, будто я его подчиненный. Приветствие может быть типа "Доброе утро", "Привет" и т.д.' },
+            { role: 'system', content: 'Придумай известного персонажа-предводителя и напиши только ответ на его приветствие, будто я его подчиненный. Приветствие может быть типа "Доброе утро", "Привет" и т.д. Начни сообщение с извинений за то, что бот заебывает.' },
             { role: 'user', content: userMessage }
         ]
     };
