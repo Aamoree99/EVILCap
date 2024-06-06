@@ -1813,14 +1813,13 @@ async function fetchTransactions() {
     if (Array.isArray(data)) {
         const now = new Date();
         const eveTimeNow = new Date(now.toISOString().slice(0, 19) + 'Z'); // Преобразуем текущее время в UTC (EVE time)
-        const threeHoursAgo = new Date(eveTimeNow.getTime() - 3 * 60 * 60 * 1000); // 3 часа назад по EVE time
 
         const recentTransactions = data.filter(tx => {
-            const txDate = new Date(tx.date);
-            return txDate >= threeHoursAgo && tx.ref_type === 'player_donation';
+            return tx.ref_type === 'player_donation';
         });
 
         transactionsCache = recentTransactions; // Сохраняем транзакции в cache
+        console.log(transactionsCache);
     } else {
         console.error('Ошибка: Ожидался массив транзакций');
         transactionsCache = [];
