@@ -13,6 +13,7 @@ const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
 const { log } = require('console');
 const moment = require('moment');
+const statsFilePath = path.join(__dirname, 'stats.json');
 
 const client = new Client({
     intents: [
@@ -75,9 +76,11 @@ client.once('ready', async () => {
     });
     cron.schedule('0 0 * * 1', async () => {
         await findTopMessage();
+        await pickWinner();
     });
     await updateMoonMessage();
     scheduleDailyMessage();
+    await initializeStats();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
@@ -198,6 +201,79 @@ const rest = new REST({ version: '9' }).setToken(token);
 })();
 
 let activeGames = {};
+
+async function readStatsFromJSON(filePath) {
+    try {
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading stats from JSON file:', error);
+        return {};
+    }
+}
+
+// Асинхронная запись в JSON файл для статистики
+async function writeStatsToJSON(filePath, data) {
+    try {
+        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+        console.log("Stats successfully written to JSON file");
+    } catch (error) {
+        console.error('Error writing stats to JSON file:', error);
+    }
+}
+
+// Инициализация данных статистики
+let stats = {};
+
+async function initializeStats() {
+    stats = await readStatsFromJSON(statsFilePath);
+}
+
+// Обновление данных при отправке сообщения
+client.on('messageCreate', async message => {
+    if (message.author.bot) return; // Игнорировать сообщения от ботов
+    const userId = message.author.id;
+    if (!stats[userId]) {
+        stats[userId] = { messages: 0 };
+    }
+    stats[userId].messages += 1;
+    await writeStatsToJSON(statsFilePath, stats);
+});
+
+// Выбор победителя
+async function pickWinner() {
+    let maxMessages = 0;
+    let winnerId = null;
+
+    for (const userId in stats) {
+        if (stats.hasOwnProperty(userId) && userId !== '739618523076362310') {
+            if (stats[userId].messages > maxMessages) {
+                maxMessages = stats[userId].messages;
+                winnerId = userId;
+            }
+        }
+    }
+
+    if (winnerId) {
+        try {
+            const channel = await client.channels.fetch(MAIN_CHANNEL_ID);
+            if (channel) {
+                await channel.send(`<@${winnerId}> - Поздравляем! Вы самый активный пользователь недели и выиграли 10 млн ISK! Обратитесь к <@739618523076362310> для получения приза.`);
+            } else {
+                console.log('Канал для объявлений не найден.');
+            }
+        } catch (error) {
+            console.error('Error fetching the announcement channel:', error);
+        }
+    } else {
+        console.log('Нет подходящего победителя на этой неделе.');
+    }
+
+    // Сброс статистики
+    stats = {};
+    await writeStatsToJSON(statsFilePath, stats);
+}
+
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand() && !interaction.isButton()) return;
@@ -677,7 +753,6 @@ client.on('interactionCreate', async interaction => {
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
-        logAndSend(allowedChannels, currentChannelId, name);
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
@@ -700,22 +775,26 @@ client.on('interactionCreate', async interaction => {
     }
 },async evgen() {
     try {
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
+        const name = interaction.options.getString('name');
+        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
-        const baseMessage = `Флот отправляется на белт в системе ${interaction.options.getString('name')}!`; 
+        const baseMessage = `Флот отправляется на белт в системе ${name}! Во имя <@350931081194897409>`;
+        const en_baseMessage = `Fleet is heading to the belt in the ${name} system! In the name of <@350931081194897409>`;
 
-        const finalMessage = `${baseMessage} Во имя <@350931081194897409>`;
-
-        const channel = client.channels.cache.get(currentChannelId);
-        if (channel) {
-            await channel.send(finalMessage);
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+    
+        if (channel && en_channel) {
+            await channel.send(baseMessage);
+            await en_channel.send(en_baseMessage);
+            
+            await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
         } else {
-            await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
         }
     } catch (error) {
         console.error(error);
@@ -1818,7 +1897,6 @@ async function fetchTransactions() {
         });
 
         transactionsCache = recentTransactions; // Сохраняем транзакции в cache
-        console.log(transactionsCache);
     } else {
         console.error('Ошибка: Ожидался массив транзакций');
         transactionsCache = [];
