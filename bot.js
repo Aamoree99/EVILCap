@@ -1784,6 +1784,7 @@ async function generateCommanderResponse(userMessage) {
     }
 }
 
+/*
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
@@ -1800,7 +1801,7 @@ client.on('messageCreate', async (message) => {
         await message.reply(stalkerResponse);
     }
 });
-
+*/
 
 async function startCasinoGame(interaction) {
     if (!interaction.isCommand() && !interaction.isButton()) {
