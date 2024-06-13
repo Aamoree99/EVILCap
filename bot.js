@@ -1728,7 +1728,7 @@ async function generateStalkerResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'Начни сообщение с извинений за свое навязывающее поведение, затем просто поприветствуй в ответ. Сообщение должно быть не более 60 символов.' },
+            { role: 'system', content: 'поприветствуй в ответ в стиле дворецкого. Сообщение должно быть не более 60 символов.' },
             { role: 'user', content: userMessage }
         ]
     };
@@ -1784,7 +1784,6 @@ async function generateCommanderResponse(userMessage) {
     }
 }
 
-/*
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
@@ -1801,7 +1800,6 @@ client.on('messageCreate', async (message) => {
         await message.reply(stalkerResponse);
     }
 });
-*/
 
 async function startCasinoGame(interaction) {
     if (!interaction.isCommand() && !interaction.isButton()) {
