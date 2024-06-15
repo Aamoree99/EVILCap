@@ -705,9 +705,8 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error(error);
         }
-        },
-        async ice() {
-        try {
+        }, async ice() {
+    try {
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
@@ -717,6 +716,7 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
+        const userMention = `<@${interaction.user.id}>`;
         const phrases = [
             "Давайте наберем побольше льда!",
             "Не упустим возможность пополнить запасы!",
@@ -724,8 +724,9 @@ client.on('interactionCreate', async interaction => {
             "Время действовать и собирать лед!"
         ];
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}!`; 
+        const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}! ${randomPhrase} Флот создан господином ${userMention}`; 
         const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+
         const en_phrases = [
             "Let's gather as much ice as we can!",
             "Don't miss the chance to stock up!",
@@ -733,12 +734,12 @@ client.on('interactionCreate', async interaction => {
             "Time to act and collect ice!"
         ];
         const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system!`; 
+        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
         const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
 
         if (channel && en_channel) {
-            await channel.send(`${baseMessage} ${randomPhrase}`);
-            await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
+            await channel.send(baseMessage);
+            await en_channel.send(en_baseMessage);
             await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
         } else {
             await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
@@ -749,7 +750,6 @@ client.on('interactionCreate', async interaction => {
     }
 },  async grav() {
     try {
-        
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
@@ -757,14 +757,16 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
-        const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт. Орка с прессом выставлена.`; 
+        
+        const userMention = `<@${interaction.user.id}>`;
+        const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
         const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-        const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open. The Orca with a press is deployed.`; 
+        const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
         const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
 
         if (channel && en_channel) {
-            await channel.send(`${baseMessage}`);
-            await en_channel.send(`${en_baseMessage}`);
+            await channel.send(baseMessage);
+            await en_channel.send(en_baseMessage);
             await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
         } else {
             await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
@@ -773,7 +775,7 @@ client.on('interactionCreate', async interaction => {
         console.error(error);
         await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
     }
-},async evgen() {
+}, async evgen() {
     try {
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
@@ -782,8 +784,10 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
-        const baseMessage = `Флот отправляется на белт в системе ${name}! Во имя <@350931081194897409>`;
-        const en_baseMessage = `Fleet is heading to the belt in the ${name} system! In the name of <@350931081194897409>`;
+
+        const userMention = `<@${interaction.user.id}>`;
+        const baseMessage = `Флот отправляется на белт в системе ${name} господином ${userMention}! Во имя <@350931081194897409>`;
+        const en_baseMessage = `Fleet is heading to the belt in the ${name} system by the master ${userMention}! In the name of <@350931081194897409>`;
 
         const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
         const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
@@ -791,7 +795,6 @@ client.on('interactionCreate', async interaction => {
         if (channel && en_channel) {
             await channel.send(baseMessage);
             await en_channel.send(en_baseMessage);
-            
             await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
         } else {
             await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
