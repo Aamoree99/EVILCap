@@ -1731,7 +1731,7 @@ async function generateStalkerResponse(userMessage) {
     const payload = {
         model: 'gpt-3.5-turbo-0125',
         messages: [
-            { role: 'system', content: 'поприветствуй в ответ в стиле дворецкого. Сообщение должно быть не более 60 символов.' },
+            { role: 'system', content: 'поприветствуй в ответ в стиле дворецкого. Сообщение должно быть не более 60 символов, в конце обязательно добавь "дон".' },
             { role: 'user', content: userMessage }
         ]
     };
