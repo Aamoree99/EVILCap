@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "Arushia", img: "/slides/of7.png", text: "CEO of Nova Labs (EU Production Wing)", extra: "Innovative Pioneer" },
         { name: "Kagutaba Shax", img: "/slides/of4.png", text: "CEO God's Forge", extra: "Forge Master" },
         { name: "Fedor Aideron", img: "/slides/of2.png", text: "CEO Black List Corporation", extra: "Fearless Commander" },
-        { name: "Necrotore", img: "/slides/of5.png", text: "CEO The Necro Order", extra: "Dark Strategist" },
         { name: "Ivan Grozny", img: "/slides/of9.png", text: "Communication Manager", extra: "Expert Diplomat" },
         { name: "Hell Heim", img: "/slides/of11.jpg", text: "CEO Capybara's Legion Lair", extra: "Null-Sec Conqueror" }
     ];    
