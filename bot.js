@@ -181,6 +181,13 @@ const commands = [
         .addStringOption(option => 
             option.setName('id')
                 .setDescription('People ID')
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('userinfo')
+        .setDescription('Показать информацию о пользователе')
+        .addStringOption(option => 
+            option.setName('id')
+                .setDescription('ID пользователя')
                 .setRequired(true))
 ]
     .map(command => command.toJSON());
