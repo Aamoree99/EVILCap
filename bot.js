@@ -209,6 +209,16 @@ const rest = new REST({ version: '9' }).setToken(token);
 
 let activeGames = {};
 
+client.on('messageCreate', message => {
+    if (message.content === '!reboot') {
+        if (message.author.id === '235822777678954496') { // Укажите ID пользователя явно
+            message.channel.send('Перезагружаюсь...')
+                .then(() => process.exit(0));
+        } else {
+            message.channel.send('У вас нет прав для выполнения этой команды.');
+        }
+    }
+});
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand() && !interaction.isButton()) return;
