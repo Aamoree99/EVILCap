@@ -19,6 +19,16 @@ const connection = mysql.createConnection({
     database: process.env.DB_NAME
 });
 
+connection.connect((err) => {
+    if (err) {
+        console.error('Ошибка подключения к базе данных:', err.stack);
+        return;
+    }
+    console.log('Подключение к базе данных установлено, ID подключения:', connection.threadId);
+});
+
+module.exports = connection;
+
 // Создание нового клиента Discord
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildPresences] });
 

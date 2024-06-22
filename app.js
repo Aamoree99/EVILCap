@@ -6,7 +6,6 @@ const querystring = require('querystring');
 const crypto = require('crypto');
 require('dotenv').config();
 const { fleetNotify, deleteVoiceChannelByFc } = require('./bot');
-require('./db');
 
 const app = express();
 const port = 8080; // Порт, на котором будет запущен сервер

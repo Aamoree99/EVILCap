@@ -15,7 +15,8 @@ const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
 const { log } = require('console');
 const moment = require('moment');
-const statsFilePath = path.join(__dirname, 'stats.json');
+const mysql = require('mysql2');
+const connection = require('./db');
 
 const client = new Client({
     intents: [
@@ -1732,11 +1733,52 @@ async function generateCommanderResponse(userMessage) {
     }
 }
 
+async function getLastResponseTimestamp(userId) {
+    try {
+        const [rows] = await connection.promise().query(
+            'SELECT lastResponseTime FROM UserResponses WHERE userId = ?', [userId]
+        );
+        return rows.length > 0 ? rows[0].lastResponseTime : null;
+    } catch (err) {
+        console.error('Ошибка при получении времени последнего ответа:', err);
+        return null;
+    }
+}
+
+// Вспомогательная функция для обновления времени последнего ответа
+async function updateLastResponseTimestamp(userId, timestamp) {
+    try {
+        await connection.promise().query(
+            'INSERT INTO UserResponses (userId, lastResponseTime) VALUES (?, ?) ON DUPLICATE KEY UPDATE lastResponseTime = VALUES(lastResponseTime)',
+            [userId, timestamp]
+        );
+    } catch (err) {
+        console.error('Ошибка при обновлении времени последнего ответа:', err);
+    }
+}
+
+// Функция для проверки, являются ли две даты из одного календарного дня
+function isSameCalendarDay(date1, date2) {
+    return date1.toISOString().split('T')[0] === date2.toISOString().split('T')[0];
+}
+
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
     const messageContent = message.content.toLowerCase();
     const containsTriggerWord = triggerWords.some(word => messageContent.includes(word));
+
+    const currentDate = new Date();
+    const lastResponseTimestamp = await getLastResponseTimestamp(message.author.id); // Получаем timestamp последнего ответа из БД
+
+    if (lastResponseTimestamp) {
+        const lastResponseDate = new Date(lastResponseTimestamp);
+
+        if (isSameCalendarDay(currentDate, lastResponseDate)) {
+            await message.reply('Простите, но <@739618523076362310> попросил меня не здороваться больше раза в сутки.');
+            return;
+        }
+    }
 
     if (messageContent.includes(specialTriggerWord)) {
         await message.reply(specialResponse);
@@ -1747,6 +1789,9 @@ client.on('messageCreate', async (message) => {
         const stalkerResponse = await generateStalkerResponse(message.content);
         await message.reply(stalkerResponse);
     }
+
+    // Обновляем время последнего ответа в БД
+    await updateLastResponseTimestamp(message.author.id, currentDate);
 });
 
 async function startCasinoGame(interaction) {
