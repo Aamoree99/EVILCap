@@ -76,7 +76,6 @@ client.once('ready', async () => {
     });
     cron.schedule('0 0 * * 1', async () => {
         await findTopMessage();
-        await pickWinner();
     });
     await updateMoonMessage();
     scheduleDailyMessage();
@@ -208,78 +207,6 @@ const rest = new REST({ version: '9' }).setToken(token);
 })();
 
 let activeGames = {};
-
-async function readStatsFromJSON(filePath) {
-    try {
-        const data = await fs.readFile(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading stats from JSON file:', error);
-        return {};
-    }
-}
-
-// Асинхронная запись в JSON файл для статистики
-async function writeStatsToJSON(filePath, data) {
-    try {
-        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-        console.log("Stats successfully written to JSON file");
-    } catch (error) {
-        console.error('Error writing stats to JSON file:', error);
-    }
-}
-
-// Инициализация данных статистики
-let stats = {};
-
-async function initializeStats() {
-    stats = await readStatsFromJSON(statsFilePath);
-}
-
-// Обновление данных при отправке сообщения
-client.on('messageCreate', async message => {
-    if (message.author.bot) return; // Игнорировать сообщения от ботов
-    const userId = message.author.id;
-    if (!stats[userId]) {
-        stats[userId] = { messages: 0 };
-    }
-    stats[userId].messages += 1;
-    await writeStatsToJSON(statsFilePath, stats);
-});
-
-// Выбор победителя
-async function pickWinner() {
-    let maxMessages = 0;
-    let winnerId = null;
-
-    for (const userId in stats) {
-        if (stats.hasOwnProperty(userId) && userId !== '739618523076362310') {
-            if (stats[userId].messages > maxMessages) {
-                maxMessages = stats[userId].messages;
-                winnerId = userId;
-            }
-        }
-    }
-
-    if (winnerId) {
-        try {
-            const channel = await client.channels.fetch(MAIN_CHANNEL_ID);
-            if (channel) {
-                await channel.send(`<@${winnerId}> - Поздравляем! Вы самый активный пользователь недели и выиграли 10 млн ISK! Обратитесь к <@739618523076362310> для получения приза.`);
-            } else {
-                console.log('Канал для объявлений не найден.');
-            }
-        } catch (error) {
-            console.error('Error fetching the announcement channel:', error);
-        }
-    } else {
-        console.log('Нет подходящего победителя на этой неделе.');
-    }
-
-    // Сброс статистики
-    stats = {};
-    await writeStatsToJSON(statsFilePath, stats);
-}
 
 
 client.on('interactionCreate', async interaction => {
