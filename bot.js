@@ -79,7 +79,6 @@ client.once('ready', async () => {
     });
     await updateMoonMessage();
     scheduleDailyMessage();
-    await initializeStats();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
 });
 
