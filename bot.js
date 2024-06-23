@@ -1206,7 +1206,7 @@ async function scheduleDailyActivity(client) {
 
 
 
-function logAndSend(message) {
+async function logAndSend(message) {
     try {
         const now = new Date(); // Получение текущей даты и времени
         const timestamp = now.toISOString();
