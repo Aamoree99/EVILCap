@@ -29,7 +29,7 @@ connection.connect((err) => {
 module.exports = connection;
 
 // Создание нового клиента Discord
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildPresences] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildMembers] });
 
 // Переменная для отслеживания последнего времени активности
 const userSessions = {};
@@ -51,9 +51,10 @@ client.once('ready', async () => {
     try {
         // Получение конкретной гильдии по ID
         const guild = await client.guilds.fetch(guildId);
+        console.log(`Гильдия с ID ${guild.id} найдена. Название: ${guild.name}`);
 
-        // Получение всех членов гильдии
         const members = await guild.members.fetch();
+        console.log(`Всего мемберов в гильдии: ${members.size}`);
 
         // Обработка всех членов гильдии
         members.forEach(member => {
@@ -106,7 +107,6 @@ client.on(Events.InteractionCreate, async interaction => {
                 [userId]
             );
 
-            console.log(results);
 
             if (!results || results.length === 0) {
                 await interaction.reply(`Пользователь с ID ${userId} не найден.`);
@@ -142,7 +142,7 @@ function formatTime(minutes) {
     return `${formattedHours}:${formattedMinutes}`;
 }
 
-client.on('presenceUpdate', (oldPresence, newPresence) => {
+client.on('presenceUpdate', (newPresence) => {
     const userId = newPresence.userId;
     const now = Date.now();
 
