@@ -35,10 +35,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 const userSessions = {};
 
 // Включение бота
-client.once('ready', () => {
-    console.log('Воришка знаний запущен во имя <@290893335244177419>');
-
-    // Отправка приветственного сообщения
+client.once('ready', async () => {
     const welcomeChannel = client.channels.cache.get(welcomeChannelId);
     if (welcomeChannel) {
         welcomeChannel.send('Воришка знаний запущен во имя <@290893335244177419>!');
@@ -46,11 +43,31 @@ client.once('ready', () => {
         console.error(`Канал с ID ${welcomeChannelId} не найден.`);
     }
 
-    // Очистка еженедельной таблицы каждую неделю в воскресенье в 12:00
     cron.schedule('0 12 * * 0', async () => {
         calculateAndAwardMedals();
         resetWeeklyActivity();
     });
+
+    try {
+        // Получение конкретной гильдии по ID
+        const guild = await client.guilds.fetch(guildId);
+
+        // Получение всех членов гильдии
+        const members = await guild.members.fetch();
+
+        // Обработка всех членов гильдии
+        members.forEach(member => {
+            if (member.presence?.status === 'online') {
+                userSessions[member.id] = {
+                    startTime: Date.now(),
+                    lastMessageTime: Date.now()
+                };
+                console.log(`Пользователь ${member.id} онлайн. Сессия начата.`);
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка при получении гильдии или членов:', error);
+    }
 });
 
 // Обработка сообщений и обновление данных
@@ -125,7 +142,6 @@ function formatTime(minutes) {
     return `${formattedHours}:${formattedMinutes}`;
 }
 
-// Обработка обновления присутствия
 client.on('presenceUpdate', (oldPresence, newPresence) => {
     const userId = newPresence.userId;
     const now = Date.now();
@@ -133,7 +149,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     if (newPresence.status === 'offline' || newPresence.status === 'idle') {
         // Пользователь ушел в оффлайн или стал неактивен
         if (userSessions[userId] && userSessions[userId].startTime) {
-            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60); 
+            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60);
             updateOnlineTime(userId, onlineDuration);
             delete userSessions[userId];
         }
