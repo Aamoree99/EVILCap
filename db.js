@@ -8,6 +8,8 @@ const cron = require('node-cron');
 const guildId = '1159107187407335434';
 const welcomeChannelId = '1239085828395892796'; // ID канала для приветственного сообщения
 const topChannelId = '1172972375688626276'; // ID канала для топа участников
+const allowedUserId = '235822777678954496';
+const command = '!apocalypse';
 
 // Настройка подключения к базе данных
 const connection = mysql.createConnection({
@@ -63,11 +65,36 @@ client.once('ready', async () => {
                     startTime: Date.now(),
                     lastMessageTime: Date.now()
                 };
-                console.log(`Пользователь ${member.id} онлайн. Сессия начата.`);
             }
         });
     } catch (error) {
         console.error('Ошибка при получении гильдии или членов:', error);
+    }
+});
+
+client.on('messageCreate', async (message) => {
+    if (message.content === command && message.author.id === allowedUserId) {
+        try {
+            const guild = message.guild;
+            if (!guild) {
+                console.log('Не удалось получить гильдию.');
+                return;
+            }
+
+            const guildName = guild.name;
+            const categories = [];
+            const channels = [];
+
+            guild.channels.cache.forEach(channel => {
+                if (channel.type === 4) { // Проверка на тип категории (GUILD_CATEGORY)
+                    categories.push({ id: channel.id, name: channel.name });
+                } else {
+                    channels.push({ id: channel.id, name: channel.name, parentId: channel.parentId });
+                }
+            });
+        } catch (error) {
+            console.error('Ошибка при получении данных о гильдии:', error);
+        }
     }
 });
 
@@ -143,6 +170,11 @@ function formatTime(minutes) {
 }
 
 client.on('presenceUpdate', (newPresence) => {
+    if (!newPresence || !newPresence.userId) {
+        console.warn('newPresence is null or userId is missing.');
+        return;
+    }
+
     const userId = newPresence.userId;
     const now = Date.now();
 
@@ -163,6 +195,7 @@ client.on('presenceUpdate', (newPresence) => {
         }
     }
 });
+
 
 // Обновление времени в онлайне в базе данных
 function updateOnlineTime(userId, duration) {
