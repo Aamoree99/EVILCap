@@ -796,6 +796,13 @@ client.on('interactionCreate', async interaction => {
     const userId = options.getString('userid');
     const text = options.getString('message');
 
+    const allowedUserId = '235822777678954496'; // ID пользователя, которому разрешено использование команды
+
+    if (interaction.user.id !== allowedUserId) {
+        await interaction.reply({ content: "У вас нет прав на использование этой команды.", ephemeral: true });
+        return;
+    }
+
     const channel = await client.channels.fetch(channelId);
     if (!channel) {
         await interaction.reply({ content: "Канал не найден.", ephemeral: true });
