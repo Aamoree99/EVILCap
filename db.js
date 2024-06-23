@@ -163,15 +163,16 @@ client.on('interactionCreate', async interaction => {
 
         async topalltime() {
             try {
-                const [results] = await queryDatabase(
-                    'SELECT user_id, messages_count FROM UserActivityTotal ORDER BY messages_count DESC LIMIT 10'
+                const results = await queryDatabase(
+                    `SELECT user_id, messages_count, last_visit, online_time 
+                     FROM UserActivityTotal 
+                     ORDER BY messages_count DESC 
+                     LIMIT 10`
                 );
-
                 if (!results || results.length === 0) {
                     await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
                     return;
                 }
-
                 let replyMessage = 'Топ-10 пользователей за все время:\n';
                 results.forEach((user, index) => {
                     const lastVisit = user.last_visit ?? 'null';
@@ -190,8 +191,11 @@ client.on('interactionCreate', async interaction => {
 
         async topweekly() {
             try {
-                const [results] = await queryDatabase(
-                    'SELECT user_id, messages_count FROM UserActivityWeekly ORDER BY messages_count DESC LIMIT 10'
+                const results = await queryDatabase(
+                    `SELECT user_id, messages_count, last_visit, online_time 
+                     FROM UserActivityWeekly
+                     ORDER BY messages_count DESC 
+                     LIMIT 10`
                 );
 
                 if (!results || results.length === 0) {
