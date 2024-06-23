@@ -198,13 +198,13 @@ const commands = [
                 .setDescription('ID канала для отправки сообщения')
                 .setRequired(true))
         .addStringOption(option =>
-            option.setName('userid')
-                .setDescription('ID пользователя для упоминания')
-                .setRequired(false))
-        .addStringOption(option =>
             option.setName('message')
                 .setDescription('Текст сообщения')
                 .setRequired(true))
+        .addStringOption(option =>
+            option.setName('userid')
+                .setDescription('ID пользователя для упоминания')
+                .setRequired(false))
 ]
     .map(command => command.toJSON());
 
