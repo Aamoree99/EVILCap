@@ -152,8 +152,7 @@ client.on('interactionCreate', async interaction => {
                     content: `Информация о пользователе <@${userId}>:\n` +
                              `- Последнее посещение: ${lastVisit}\n` +
                              `- Количество сообщений: ${messagesCount}\n` +
-                             `- Общее время в онлайне: ${onlineTime} часов`,
-                    ephemeral: true
+                             `- Общее время в онлайне: ${onlineTime} часов`
                 });
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
@@ -182,7 +181,7 @@ client.on('interactionCreate', async interaction => {
                                     `общее время онлайн: ${onlineTime} часов\n`;
                 });
 
-                await interaction.reply({ content: replyMessage, ephemeral: true });
+                await interaction.reply({ content: replyMessage});
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
@@ -212,7 +211,7 @@ client.on('interactionCreate', async interaction => {
                                     `общее время онлайн: ${onlineTime} часов\n`;
                 });
 
-                await interaction.reply({ content: replyMessage, ephemeral: true });
+                await interaction.reply({ content: replyMessage});
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
