@@ -5,7 +5,6 @@ const { Client, GatewayIntentBits, Events } = require('discord.js');
 const mysql = require('mysql2');
 const cron = require('node-cron');
 
-// Переменные окружения
 const guildId = '1159107187407335434';
 const welcomeChannelId = '1239085828395892796'; // ID канала для приветственного сообщения
 const topChannelId = '1172972375688626276'; // ID канала для топа участников
