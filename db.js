@@ -118,43 +118,108 @@ client.on('messageCreate', message => {
     }
 });
 
-// Обработка Slash-команд
-client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand() && !interaction.isButton()) return;
 
-    const { commandName } = interaction;
+    if (interaction.channelId !== welcomeChannelId) {
+        await interaction.reply({ content: "Эта команда доступна только в канале #welcomechannel.", ephemeral: true });
+        return;
+    }
 
-    if (commandName === 'userinfo') {
-        const userId = interaction.options.getString('id');
+    const { commandName, options, channelId } = interaction;
 
-        // Запрос к базе данных
-        try {
-            const [results] = await queryDatabase(
-                'SELECT * FROM UserActivityTotal WHERE user_id = ?',
-                [userId]
-            );
+    const commandHandlers = {
+        async userinfo() {
+            const userId = options.getString('id');
+            
+            try {
+                const [results] = await queryDatabase(
+                    'SELECT * FROM UserActivityTotal WHERE user_id = ?',
+                    [userId]
+                );
 
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: `Пользователь с ID ${userId} не найден.`, ephemeral: true });
+                    return;
+                }
 
-            if (!results || results.length === 0) {
-                await interaction.reply(`Пользователь с ID ${userId} не найден.`);
-                return;
+                const userInfo = results[0] || {};
+                const lastVisit = userInfo.last_visit ?? 'null';
+                const messagesCount = userInfo.messages_count ?? 'null';
+                const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
+
+                await interaction.reply({
+                    content: `Информация о пользователе <@${userId}>:\n` +
+                             `- Последнее посещение: ${lastVisit}\n` +
+                             `- Количество сообщений: ${messagesCount}\n` +
+                             `- Общее время в онлайне: ${onlineTime} часов`,
+                    ephemeral: true
+                });
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
             }
+        },
 
-            const userInfo = results || {};
-            const lastVisit = userInfo.last_visit ?? 'null';
-            const messagesCount = userInfo.messages_count ?? 'null';
-            const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
+        async topalltime() {
+            try {
+                const [results] = await queryDatabase(
+                    'SELECT user_id, messages_count FROM UserActivityTotal ORDER BY messages_count DESC LIMIT 10'
+                );
 
-            await interaction.reply(
-                `Информация о пользователе <@${userId}>:\n` +
-                `- Последнее посещение: ${lastVisit}\n` +
-                `- Количество сообщений: ${messagesCount}\n` +
-                `- Общее время в онлайне: ${onlineTime} часов`
-            );
-        } catch (err) {
-            console.error('Ошибка выполнения запроса:', err);
-            await interaction.reply('Ошибка выполнения запроса к базе данных. Попробуйте позже.');
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                    return;
+                }
+
+                let replyMessage = 'Топ-10 пользователей за все время:\n';
+                results.forEach((user, index) => {
+                    const lastVisit = user.last_visit ?? 'null';
+                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
+                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
+                                    `последнее посещение: ${lastVisit}, ` +
+                                    `общее время онлайн: ${onlineTime} часов\n`;
+                });
+
+                await interaction.reply({ content: replyMessage, ephemeral: true });
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
+        },
+
+        async topweekly() {
+            try {
+                const [results] = await queryDatabase(
+                    'SELECT user_id, messages_count FROM UserActivityWeekly ORDER BY messages_count DESC LIMIT 10'
+                );
+
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                    return;
+                }
+
+                let replyMessage = 'Топ-10 пользователей за неделю:\n';
+                results.forEach((user, index) => {
+                    const lastVisit = user.last_visit ?? 'null';
+                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
+                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
+                                    `последнее посещение: ${lastVisit}, ` +
+                                    `общее время онлайн: ${onlineTime} часов\n`;
+                });
+
+                await interaction.reply({ content: replyMessage, ephemeral: true });
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
         }
+    };
+
+    if (commandHandlers[commandName]) {
+        await commandHandlers[commandName]();
+    } else {
+        await interaction.reply({ content: `Команда ${commandName} не распознана.`, ephemeral: true });
     }
 });
 

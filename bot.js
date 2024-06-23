@@ -204,7 +204,13 @@ const commands = [
         .addStringOption(option =>
             option.setName('userid')
                 .setDescription('ID пользователя для упоминания')
-                .setRequired(false))
+                .setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('topweekly')
+        .setDescription('Показывает топ-10 пользователей за неделю'),
+    new SlashCommandBuilder()
+        .setName('topalltime')
+        .setDescription('Показывает топ-10 пользователей за все время')
 ]
     .map(command => command.toJSON());
 
