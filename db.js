@@ -331,15 +331,16 @@ async function canUserBeAwarded(userId) {
         if (results.length > 0) {
             const lastAwardedDate = new Date(results[0].awarded_at);
             const currentLevel = results[0].level;
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            const threeWeeksAgo = new Date();
+            threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+            threeWeeksAgo.setSeconds(threeWeeksAgo.getSeconds() - 1);
 
             // Проверка на максимальный уровень
             if (currentLevel >= maxLevel) {
                 return false;
             }
 
-            return lastAwardedDate < oneMonthAgo;
+            return lastAwardedDate < threeWeeksAgo;
         }
         return true;
     } catch (err) {
