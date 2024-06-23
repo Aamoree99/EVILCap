@@ -792,6 +792,8 @@ client.on('interactionCreate', async interaction => {
         console.log(waitList);
         await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
 }, async sendcustommessage() {
+    await interaction.deferReply({ ephemeral: true });
+    
     const channelId = options.getString('channelid');
     const userId = options.getString('userid');
     const text = options.getString('message');
