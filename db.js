@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
                     return;
                 }
 
-                const userInfo = results[0] || {};
+                const userInfo = results || {};
                 const lastVisit = userInfo.last_visit ?? 'null';
                 const messagesCount = userInfo.messages_count ?? 'null';
                 const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
