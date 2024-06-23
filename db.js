@@ -99,7 +99,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const userInfo = results || {};
             const lastVisit = userInfo.last_visit ?? 'null';
             const messagesCount = userInfo.messages_count ?? 'null';
-            const onlineTime = userInfo.online_time ?? 'null';
+            const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
 
             await interaction.reply(
                 `Информация о пользователе <@${userId}>:\n` +
@@ -114,6 +114,17 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+function formatTime(minutes) {
+    const hours = Math.floor(minutes / 60); // Извлечение целых часов
+    const remainingMinutes = minutes % 60; // Извлечение оставшихся минут
+
+    // Форматирование с ведущими нулями
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(remainingMinutes).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}`;
+}
+
 // Обработка обновления присутствия
 client.on('presenceUpdate', (oldPresence, newPresence) => {
     const userId = newPresence.userId;
@@ -122,7 +133,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     if (newPresence.status === 'offline' || newPresence.status === 'idle') {
         // Пользователь ушел в оффлайн или стал неактивен
         if (userSessions[userId] && userSessions[userId].startTime) {
-            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60); // в часах
+            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60); 
             updateOnlineTime(userId, onlineDuration);
             delete userSessions[userId];
         }
