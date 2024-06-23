@@ -189,6 +189,21 @@ const commands = [
         .addStringOption(option => 
             option.setName('id')
                 .setDescription('ID пользователя')
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('sendcustommessage')
+        .setDescription('Отправляет кастомное сообщение в указанный канал.')
+        .addStringOption(option =>
+            option.setName('channelid')
+                .setDescription('ID канала для отправки сообщения')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('userid')
+                .setDescription('ID пользователя для упоминания')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('message')
+                .setDescription('Текст сообщения')
                 .setRequired(true))
 ]
     .map(command => command.toJSON());
@@ -776,6 +791,29 @@ client.on('interactionCreate', async interaction => {
         waitList.set(memberId, Date.now());
         console.log(waitList);
         await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
+}, async sendcustommessage() {
+    const channelId = options.getString('channelid');
+    const userId = options.getString('userid');
+    const text = options.getString('message');
+
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) {
+        await interaction.reply("Канал не найден.");
+        return;
+    }
+
+    if (userId) {
+        const user = await client.users.fetch(userId);
+        if (!user) {
+            await interaction.reply("Пользователь не найден.");
+            return;
+        }
+        await channel.send(`<@${user.id}> ${text}`);
+    } else {
+        await channel.send(text);
+    }
+
+    await interaction.reply("Сообщение отправлено.");
 }
 
     };
