@@ -123,7 +123,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     if (newPresence.status === 'offline' || newPresence.status === 'idle') {
         // Пользователь ушел в оффлайн или стал неактивен
         if (userSessions[userId] && userSessions[userId].startTime) {
-            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60 * 60); // в часах
+            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60); // в часах
             updateOnlineTime(userId, onlineDuration);
             delete userSessions[userId];
         }

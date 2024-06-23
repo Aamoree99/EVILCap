@@ -1768,6 +1768,8 @@ client.on('messageCreate', async (message) => {
     const messageContent = message.content.toLowerCase();
     const containsTriggerWord = triggerWords.some(word => messageContent.includes(word));
 
+    if (!containsTriggerWord) return;
+
     const currentDate = new Date();
     const lastResponseTimestamp = await getLastResponseTimestamp(message.author.id); // Получаем timestamp последнего ответа из БД
 
