@@ -792,30 +792,27 @@ client.on('interactionCreate', async interaction => {
         console.log(waitList);
         await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
 }, async sendcustommessage() {
-    await interaction.deferReply({ ephemeral: true });
-    
     const channelId = options.getString('channelid');
     const userId = options.getString('userid');
     const text = options.getString('message');
 
     const channel = await client.channels.fetch(channelId);
     if (!channel) {
-        await interaction.reply("Канал не найден.");
+        await interaction.reply({ content: "Канал не найден.", ephemeral: true });
         return;
     }
 
     if (userId) {
         const user = await client.users.fetch(userId);
         if (!user) {
-            await interaction.reply("Пользователь не найден.");
+            await interaction.reply({ content: "Пользователь не найден.", ephemeral: true });
             return;
         }
         await channel.send(`<@${user.id}> ${text}`);
     } else {
         await channel.send(text);
     }
-
-    await interaction.reply("Сообщение отправлено.");
+    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
 }
 
     };
