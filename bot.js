@@ -403,12 +403,14 @@ client.on('interactionCreate', async interaction => {
                 const allowedChannels = ['1172972375688626276', '1212507080934686740'];
                 const currentChannelId = interaction.channel.id;
                 const authorUsername = interaction.user.username;
-
+        
                 if (!allowedChannels.includes(currentChannelId)) {
                     await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
                     return;
                 }
-
+        
+                let responseMessage = '';
+        
                 if (ignoreList.includes(authorUsername)) {
                     const phrases = [
                         "Пришло время заработать немного ISK!",
@@ -430,13 +432,13 @@ client.on('interactionCreate', async interaction => {
                     const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
                     const en_baseMessage = "<@&1163380015191302214> The moon has exploded.";
                     const en_channel = client.channels.cache.get('1212507080934686740');
-
+        
                     if (channel) {
                         await channel.send(`${baseMessage} ${randomPhrase}`);
                         await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
-                        await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+                        responseMessage = "Сообщение отправлено.";
                     } else {
-                        await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+                        responseMessage = "Канал не найден.";
                     }
                 } else {
                     const now = new Date();
@@ -444,19 +446,15 @@ client.on('interactionCreate', async interaction => {
                     const currentMinuteUTC = now.getUTCMinutes();
                     let nextEvenDay = new Date(now);
                     nextEvenDay.setUTCHours(11, 15, 0, 0);
-
+        
                     const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
-
+        
                     if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
                         const timeUntilNextEvenDay = nextEvenDay - now;
                         const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
                         const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-
-                        if (currentChannelId === '1172972375688626276') {
-                            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
-                        } else if (currentChannelId === '1212507080934686740') {
-                            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
-                        }
+        
+                        responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
                     } else {
                         if (nextEvenDay <= now || !isEvenDay) {
                             nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
@@ -464,14 +462,12 @@ client.on('interactionCreate', async interaction => {
                         const timeUntilNextEvenDay = nextEvenDay - now;
                         const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
                         const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-
-                        if (currentChannelId === '1172972375688626276') {
-                            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
-                        } else if (currentChannelId === '1212507080934686740') {
-                            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
-                        }
+        
+                        responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
                     }
                 }
+        
+                await interaction.reply({ content: responseMessage, ephemeral: true });
             } catch (error) {
                 console.error("Error in moon function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
