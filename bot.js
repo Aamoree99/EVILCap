@@ -848,7 +848,7 @@ client.on('interactionCreate', async interaction => {
         },
 
         async sendcustommessage() {
-            const channelId = options.getString('channelid');
+            const channelId = interaction.channel.id;
             const userId = options.getString('userid');
             const text = options.getString('message');
 
@@ -875,7 +875,7 @@ client.on('interactionCreate', async interaction => {
             }
             await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
         }, async userinfo() {
-            if (interaction.channelId !== LOG_CHANNEL_ID) {
+            if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
             }
@@ -910,7 +910,7 @@ client.on('interactionCreate', async interaction => {
         },
 
         async topalltime() {
-            if (interaction.channelId !== LOG_CHANNEL_ID) {
+            if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
             }
@@ -942,7 +942,7 @@ client.on('interactionCreate', async interaction => {
         },
 
         async topweekly() {
-            if (interaction.channelId !== LOG_CHANNEL_ID) {
+            if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
             }
@@ -975,6 +975,10 @@ client.on('interactionCreate', async interaction => {
             }
         }, 
         async adamkadyrov() {
+            if (interaction.channel.id !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
+                return;
+            }
             try {
                 const rows = await queryDatabase(
                     'SELECT user_id, level, awarded_at FROM Medals ORDER BY level DESC, awarded_at DESC'
@@ -1005,6 +1009,10 @@ client.on('interactionCreate', async interaction => {
         },
 
         async medals() {
+            if (interaction.channel.id !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
+                return;
+            }
             try {
                 const input = options.getString('input');
 
