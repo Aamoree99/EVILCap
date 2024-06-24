@@ -326,13 +326,26 @@ client.on('interactionCreate', async interaction => {
         },
 
         async listignore() {
-            if (channelId !== LOG_CHANNEL_ID) {
-                await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
-                return;
+            try {
+                if (interaction.channelId !== LOG_CHANNEL_ID) {
+                    await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+                    return;
+                }
+        
+                await interaction.deferReply({ ephemeral: true });
+        
+                const data = await readData();
+                const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
+        
+                await interaction.editReply({ content: message });
+            } catch (error) {
+                console.error('Error in listignore function:', error);
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.editReply({ content: 'Произошла ошибка при выполнении команды.' });
+                } else {
+                    await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
+                }
             }
-            const data = await readData();
-            const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
-            await interaction.reply({ content: message, ephemeral: true });
         },
 
         async reactionslist() {
