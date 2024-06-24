@@ -1827,7 +1827,6 @@ client.on('messageCreate', async (message) => {
         const lastResponseDate = new Date(lastResponseTimestamp);
 
         if (isSameCalendarDay(currentDate, lastResponseDate)) {
-            await message.reply('Простите, но <@739618523076362310> попросил меня не здороваться больше раза в сутки.');
             return;
         }
     }
