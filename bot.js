@@ -974,19 +974,19 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
             }
         }, 
-        async adamKadyrov() {
+        async adamkadyrov() {
             try {
-                const [results] = await queryDatabase(
+                const rows = await queryDatabase(
                     'SELECT user_id, level, awarded_at FROM Medals ORDER BY level DESC, awarded_at DESC'
                 );
 
-                if (!results || results.length === 0) {
+                if (!rows || rows.length === 0) {
                     await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
                     return;
                 }
 
                 let replyMessage = 'Список кадыровцев:\n';
-                results.forEach((row, index) => {
+                rows.forEach((row, index) => {
                     replyMessage += `${index + 1}. <@${row.user_id}> - Уровень медали: ${row.level}, Получено: ${new Date(row.awarded_at).toLocaleString()}\n`;
                 });
 
@@ -1006,10 +1006,9 @@ client.on('interactionCreate', async interaction => {
 
         async medals() {
             try {
-                const input = options.getString('input'); // Условно предполагаем, что `input` - это ваш параметр
+                const input = options.getString('input');
 
                 if (input) {
-                    // Разделим строку по ":"
                     const [levelStr, name] = input.split(':').map(s => s.trim());
                     const level = parseInt(levelStr, 10);
 
@@ -1018,40 +1017,36 @@ client.on('interactionCreate', async interaction => {
                         return;
                     }
 
-                    // Проверим, существует ли запись с таким уровнем
-                    const [existing] = await queryDatabase(
+                    const existing = await queryDatabase(
                         'SELECT * FROM MedalNames WHERE level = ?',
                         [level]
                     );
 
                     if (existing.length > 0) {
-                        // Если запись существует, обновим ее
                         await queryDatabase(
                             'UPDATE MedalNames SET name = ? WHERE level = ?',
                             [name, level]
                         );
-                        await interaction.reply({ content: `Медаль ${name} с уровнем ${level} обновлена.` });
+                        await interaction.reply({ content: `Медаль с уровнем ${level} обновлена.` });
                     } else {
-                        // Если запись не существует, добавим новую
                         await queryDatabase(
                             'INSERT INTO MedalNames (level, name) VALUES (?, ?)',
                             [level, name]
                         );
-                        await interaction.reply({ content: `Медаль ${name} с уровнем ${level} добавлена.` });
+                        await interaction.reply({ content: `Медаль с уровнем ${level} добавлена.` });
                     }
                 } else {
-                    // Если `input` не указан, получаем список всех медалей
-                    const [results] = await queryDatabase(
+                    const rows = await queryDatabase(
                         'SELECT level, name FROM MedalNames ORDER BY level ASC'
                     );
 
-                    if (!results || results.length === 0) {
+                    if (!rows || rows.length === 0) {
                         await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
                         return;
                     }
 
                     let replyMessage = 'Список медалей:\n';
-                    results.forEach((row) => {
+                    rows.forEach((row) => {
                         replyMessage += `Уровень ${row.level}: ${row.name}\n`;
                     });
 
