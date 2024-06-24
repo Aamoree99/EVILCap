@@ -104,7 +104,7 @@ client.once('ready', async () => {
     await updateMoonMessage();
     scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
-    cron.schedule('0 12 * * 1', async () => {
+    cron.schedule('0 12 * * 0', async () => {
         calculateAndAwardMedals();
         resetWeeklyActivity();
     });
