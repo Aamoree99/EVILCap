@@ -232,7 +232,17 @@ const commands = [
         .setDescription('Показывает топ-10 пользователей за неделю'),
     new SlashCommandBuilder()
         .setName('topalltime')
-        .setDescription('Показывает топ-10 пользователей за все время')
+        .setDescription('Показывает топ-10 пользователей за все время'),
+    new SlashCommandBuilder()
+        .setName('adamkadyrov')
+        .setDescription('Показывает список людей с медалями в лог-канал'),
+    new SlashCommandBuilder()
+        .setName('medals')
+        .setDescription('Управление медалями')
+        .addStringOption(option => 
+            option.setName('input')
+                .setDescription('Формат: уровень: имя медали. Пример: 3: Золотая звезда')
+                .setRequired(false))
 ]
     .map(command => command.toJSON());
 
@@ -962,6 +972,94 @@ client.on('interactionCreate', async interaction => {
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
+        }, 
+        async adamKadyrov() {
+            try {
+                const [results] = await queryDatabase(
+                    'SELECT user_id, level, awarded_at FROM Medals ORDER BY level DESC, awarded_at DESC'
+                );
+
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                    return;
+                }
+
+                let replyMessage = 'Список кадыровцев:\n';
+                results.forEach((row, index) => {
+                    replyMessage += `${index + 1}. <@${row.user_id}> - Уровень медали: ${row.level}, Получено: ${new Date(row.awarded_at).toLocaleString()}\n`;
+                });
+
+                const logChannel = await client.channels.fetch(LOG_CHANNEL_ID);
+                if (logChannel) {
+                    await logChannel.send(replyMessage);
+                } else {
+                    await interaction.reply({ content: 'Лог-канал не найден.', ephemeral: true });
+                }
+
+                await interaction.reply({ content: 'Список отправлен в лог-канал.', ephemeral: true });
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка получения данных. Попробуйте позже.', ephemeral: true });
+            }
+        },
+
+        async medals() {
+            try {
+                const input = options.getString('input'); // Условно предполагаем, что `input` - это ваш параметр
+
+                if (input) {
+                    // Разделим строку по ":"
+                    const [levelStr, name] = input.split(':').map(s => s.trim());
+                    const level = parseInt(levelStr, 10);
+
+                    if (!level || !name) {
+                        await interaction.reply({ content: 'Неверный формат ввода. Используйте `level: name`.', ephemeral: true });
+                        return;
+                    }
+
+                    // Проверим, существует ли запись с таким уровнем
+                    const [existing] = await queryDatabase(
+                        'SELECT * FROM MedalNames WHERE level = ?',
+                        [level]
+                    );
+
+                    if (existing.length > 0) {
+                        // Если запись существует, обновим ее
+                        await queryDatabase(
+                            'UPDATE MedalNames SET name = ? WHERE level = ?',
+                            [name, level]
+                        );
+                        await interaction.reply({ content: `Медаль ${name} с уровнем ${level} обновлена.` });
+                    } else {
+                        // Если запись не существует, добавим новую
+                        await queryDatabase(
+                            'INSERT INTO MedalNames (level, name) VALUES (?, ?)',
+                            [level, name]
+                        );
+                        await interaction.reply({ content: `Медаль ${name} с уровнем ${level} добавлена.` });
+                    }
+                } else {
+                    // Если `input` не указан, получаем список всех медалей
+                    const [results] = await queryDatabase(
+                        'SELECT level, name FROM MedalNames ORDER BY level ASC'
+                    );
+
+                    if (!results || results.length === 0) {
+                        await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                        return;
+                    }
+
+                    let replyMessage = 'Список медалей:\n';
+                    results.forEach((row) => {
+                        replyMessage += `Уровень ${row.level}: ${row.name}\n`;
+                    });
+
+                    await interaction.reply({ content: replyMessage });
+                }
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка получения данных. Попробуйте позже.', ephemeral: true });
             }
         }
     };
