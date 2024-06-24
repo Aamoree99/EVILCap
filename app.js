@@ -5,7 +5,7 @@ const axios = require('axios');
 const querystring = require('querystring');
 const crypto = require('crypto');
 require('dotenv').config();
-const { fleetNotify, deleteVoiceChannelByFc } = require('./bot');
+const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 
 const app = express();
 const port = 8080; // Порт, на котором будет запущен сервер

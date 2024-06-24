@@ -16,7 +16,6 @@ const { randomInt } = require('crypto');
 const { log } = require('console');
 const moment = require('moment');
 const mysql = require('mysql2');
-const connection = require('./db');
 
 const client = new Client({
     intents: [
@@ -83,6 +82,7 @@ client.once('ready', async () => {
     await updateMoonMessage();
     scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
+    const connection = require('./db');
 });
 
 const clientId = '1238628917900738591'; 
@@ -844,6 +844,105 @@ client.on('interactionCreate', async interaction => {
                 await channel.send(text);
             }
             await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        }, async userinfo() {
+            if (interaction.channelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
+                return;
+            }
+            const userId = options.getString('id');
+            
+            try {
+                const [results] = await queryDatabase(
+                    'SELECT * FROM UserActivityTotal WHERE user_id = ?',
+                    [userId]
+                );
+
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: `Пользователь с ID ${userId} не найден.`, ephemeral: true });
+                    return;
+                }
+
+                const userInfo = results || {};
+                const lastVisit = userInfo.last_visit ?? 'null';
+                const messagesCount = userInfo.messages_count ?? 'null';
+                const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
+
+                await interaction.reply({
+                    content: `Информация о пользователе <@${userId}>:\n` +
+                             `- Последнее посещение: ${lastVisit}\n` +
+                             `- Количество сообщений: ${messagesCount}\n` +
+                             `- Общее время в онлайне: ${onlineTime} часов`
+                });
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
+        },
+
+        async topalltime() {
+            if (interaction.channelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
+                return;
+            }
+            try {
+                const results = await queryDatabase(
+                    `SELECT user_id, messages_count, last_visit, online_time 
+                     FROM UserActivityTotal 
+                     ORDER BY messages_count DESC 
+                     LIMIT 10`
+                );
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                    return;
+                }
+                let replyMessage = 'Топ-10 пользователей за все время:\n';
+                results.forEach((user, index) => {
+                    const lastVisit = user.last_visit ?? 'null';
+                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
+                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
+                                    `последнее посещение: ${lastVisit}, ` +
+                                    `общее время онлайн: ${onlineTime} часов\n`;
+                });
+
+                await interaction.reply({ content: replyMessage});
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
+        },
+
+        async topweekly() {
+            if (interaction.channelId !== LOG_CHANNEL_ID) {
+                await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
+                return;
+            }
+            try {
+                const results = await queryDatabase(
+                    `SELECT user_id, messages_count, last_visit, online_time 
+                     FROM UserActivityWeekly
+                     ORDER BY messages_count DESC 
+                     LIMIT 10`
+                );
+
+                if (!results || results.length === 0) {
+                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
+                    return;
+                }
+
+                let replyMessage = 'Топ-10 пользователей за неделю:\n';
+                results.forEach((user, index) => {
+                    const lastVisit = user.last_visit ?? 'null';
+                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
+                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
+                                    `последнее посещение: ${lastVisit}, ` +
+                                    `общее время онлайн: ${onlineTime} часов\n`;
+                });
+
+                await interaction.reply({ content: replyMessage});
+            } catch (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
+            }
         }
     };
 
@@ -858,6 +957,16 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+function formatTime(minutes) {
+    const hours = Math.floor(minutes / 60); // Извлечение целых часов
+    const remainingMinutes = minutes % 60; // Извлечение оставшихся минут
+
+    // Форматирование с ведущими нулями
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(remainingMinutes).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}`;
+}
 
 async function checkBirthdays() {
     try {
@@ -3121,4 +3230,8 @@ async function findTopMessage() {
 
 client.login(token); 
 
-module.exports = { fleetNotify, deleteVoiceChannelByFc };
+module.exports = {
+    client,
+    fleetNotify,
+    deleteVoiceChannelByFc
+};

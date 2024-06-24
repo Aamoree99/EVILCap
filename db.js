@@ -1,9 +1,9 @@
 console.log('db.js запущен');
 
 require('dotenv').config();
-const { Client, GatewayIntentBits, Events } = require('discord.js');
 const mysql = require('mysql2');
 const cron = require('node-cron');
+const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 
 const guildId = '1159107187407335434';
 const welcomeChannelId = '1239085828395892796'; // ID канала для приветственного сообщения
@@ -30,10 +30,6 @@ connection.connect((err) => {
 
 module.exports = connection;
 
-// Создание нового клиента Discord
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildMembers] });
-
-// Переменная для отслеживания последнего времени активности
 const userSessions = {};
 
 // Включение бота
@@ -117,125 +113,6 @@ client.on('messageCreate', message => {
         userSessions[userId].lastMessageTime = now;
     }
 });
-
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand() && !interaction.isButton()) return;
-
-    if (interaction.channelId !== welcomeChannelId) {
-        await interaction.reply({ content: "Эта команда доступна только в канале #welcomechannel.", ephemeral: true });
-        return;
-    }
-
-    const { commandName, options, channelId } = interaction;
-
-    const commandHandlers = {
-        async userinfo() {
-            const userId = options.getString('id');
-            
-            try {
-                const [results] = await queryDatabase(
-                    'SELECT * FROM UserActivityTotal WHERE user_id = ?',
-                    [userId]
-                );
-
-                if (!results || results.length === 0) {
-                    await interaction.reply({ content: `Пользователь с ID ${userId} не найден.`, ephemeral: true });
-                    return;
-                }
-
-                const userInfo = results || {};
-                const lastVisit = userInfo.last_visit ?? 'null';
-                const messagesCount = userInfo.messages_count ?? 'null';
-                const onlineTime = (userInfo.online_time !== null && userInfo.online_time !== undefined) ? formatTime(userInfo.online_time) : 'null';
-
-                await interaction.reply({
-                    content: `Информация о пользователе <@${userId}>:\n` +
-                             `- Последнее посещение: ${lastVisit}\n` +
-                             `- Количество сообщений: ${messagesCount}\n` +
-                             `- Общее время в онлайне: ${onlineTime} часов`
-                });
-            } catch (err) {
-                console.error('Ошибка выполнения запроса:', err);
-                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
-            }
-        },
-
-        async topalltime() {
-            try {
-                const results = await queryDatabase(
-                    `SELECT user_id, messages_count, last_visit, online_time 
-                     FROM UserActivityTotal 
-                     ORDER BY messages_count DESC 
-                     LIMIT 10`
-                );
-                if (!results || results.length === 0) {
-                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
-                    return;
-                }
-                let replyMessage = 'Топ-10 пользователей за все время:\n';
-                results.forEach((user, index) => {
-                    const lastVisit = user.last_visit ?? 'null';
-                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
-                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
-                                    `последнее посещение: ${lastVisit}, ` +
-                                    `общее время онлайн: ${onlineTime} часов\n`;
-                });
-
-                await interaction.reply({ content: replyMessage});
-            } catch (err) {
-                console.error('Ошибка выполнения запроса:', err);
-                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
-            }
-        },
-
-        async topweekly() {
-            try {
-                const results = await queryDatabase(
-                    `SELECT user_id, messages_count, last_visit, online_time 
-                     FROM UserActivityWeekly
-                     ORDER BY messages_count DESC 
-                     LIMIT 10`
-                );
-
-                if (!results || results.length === 0) {
-                    await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
-                    return;
-                }
-
-                let replyMessage = 'Топ-10 пользователей за неделю:\n';
-                results.forEach((user, index) => {
-                    const lastVisit = user.last_visit ?? 'null';
-                    const onlineTime = (user.online_time !== null && user.online_time !== undefined) ? formatTime(user.online_time) : 'null';
-                    replyMessage += `${index + 1}. <@${user.user_id}> - ${user.messages_count} сообщений, ` +
-                                    `последнее посещение: ${lastVisit}, ` +
-                                    `общее время онлайн: ${onlineTime} часов\n`;
-                });
-
-                await interaction.reply({ content: replyMessage});
-            } catch (err) {
-                console.error('Ошибка выполнения запроса:', err);
-                await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
-            }
-        }
-    };
-
-    if (commandHandlers[commandName]) {
-        await commandHandlers[commandName]();
-    } else {
-        await interaction.reply({ content: `Команда ${commandName} не распознана.`, ephemeral: true });
-    }
-});
-
-function formatTime(minutes) {
-    const hours = Math.floor(minutes / 60); // Извлечение целых часов
-    const remainingMinutes = minutes % 60; // Извлечение оставшихся минут
-
-    // Форматирование с ведущими нулями
-    const formattedHours = String(hours).padStart(2, '0');
-    const formattedMinutes = String(remainingMinutes).padStart(2, '0');
-
-    return `${formattedHours}:${formattedMinutes}`;
-}
 
 client.on('presenceUpdate', (newPresence) => {
     if (!newPresence || !newPresence.userId) {
@@ -504,9 +381,6 @@ function resetWeeklyActivity() {
             console.error('Ошибка очистки таблицы еженедельной активности:', err);
         });
 }
-
-// Логин бота
-client.login(process.env.DISCORD_TOKEN);
 
 // Обертка для запросов к базе данных с обработкой ошибок
 function queryDatabase(query, params) {
