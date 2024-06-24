@@ -44,7 +44,6 @@ client.once('ready', async () => {
     } else {
         console.error(`Канал с ID ${welcomeChannelId} не найден.`);
     }
-    calculateAndAwardMedals();
 
     cron.schedule('0 12 * * 1', async () => {
         calculateAndAwardMedals();
