@@ -104,26 +104,7 @@ client.once('ready', async () => {
         calculateAndAwardMedals();
         resetWeeklyActivity();
     });
-
-    try {
-        // Получение конкретной гильдии по ID
-        const guild = await client.guilds.fetch(guildId);
-
-        const members = await guild.members.fetch();
-        logAndSend(`Всего мемберов в гильдии: ${members.size}`);
-
-        // Обработка всех членов гильдии
-        members.forEach(member => {
-            if (member.presence?.status === 'online') {
-                userSessions[member.id] = {
-                    startTime: Date.now(),
-                    lastMessageTime: Date.now()
-                };
-            }
-        });
-    } catch (error) {
-        console.error('Ошибка при получении гильдии или членов:', error);
-    }
+    checkMembersStatus();
 });
 
 const clientId = '1238628917900738591'; 
@@ -3312,32 +3293,36 @@ client.on('messageCreate', message => {
     }
 });
 
-client.on('presenceUpdate', (newPresence) => {
-    if (!newPresence || !newPresence.userId) {
-        console.warn('newPresence is null or userId is missing.');
-        return;
-    }
+async function checkMembersStatus() {
+    try {
+        const guild = await client.guilds.fetch(guildId);
+        const members = await guild.members.fetch();
+        logAndSend(`Всего мемберов в гильдии: ${members.size}`);
+        const now = Date.now();
+        members.forEach(member => {
+            if (member.presence?.status === 'online') {
+                if (!userSessions[member.id]) {
+                    userSessions[member.id] = {
+                        startTime: now,
+                        lastStatus: 'online',
+                        lastMessageTime: now
+                    };
+                }
+            } else {
+                if (userSessions[member.id]) {
+                    // Пользователь был онлайн, но ушел
+                    const onlineDuration = (now - userSessions[member.id].startTime) / (1000 * 60); // в минутах
+                    updateOnlineTime(member.id, onlineDuration);
+                    delete userSessions[member.id];
+                }
+            }
+        });
 
-    const userId = newPresence.userId;
-    const now = Date.now();
-
-    if (newPresence.status === 'offline' || newPresence.status === 'idle') {
-        // Пользователь ушел в оффлайн или стал неактивен
-        if (userSessions[userId] && userSessions[userId].startTime) {
-            const onlineDuration = (now - userSessions[userId].startTime) / (1000 * 60);
-            updateOnlineTime(userId, onlineDuration);
-            delete userSessions[userId];
-        }
-    } else if (newPresence.status === 'online') {
-        // Пользователь стал активен
-        if (!userSessions[userId]) {
-            userSessions[userId] = {
-                startTime: now,
-                lastMessageTime: now
-            };
-        }
+        logAndSend(`Статус участников проверен в ${new Date().toISOString()}`);
+    } catch (error) {
+        console.error('Ошибка проверки статуса участников:', error);
     }
-});
+}
 
 
 // Обновление времени в онлайне в базе данных
