@@ -1,15 +1,19 @@
 console.log('bot.js запущен');
 
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ActivityType, PermissionsBitField, ChannelType, AutoModerationRuleKeywordPresetType  } = require('discord.js');
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ActivityType, PermissionsBitField, ChannelType, AutoModerationRuleKeywordPresetType, AttachmentBuilder  } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const axios = require('axios');
 const cron = require('node-cron');
+const fetch = require('node-fetch');
 const dotenv = require('dotenv');
 dotenv.config();
 const qs = require('querystring');
 const fs = require('fs').promises;
+const Canvas = require('canvas');
+const Jimp = require('jimp');
+const webp = require('webp-converter');
 const path = require('path');
 const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
@@ -104,12 +108,13 @@ client.once('ready', async () => {
         calculateAndAwardMedals();
         resetWeeklyActivity();
     });
-    checkMembersStatus();
+    cron.schedule('*/15 * * * *', () => {
+        checkMembersStatus();
+    });
 });
 
 const clientId = '1238628917900738591'; 
 const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения
-const guildId = GUILD_ID; 
 
 const commands = [
     new SlashCommandBuilder()
@@ -1047,19 +1052,37 @@ client.on('interactionCreate', async interaction => {
                     const rows = await queryDatabase(
                         'SELECT level, name FROM MedalNames ORDER BY level ASC'
                     );
-
+                
                     if (!rows || rows.length === 0) {
                         await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
                         return;
                     }
-
-                    let replyMessage = 'Список медалей:\n';
+                
+                    let replyMessages = [];
+                    let currentMessage = 'Список медалей:\n';
+                    const maxMessageLength = 2000;
+                
                     rows.forEach((row) => {
-                        replyMessage += `Уровень ${row.level}: ${row.name}\n`;
+                        const newLine = `Уровень ${row.level}: ${row.name}\n`;
+                        if ((currentMessage + newLine).length > maxMessageLength) {
+                            replyMessages.push(currentMessage);
+                            currentMessage = newLine;
+                        } else {
+                            currentMessage += newLine;
+                        }
                     });
-
-                    await interaction.reply({ content: replyMessage });
-                }
+                
+                    // Push the last message if it contains any data
+                    if (currentMessage.length > 0) {
+                        replyMessages.push(currentMessage);
+                    }
+                
+                    // Send the first message using reply and the rest using followUp
+                    await interaction.reply({ content: replyMessages[0] });
+                    for (let i = 1; i < replyMessages.length; i++) {
+                        await interaction.followUp({ content: replyMessages[i] });
+                    }
+                }                
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка получения данных. Попробуйте позже.', ephemeral: true });
@@ -1087,6 +1110,75 @@ function formatTime(minutes) {
     const formattedMinutes = String(remainingMinutes).padStart(2, '0');
 
     return `${formattedHours}:${formattedMinutes}`;
+}
+
+async function generateProfileImage(userId, guild) {
+    try {
+        const background = await Canvas.loadImage('./adam.jpg');
+
+        // Получаем аватар пользователя
+        const member = await guild.members.fetch(userId);
+        const avatarURL = member.user.displayAvatarURL({ size: 256 });
+        const response = await fetch(avatarURL);
+        if (!response.ok) throw new Error(`Failed to fetch avatar: ${response.statusText}`);
+        const avatarBuffer = await response.buffer();
+        const mimeType = response.headers.get('content-type');
+
+        let pngAvatarBuffer;
+
+        // Преобразование WEBP в PNG с помощью webp-converter
+        if (mimeType === 'image/webp') {
+            const webpFilePath = path.join(__dirname, 'avatar.webp');
+            await fs.writeFile(webpFilePath, avatarBuffer);
+
+            const pngFilePath = path.join(__dirname, 'avatar.png');
+            await webp.dwebp(webpFilePath, pngFilePath, "-o");
+
+            pngAvatarBuffer = await fs.readFile(pngFilePath);
+
+            // Удаляем временные файлы
+            await fs.unlink(webpFilePath);
+            await fs.unlink(pngFilePath);
+        } else {
+            // Преобразование изображения в PNG с помощью jimp
+            const avatarImage = await Jimp.read(avatarBuffer);
+            pngAvatarBuffer = await avatarImage.getBufferAsync(Jimp.MIME_PNG);
+        }
+        const avatar = await Canvas.loadImage(pngAvatarBuffer);
+
+        const canvas = Canvas.createCanvas(900, 900);
+        const ctx = canvas.getContext('2d');
+
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+        const avatarRadius = 80;
+        const avatarDiameter = avatarRadius * 2;
+        const avatarX = 430 - avatarRadius;
+        const avatarY = 120 - avatarRadius;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(430, 120, avatarRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar, avatarX, avatarY, avatarDiameter, avatarDiameter);
+        ctx.restore();
+
+        const username = member.nickname || member.user.username;
+
+        ctx.font = 'bold 100px Times New Roman';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#000000';
+        ctx.strokeText(username, canvas.width / 2, canvas.height - 50);
+        ctx.fillText(username, canvas.width / 2, canvas.height - 50);
+
+        return canvas.toBuffer(); // Возвращаем буфер изображения
+    } catch (error) {
+        console.error('Ошибка создания изображения:', error);
+        throw new Error('Произошла ошибка при создании изображения.');
+    }
 }
 
 async function checkBirthdays() {
@@ -3396,24 +3488,26 @@ client.on('messageCreate', message => {
 
 async function checkMembersStatus() {
     try {
-        const guild = await client.guilds.fetch(guildId);
+        const guild = await client.guilds.fetch(GUILD_ID);
         const members = await guild.members.fetch();
         logAndSend(`Всего мемберов в гильдии: ${members.size}`);
-        const now = Date.now();
+        
         members.forEach(member => {
             if (member.presence?.status === 'online') {
-                if (!userSessions[member.id]) {
+                if (userSessions[member.id]) {
+                    // Пользователь онлайн и уже есть в массиве, добавляем 15 минут
+                    updateOnlineTime(member.id, 15); // добавляем 15 минут
+                } else {
+                    // Пользователь онлайн и его нет в массиве, добавляем его
                     userSessions[member.id] = {
-                        startTime: now,
+                        startTime: Date.now(),
                         lastStatus: 'online',
-                        lastMessageTime: now
+                        lastMessageTime: Date.now()
                     };
                 }
             } else {
                 if (userSessions[member.id]) {
                     // Пользователь был онлайн, но ушел
-                    const onlineDuration = (now - userSessions[member.id].startTime) / (1000 * 60); // в минутах
-                    updateOnlineTime(member.id, onlineDuration);
                     delete userSessions[member.id];
                 }
             }
@@ -3424,7 +3518,6 @@ async function checkMembersStatus() {
         console.error('Ошибка проверки статуса участников:', error);
     }
 }
-
 
 // Обновление времени в онлайне в базе данных
 function updateOnlineTime(userId, duration) {
@@ -3563,7 +3656,21 @@ async function awardMedals(users) {
     }
 
     if (awardedUser) {
-        topChannel.send(`<@${awardedUser}> получил(а) ${awardedMedal}! За наградой 10 млн ISK обращайтесь к <@739618523076362310>.`);
+        try {
+            const guild = client.guilds.cache.get(GUILD_ID);
+            if (!guild) throw new Error('Гильдия не найдена.');
+            
+            const imageBuffer = await generateProfileImage(awardedUser, guild);
+            const attachment = new AttachmentBuilder(imageBuffer, { name: 'awarded-image.png' });
+            
+            await topChannel.send({
+                content: `<@${awardedUser}> получил(а) ${awardedMedal}! За наградой 10 млн ISK обращайтесь к <@739618523076362310>.`,
+                files: [attachment],
+            });
+        } catch (error) {
+            console.error('Ошибка при отправке изображения:', error);
+            await topChannel.send('Произошла ошибка при создании изображения.');
+        }
     }
 
     topChannel.send(announcement);
