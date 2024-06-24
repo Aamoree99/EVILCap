@@ -40,10 +40,11 @@ const userSessions = {};
 client.once('ready', async () => {
     const welcomeChannel = client.channels.cache.get(welcomeChannelId);
     if (welcomeChannel) {
-        welcomeChannel.send('Воришка знаний запущен во имя <@290893335244177419>!');
+        welcomeChannel.send('Воришка знаний запущен!');
     } else {
         console.error(`Канал с ID ${welcomeChannelId} не найден.`);
     }
+    calculateAndAwardMedals();
 
     cron.schedule('0 12 * * 1', async () => {
         calculateAndAwardMedals();
@@ -343,15 +344,13 @@ async function updateUserActivity(userId) {
 }
 
 
-// Вычисление топа участников и присуждение медалей
 async function calculateAndAwardMedals() {
     try {
-        // Получение данных о пользователях, которые были активны за последнюю неделю
         const results = await queryDatabase(
             `SELECT user_id, visit_count, SUM(messages_count) AS total_messages
             FROM UserActivityWeekly
+            WHERE user_id NOT IN ('739618523076362310', '235822777678954496')
             GROUP BY user_id
-            HAVING visit_count >= 4
             ORDER BY total_messages DESC
             LIMIT 10`
         );
@@ -363,7 +362,6 @@ async function calculateAndAwardMedals() {
             return;
         }
 
-        // Присуждение медалей
         awardMedals(results);
     } catch (err) {
         console.error('Ошибка получения данных:', err);
@@ -382,23 +380,20 @@ async function awardMedals(users) {
     let announcement = 'Топ активных участников за последнюю неделю:\n';
     let awardedUser = null;
     let awardedMedal = null;
-
+    let awardGiven = false; 
     for (const [index, user] of users.entries()) {
         const place = index + 1;
         const totalMessages = user.total_messages || 0;
 
         try {
-            if (!awardedUser) {
-                // Проверяем, не получал ли пользователь медаль за последний месяц
-                const canAward = await canUserBeAwarded(user.user_id);
-                if (canAward) {
-                    // Присуждаем награду и медаль
-                    awardedMedal = await awardUser(user.user_id, true);
-                    awardedUser = user.user_id;
-                    announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений, получает ${awardedMedal}\n`;
-                } else {
-                    announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений\n`;
-                }
+            const canAward = await canUserBeAwarded(user.user_id);
+            console.log(user, canAward);
+
+            if (!awardGiven && canAward) {
+                awardedMedal = await awardUser(user.user_id, true);
+                awardedUser = user.user_id;
+                announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений, получает медаль ${awardedMedal}\n`;
+                awardGiven = true; // Устанавливаем флаг, что медаль была присуждена
             } else {
                 announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений\n`;
             }
@@ -414,16 +409,13 @@ async function awardMedals(users) {
     topChannel.send(announcement);
 }
 
-// Проверка, может ли пользователь получить медаль (не получал за последний месяц)
 async function canUserBeAwarded(userId) {
     try {
-        // Получаем максимальный уровень медали из таблицы MedalNames
         const maxLevelResults = await queryDatabase(
             'SELECT MAX(level) AS maxLevel FROM MedalNames'
         );
         const maxLevel = maxLevelResults[0].maxLevel;
 
-        // Получаем последнюю медаль пользователя
         const results = await queryDatabase(
             'SELECT level, awarded_at FROM Medals WHERE user_id = ? ORDER BY awarded_at DESC LIMIT 1',
             [userId]
@@ -436,7 +428,6 @@ async function canUserBeAwarded(userId) {
             threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
             threeWeeksAgo.setSeconds(threeWeeksAgo.getSeconds() - 1);
 
-            // Проверка на максимальный уровень
             if (currentLevel >= maxLevel) {
                 return false;
             }
@@ -452,13 +443,12 @@ async function canUserBeAwarded(userId) {
 
 async function awardUser(userId, isFirstPlace) {
     try {
-        // Получаем максимальный уровень медали из таблицы MedalNames
+        console.log(userId, isFirstPlace);
         const maxLevelResults = await queryDatabase(
             'SELECT MAX(level) AS maxLevel FROM MedalNames'
         );
         const maxLevel = maxLevelResults[0].maxLevel;
 
-        // Получаем последнюю медаль пользователя
         const results = await queryDatabase(
             'SELECT level, awarded_at FROM Medals WHERE user_id = ? ORDER BY awarded_at DESC LIMIT 1',
             [userId]
@@ -470,7 +460,6 @@ async function awardUser(userId, isFirstPlace) {
             const currentLevel = results[0].level;
 
             if (currentLevel >= maxLevel) {
-                // Пользователь уже имеет максимальный уровень медали
                 return (await queryDatabase(
                     'SELECT name FROM MedalNames WHERE level = ?',
                     [currentLevel]
@@ -487,15 +476,13 @@ async function awardUser(userId, isFirstPlace) {
                 level = currentLevel;
             }
         } else if (isFirstPlace) {
-            // Присуждение новой медали
-            await queryDatabase(
-                'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, ?, 1, NOW())',
-                [userId]
-            );
-            level = 1;
+                console.log(`Inserting new medal for user ${userId}`);
+                await queryDatabase(
+                    'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, 1, NOW())',
+                    [userId]
+                );
         }
 
-        // Получаем название медали из таблицы MedalNames
         const medalNameResults = await queryDatabase(
             'SELECT name FROM MedalNames WHERE level = ?',
             [level]
@@ -508,7 +495,7 @@ async function awardUser(userId, isFirstPlace) {
     }
 }
 
-// Сброс еженедельной таблицы активности
+
 function resetWeeklyActivity() {
     queryDatabase('DELETE FROM UserActivityWeekly')
         .then(() => {
