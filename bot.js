@@ -262,7 +262,9 @@ client.on('interactionCreate', async interaction => {
             data.ignoreList.push(username);
             await writeData(data);
             await interaction.reply({ content: `${username} добавлен в игнор-лист.`, ephemeral: true });
-        },        async channel_info() {
+        },
+        
+        async channel_info() {
             const categoryId = options.getString('id');
             console.log(`Получен ID категории: ${categoryId}`); // Отладочная информация
             const category = await interaction.guild.channels.fetch(categoryId);
@@ -305,6 +307,7 @@ client.on('interactionCreate', async interaction => {
             await logChannel.send(channelList);
             await interaction.reply({ content: "Список каналов отправлен в лог-канал.", ephemeral: true });
         },
+
         async removeignore() {
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
@@ -321,6 +324,7 @@ client.on('interactionCreate', async interaction => {
             await writeData(data);
             await interaction.reply({ content: `${username} удалён из игнор-листа.`, ephemeral: true });
         },
+
         async listignore() {
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
@@ -330,19 +334,18 @@ client.on('interactionCreate', async interaction => {
             const message = data.ignoreList.length === 0 ? "Игнор-лист пуст." : `Игнор-лист: ${data.ignoreList.join(', ')}`;
             await interaction.reply({ content: message, ephemeral: true });
         },
+
         async reactionslist() {
-            // Получаем идентификатор канала и сообщения из параметров команды
             const channelId = interaction.options.getString('channelid');
             const messageId = interaction.options.getString('messageid');
 
-            // Идентификатор канала, где вводится команда
             const commandChannelId = interaction.channelId;
 
-            // Проверяем, что команда введена в нужном канале
             if (commandChannelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
                 return;
             }
+
             await interaction.deferReply({ ephemeral: true });
 
             try {
@@ -354,11 +357,8 @@ client.on('interactionCreate', async interaction => {
                     const users = await reaction.users.fetch();
                     for (const user of users.values()) {
                         if (!user.bot) {
-                            // Получаем объект участника сервера
                             const member = await interaction.guild.members.fetch(user.id);
-                            // Берем никнейм на сервере, если он есть, иначе имя пользователя
                             let username = member.nickname || user.username;
-                            // Обрезаем ник до символа '(' если он присутствует
                             const parenIndex = username.indexOf('(');
                             if (parenIndex !== -1) {
                                 username = username.substring(0, parenIndex).trim();
@@ -384,6 +384,7 @@ client.on('interactionCreate', async interaction => {
                 await interaction.editReply({ content: 'Произошла ошибка при получении реакции.' });
             }
         },
+
         async members() {
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
@@ -394,6 +395,7 @@ client.on('interactionCreate', async interaction => {
             const message = namesList.length === 0 ? "Список имен пуст." : `Список имен: ${namesList.join(', ')}\nОбщее количество: ${namesList.length}`;
             await interaction.reply({ content: message, ephemeral: true });
         },
+
         async moon() {
             try {
                 const data = await readData();
@@ -416,8 +418,8 @@ client.on('interactionCreate', async interaction => {
                         "Время действовать и зарабатывать!"
                     ];
                     const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                    const baseMessage = "<@&1163380015191302214> Луна взорвана!"; 
-                    const channel = client.channels.cache.get('1172972375688626276'); 
+                    const baseMessage = "<@&1163380015191302214> Луна взорвана!";
+                    const channel = client.channels.cache.get('1172972375688626276');
                     const en_phrases = [
                         "Time to make some ISK!",
                         "Let's rack up some profits!",
@@ -426,8 +428,8 @@ client.on('interactionCreate', async interaction => {
                         "Time to act and earn!"
                     ];
                     const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-                    const en_baseMessage = "<@&1163380015191302214> The moon has exploded."; 
-                    const en_channel = client.channels.cache.get('1212507080934686740'); 
+                    const en_baseMessage = "<@&1163380015191302214> The moon has exploded.";
+                    const en_channel = client.channels.cache.get('1212507080934686740');
 
                     if (channel) {
                         await channel.send(`${baseMessage} ${randomPhrase}`);
@@ -437,52 +439,49 @@ client.on('interactionCreate', async interaction => {
                         await interaction.reply({ content: "Канал не найден.", ephemeral: true });
                     }
                 } else {
-    const now = new Date();
-    const currentHourUTC = now.getUTCHours();
-    const currentMinuteUTC = now.getUTCMinutes();
-    let nextEvenDay = new Date(now);
-    nextEvenDay.setUTCHours(11, 15, 0, 0);
+                    const now = new Date();
+                    const currentHourUTC = now.getUTCHours();
+                    const currentMinuteUTC = now.getUTCMinutes();
+                    let nextEvenDay = new Date(now);
+                    nextEvenDay.setUTCHours(11, 15, 0, 0);
 
-    const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
+                    const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
 
-    if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
-        // Сегодня четный день, время до 11:15 UTC
-        const timeUntilNextEvenDay = nextEvenDay - now;
-        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
+                    if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
+                        const timeUntilNextEvenDay = nextEvenDay - now;
+                        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
+                        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
 
-        if (currentChannelId === '1172972375688626276') {
-            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
-        } else if (currentChannelId === '1212507080934686740') {
-            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
-        }
-    } else {
-        // Сегодня нечетный день или уже прошло 11:15 UTC
-        if (nextEvenDay <= now || !isEvenDay) {
-            nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
-        }
-        const timeUntilNextEvenDay = nextEvenDay - now;
-        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
+                        if (currentChannelId === '1172972375688626276') {
+                            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
+                        } else if (currentChannelId === '1212507080934686740') {
+                            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
+                        }
+                    } else {
+                        if (nextEvenDay <= now || !isEvenDay) {
+                            nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
+                        }
+                        const timeUntilNextEvenDay = nextEvenDay - now;
+                        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
+                        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
 
-        if (currentChannelId === '1172972375688626276') {
-            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
-        } else if (currentChannelId === '1212507080934686740') {
-            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
-        }
-    }
-}
-
+                        if (currentChannelId === '1172972375688626276') {
+                            await interaction.channel.send(`${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`);
+                        } else if (currentChannelId === '1212507080934686740') {
+                            await interaction.channel.send(`${interaction.user}, the next moon will be in ${hoursUntilNextEvenDay} hours and ${minutesUntilNextEvenDay} minutes.`);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error("Error in moon function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
             }
         },
+
         async winners() {
             const channelId = interaction.channel.id;
         
             if (channelId === LOG_CHANNEL_ID) {
-                // Логика для лог-канала
                 try {
                     const data = await readData();
                     const winners = data.winners;
@@ -500,7 +499,6 @@ client.on('interactionCreate', async interaction => {
                         reply += '\nОтветьте с номером победителя, которому была произведена выплата.';
                     }
 
-                    // Добавление текущих значений переменных состояния казино
                     reply += `\n\nТекущее состояние казино:\n`;
                     reply += `Общая сумма ставок: ${totalBets} ISK\n`;
                     reply += `Общая сумма выигрышей: ${accumulatedWins} ISK\n`;
@@ -508,7 +506,6 @@ client.on('interactionCreate', async interaction => {
 
                     const winnerMessage = await interaction.reply({ content: reply, ephemeral: true });
 
-                    // Если есть победители, ожидание номера для подтверждения выплаты
                     if (winners && Object.keys(winners).length > 0) {
                         const filter = response => {
                             const number = parseInt(response.content);
@@ -540,7 +537,6 @@ client.on('interactionCreate', async interaction => {
                 }
 
             } else if (channelId === CASINO_CHANNEL_ID) {
-                // Логика для канала казино
                 try {
                     const data = await readData();
                     const winners = data.winners || {};
@@ -563,9 +559,11 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: "Эта команда доступна только в лог-канале или канале казино.", ephemeral: true });
             }
         },
+
         async startcasino() {
             await startCasinoGame(interaction);
         },
+
         async show_sessions() {
             if (channelId !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "This command can only be used in the log channel.", ephemeral: true });
@@ -589,7 +587,6 @@ client.on('interactionCreate', async interaction => {
 
             let sessionMsg = await interaction.reply({ content: sessionMessage, fetchReply: true });
 
-            // Add reactions for each session
             for (let i = 0; i < Object.keys(activeGames).length; i++) {
                 await sessionMsg.react(`${i + 1}\u20E3`);
             }
@@ -609,6 +606,7 @@ client.on('interactionCreate', async interaction => {
                 setTimeout(() => confirmationMessage.delete(), 5000);
             });
         },
+
         async hf() {
             try {
                 const data = await readData();
@@ -623,10 +621,8 @@ client.on('interactionCreate', async interaction => {
                     return;
                 }
         
-                // Извлекаем имена и количество окон
                 const participantEntries = Object.entries(participants);
         
-                // Получаем список участников с их упоминаниями
                 const participantNames = await Promise.all(
                     participantEntries.map(async ([id, count]) => {
                         const member = await interaction.guild.members.fetch(id);
@@ -645,10 +641,8 @@ client.on('interactionCreate', async interaction => {
                     await interaction.reply({ content: 'Сообщение не может быть отправлено в этом канале.', ephemeral: true });
                 }
         
-                // Очистка участников через 4 часа
                 setTimeout(async () => {
                     try {
-                        // Очистите участников здесь
                         console.log('Очистка участников через 4 часа.');
                     } catch (error) {
                         console.error('Error clearing participants:', error);
@@ -659,175 +653,189 @@ client.on('interactionCreate', async interaction => {
                 console.error("Error in hf function:", error);
                 await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
             }
-        },async create_category() {
-        try {
-            if (channelId !== LOG_CHANNEL_ID) {
-                await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+        },
+
+        async create_category() {
+            try {
+                if (channelId !== LOG_CHANNEL_ID) {
+                    await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
+                    return;
+                }
+                const guild = client.guilds.cache.get(GUILD_ID);
+                const name = interaction.options.getString('name');
+                const tag = interaction.options.getString('tag');
+                await createСategory(guild, name, tag);
+                await interaction.reply({ content: `Категория ${name} создана.`, ephemeral: true });
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: 'Произошла ошибка при создании категории.', ephemeral: true });
+            }
+        },
+
+        async ice() {
+            try {
+                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+                const currentChannelId = interaction.channel.id;
+                const name = interaction.options.getString('name');
+                
+                if (!allowedChannels.includes(currentChannelId)) {
+                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+                    return;
+                }
+
+                const userMention = `<@${interaction.user.id}>`;
+                const phrases = [
+                    "Давайте наберем побольше льда!",
+                    "Не упустим возможность пополнить запасы!",
+                    "Пора пополнить наши склады льдом!",
+                    "Время действовать и собирать лед!"
+                ];
+                const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}! ${randomPhrase} Флот создан господином ${userMention}`; 
+                const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+
+                const en_phrases = [
+                    "Let's gather as much ice as we can!",
+                    "Don't miss the chance to stock up!",
+                    "Time to fill our warehouses with ice!",
+                    "Time to act and collect ice!"
+                ];
+                const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
+                const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
+                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+
+                if (channel && en_channel) {
+                    await channel.send(baseMessage);
+                    await en_channel.send(en_baseMessage);
+                    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+                } else {
+                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                }
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+            }
+        },
+
+        async grav() {
+            try {
+                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+                const currentChannelId = interaction.channel.id;
+                const name = interaction.options.getString('name');
+                if (!allowedChannels.includes(currentChannelId)) {
+                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+                    return;
+                }
+                
+                const userMention = `<@${interaction.user.id}>`;
+                const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
+                const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+                const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
+                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+
+                if (channel && en_channel) {
+                    await channel.send(baseMessage);
+                    await en_channel.send(en_baseMessage);
+                    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+                } else {
+                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                }
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+            }
+        },
+
+        async evgen() {
+            try {
+                const currentChannelId = interaction.channel.id;
+                const name = interaction.options.getString('name');
+                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+                if (!allowedChannels.includes(currentChannelId)) {
+                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
+                    return;
+                }
+
+                const userMention = `<@${interaction.user.id}>`;
+                const baseMessage = `Флот отправляется на белт в системе ${name} господином ${userMention}! Во имя <@350931081194897409>`;
+                const en_baseMessage = `Fleet is heading to the belt in the ${name} system by the master ${userMention}! In the name of <@350931081194897409>`;
+
+                const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+            
+                if (channel && en_channel) {
+                    await channel.send(baseMessage);
+                    await en_channel.send(en_baseMessage);
+                    await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
+                } else {
+                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                }
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
+            }
+        },
+
+        async birthday() {
+            const date = interaction.options.getString('date');
+            const dateRegexWithYear = /^\d{2}\.\d{2}\.\d{4}$/;
+            const dateRegexWithoutYear = /^\d{2}\.\d{2}$/;
+
+            if (!dateRegexWithYear.test(date) && !dateRegexWithoutYear.test(date)) {
+                return interaction.reply({ content: 'Неправильный формат даты. Используйте ДД.ММ.ГГГГ или ДД.ММ. Пример: 25.12.1990 или 25.12', ephemeral: true });
+            }
+
+            try {
+                const data = await readData();
+                if (!data.birthdays) {
+                    data.birthdays = {};
+                }
+                data.birthdays[interaction.user.id] = date;
+                await writeData(data);
+                interaction.reply({ content: 'Ваш день рождения успешно добавлен!', ephemeral: true });
+            } catch (error) {
+                console.error('Error saving birthday:', error);
+                interaction.reply({ content: 'Произошла ошибка при сохранении вашего дня рождения. Попробуйте позже.', ephemeral: true });
+            }
+        },
+
+        async addtowaitlist() {
+            const memberId = interaction.options.getString('id');
+            waitList.set(memberId, Date.now());
+            console.log(waitList);
+            await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
+        },
+
+        async sendcustommessage() {
+            const channelId = options.getString('channelid');
+            const userId = options.getString('userid');
+            const text = options.getString('message');
+
+            const allowedUserId = '235822777678954496';
+
+            if (interaction.user.id !== allowedUserId) {
+                await interaction.reply({ content: "У вас нет прав на использование этой команды.", ephemeral: true });
                 return;
             }
-            const guild = client.guilds.cache.get(GUILD_ID);
-            const name = interaction.options.getString('name');
-            const tag = interaction.options.getString('tag');
-            await createСategory(guild, name, tag);
-        } catch (error) {
-            console.error(error);
-        }
-        }, async ice() {
-    try {
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-        const currentChannelId = interaction.channel.id;
-        const name = interaction.options.getString('name');
-        logAndSend(allowedChannels, currentChannelId, name);
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-            return;
-        }
 
-        const userMention = `<@${interaction.user.id}>`;
-        const phrases = [
-            "Давайте наберем побольше льда!",
-            "Не упустим возможность пополнить запасы!",
-            "Пора пополнить наши склады льдом!",
-            "Время действовать и собирать лед!"
-        ];
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}! ${randomPhrase} Флот создан господином ${userMention}`; 
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-
-        const en_phrases = [
-            "Let's gather as much ice as we can!",
-            "Don't miss the chance to stock up!",
-            "Time to fill our warehouses with ice!",
-            "Time to act and collect ice!"
-        ];
-        const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-        const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
-
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-        } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-        }
-    } catch (error) {
-        console.error(error);
-        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
-    }
-},  async grav() {
-    try {
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-        const currentChannelId = interaction.channel.id;
-        const name = interaction.options.getString('name');
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-            return;
-        }
-        
-        const userMention = `<@${interaction.user.id}>`;
-        const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-        const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
-
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-        } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-        }
-    } catch (error) {
-        console.error(error);
-        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
-    }
-}, async evgen() {
-    try {
-        const currentChannelId = interaction.channel.id;
-        const name = interaction.options.getString('name');
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-            return;
-        }
-
-        const userMention = `<@${interaction.user.id}>`;
-        const baseMessage = `Флот отправляется на белт в системе ${name} господином ${userMention}! Во имя <@350931081194897409>`;
-        const en_baseMessage = `Fleet is heading to the belt in the ${name} system by the master ${userMention}! In the name of <@350931081194897409>`;
-
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
-    
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
-        } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-        }
-    } catch (error) {
-        console.error(error);
-        await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
-    }
-}, async birthday() {
-    const date = interaction.options.getString('date');
-        const dateRegexWithYear = /^\d{2}\.\d{2}\.\d{4}$/;
-        const dateRegexWithoutYear = /^\d{2}\.\d{2}$/;
-
-        if (!dateRegexWithYear.test(date) && !dateRegexWithoutYear.test(date)) {
-            return interaction.reply({ content: 'Неправильный формат даты. Используйте ДД.ММ.ГГГГ или ДД.ММ. Пример: 25.12.1990 или 25.12', ephemeral: true });
-        }
-
-        try {
-            const data = await readData();
-            if (!data.birthdays) {
-                data.birthdays = {};
+            const channel = await client.channels.fetch(channelId);
+            if (!channel) {
+                await interaction.reply({ content: "Канал не найден.", ephemeral: true });
+                return;
             }
-            data.birthdays[interaction.user.id] = date;
-            await writeData(data);
-            interaction.reply({ content: 'Ваш день рождения успешно добавлен!', ephemeral: true });
-        } catch (error) {
-            console.error('Error saving birthday:', error);
-            interaction.reply({ content: 'Произошла ошибка при сохранении вашего дня рождения. Попробуйте позже.', ephemeral: true });
+
+            if (userId) {
+                const user = await client.users.fetch(userId);
+                if (!user) {
+                    await interaction.reply({ content: "Пользователь не найден.", ephemeral: true });
+                    return;
+                }
+                await channel.send(`<@${user.id}> ${text}`);
+            } else {
+                await channel.send(text);
+            }
+            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
         }
-}, async addtowaitlist() {
-    const memberId = interaction.options.getString('id');
-
-        waitList.set(memberId, Date.now());
-        console.log(waitList);
-        await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
-}, async sendcustommessage() {
-    const channelId = options.getString('channelid');
-    const userId = options.getString('userid');
-    const text = options.getString('message');
-
-    const allowedUserId = '235822777678954496'; // ID пользователя, которому разрешено использование команды
-
-    if (interaction.user.id !== allowedUserId) {
-        await interaction.reply({ content: "У вас нет прав на использование этой команды.", ephemeral: true });
-        return;
-    }
-
-    const channel = await client.channels.fetch(channelId);
-    if (!channel) {
-        await interaction.reply({ content: "Канал не найден.", ephemeral: true });
-        return;
-    }
-
-    if (userId) {
-        const user = await client.users.fetch(userId);
-        if (!user) {
-            await interaction.reply({ content: "Пользователь не найден.", ephemeral: true });
-            return;
-        }
-        await channel.send(`<@${user.id}> ${text}`);
-    } else {
-        await channel.send(text);
-    }
-    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-}
-
     };
 
     if (interaction.isCommand()) {
@@ -840,6 +848,7 @@ client.on('interactionCreate', async interaction => {
         await confirmTransaction(interaction);
     }
 });
+
 
 async function checkBirthdays() {
     try {
