@@ -46,7 +46,7 @@ const TARGET_CHANNEL_ID = '1242246489787334747';
 const HOMEFRONTS_ID='1243701044157091860';
 const allowedUserId = '235822777678954496';
 const chatApi = process.env.OPENAI_API_KEY;
-
+const guildId = GUILD_ID;
 
 const waitList = new Map();
 const messageMap = new Map();
