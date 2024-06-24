@@ -6,10 +6,9 @@ const cron = require('node-cron');
 const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 
 const guildId = '1159107187407335434';
-const welcomeChannelId = '1239085828395892796'; // ID канала для приветственного сообщения
-const topChannelId = '1172972375688626276'; // ID канала для топа участников
+const LOG_CHANNEL_ID = '1239085828395892796'; // ID канала для приветственного сообщения
+const MAIN_CHANNEL_ID = '1172972375688626276'; // ID канала для топа участников
 const allowedUserId = '235822777678954496';
-const command = '!apocalypse';
 
 // Настройка подключения к базе данных
 const connection = mysql.createConnection({
@@ -34,11 +33,11 @@ const userSessions = {};
 
 // Включение бота
 client.once('ready', async () => {
-    const welcomeChannel = client.channels.cache.get(welcomeChannelId);
+    const welcomeChannel = client.channels.cache.get(LOG_CHANNEL_ID);
     if (welcomeChannel) {
         welcomeChannel.send('Воришка знаний запущен!');
     } else {
-        console.error(`Канал с ID ${welcomeChannelId} не найден.`);
+        console.error(`Канал с ID ${LOG_CHANNEL_ID} не найден.`);
     }
 
     cron.schedule('0 12 * * 1', async () => {
@@ -69,7 +68,7 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.content === command && message.author.id === allowedUserId) {
+    if (message.content === `!apocalypse` && message.author.id === allowedUserId) {
         try {
             const guild = message.guild;
             if (!guild) {
@@ -247,9 +246,9 @@ async function calculateAndAwardMedals() {
 async function awardMedals(users) {
     if (!users.length) return;
 
-    const topChannel = client.channels.cache.get(topChannelId);
+    const topChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
     if (!topChannel) {
-        console.error(`Канал с ID ${topChannelId} не найден.`);
+        console.error(`Канал с ID ${MAIN_CHANNEL_ID} не найден.`);
         return;
     }
 
