@@ -108,6 +108,7 @@ client.once('ready', async () => {
         calculateAndAwardMedals();
         resetWeeklyActivity();
     });
+    checkMembersStatus();
     cron.schedule('*/15 * * * *', () => {
         checkMembersStatus();
     });
@@ -3494,6 +3495,7 @@ async function checkMembersStatus() {
         
         members.forEach(member => {
             if (member.presence?.status === 'online') {
+                logAndSend(`<@${member.id}>`)
                 if (userSessions[member.id]) {
                     // Пользователь онлайн и уже есть в массиве, добавляем 15 минут
                     updateOnlineTime(member.id, 15); // добавляем 15 минут
