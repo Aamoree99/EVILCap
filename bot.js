@@ -30,7 +30,8 @@ const client = new Client({
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.DirectMessageReactions,
         GatewayIntentBits.DirectMessageTyping,
-        GatewayIntentBits.GuildMessageReactions
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildPresences
     ]
 });
 
@@ -3495,7 +3496,6 @@ async function checkMembersStatus() {
         
         members.forEach(member => {
             if (member.presence?.status === 'online') {
-                logAndSend(`<@${member.id}>`)
                 if (userSessions[member.id]) {
                     // Пользователь онлайн и уже есть в массиве, добавляем 15 минут
                     updateOnlineTime(member.id, 15); // добавляем 15 минут
