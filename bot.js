@@ -1166,7 +1166,7 @@ async function generateProfileImage(userId, guild) {
         ctx.drawImage(avatar, avatarX, avatarY, avatarDiameter, avatarDiameter);
         ctx.restore();
 
-        const username = member.nickname || member.user.username;
+        const username = member.displayName || member.user.username;
 
         ctx.font = 'bold 100px Times New Roman';
         ctx.fillStyle = '#ffffff';
@@ -3598,19 +3598,50 @@ async function updateUserActivity(userId) {
     }
 }
 
+async function getChannelMemberIds(channelId) {
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (!channel || !channel.isTextBased()) {
+            console.log(`Канал с ID ${channelId} не найден или не является текстовым каналом.`);
+            return [];
+        }
+
+        const messages = await channel.messages.fetch({ limit: 100 });
+        const userIds = new Set();
+
+        messages.forEach(message => {
+            userIds.add(message.author.id);
+        });
+
+        return Array.from(userIds);
+    } catch (error) {
+        console.error(`Ошибка при получении участников канала ${channelId}:`, error);
+        return [];
+    }
+}
 
 async function calculateAndAwardMedals() {
+    const EXCLUDE_CHANNEL_ID = '1213973137176133772';
+
     try {
-        const results = await queryDatabase(
-            `SELECT user_id, visit_count, SUM(messages_count) AS total_messages
+        const excludeUserIds = await getChannelMemberIds(EXCLUDE_CHANNEL_ID);
+
+
+        const whereClause = excludeUserIds.length > 0
+            ? `WHERE user_id NOT IN (${excludeUserIds.map(id => `'${id}'`).join(', ')})`
+            : '';
+
+        const query = `
+            SELECT user_id, visit_count, SUM(messages_count) AS total_messages
             FROM UserActivityWeekly
-            WHERE user_id NOT IN ('739618523076362310', '235822777678954496')
+            ${whereClause}
             GROUP BY user_id
             ORDER BY total_messages DESC
-            LIMIT 10`
-        );
+            LIMIT 10
+        `;
 
-        console.log('Результаты запроса:', results); // Диагностика
+        const results = await queryDatabase(query);
+
 
         if (!results || results.length === 0) {
             console.log('Нет данных для создания топа.');
@@ -3622,6 +3653,7 @@ async function calculateAndAwardMedals() {
         console.error('Ошибка получения данных:', err);
     }
 }
+
 
 async function awardMedals(users) {
     if (!users.length) return;
