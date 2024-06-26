@@ -63,6 +63,7 @@ let bonusPool = 0;
 let transactionsCache = [];
 let isProcessing = false;
 const userSessions = {};
+let StealthBot = false;
 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -221,15 +222,7 @@ const commands = [
                 .setRequired(true)),
     new SlashCommandBuilder()
         .setName('sendcustommessage')
-        .setDescription('Отправляет кастомное сообщение в указанный канал.')
-        .addStringOption(option =>
-            option.setName('message')
-                .setDescription('Текст сообщения')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('userid')
-                .setDescription('ID пользователя для упоминания')
-                .setRequired(false)),
+        .setDescription('Отправляет кастомное сообщение в указанный канал.'),
     new SlashCommandBuilder()
         .setName('topweekly')
         .setDescription('Показывает топ-10 пользователей за неделю'),
@@ -851,32 +844,15 @@ client.on('interactionCreate', async interaction => {
         },
 
         async sendcustommessage() {
-            const channelId = interaction.channel.id;
-            const userId = options.getString('userid');
-            const text = options.getString('message');
+            const allowedUserId = '235822777678954496'; // ID разрешенного пользователя
 
             if (interaction.user.id !== allowedUserId) {
                 await interaction.reply({ content: "У вас нет прав на использование этой команды.", ephemeral: true });
                 return;
             }
-
-            const channel = await client.channels.fetch(channelId);
-            if (!channel) {
-                await interaction.reply({ content: "Канал не найден.", ephemeral: true });
-                return;
-            }
-
-            if (userId) {
-                const user = await client.users.fetch(userId);
-                if (!user) {
-                    await interaction.reply({ content: "Пользователь не найден.", ephemeral: true });
-                    return;
-                }
-                await channel.send(`<@${user.id}> ${text}`);
-            } else {
-                await channel.send(text);
-            }
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        
+            StealthBot = !StealthBot;
+            await interaction.reply({ content: `StealthBot режим ${StealthBot ? 'включен' : 'выключен'}.`, ephemeral: true });
         }, async userinfo() {
             if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
@@ -1096,6 +1072,17 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isButton()) {
         await confirmTransaction(interaction);
+    }
+});
+
+client.on('messageCreate', async (message) => {
+    const allowedUserId = '235822777678954496'; // ID разрешенного пользователя
+
+    // Проверяем режим StealthBot и автора сообщения
+    if (StealthBot && message.author.id === allowedUserId) {
+        const content = message.content;
+        await message.delete();
+        await message.channel.send(content); // Отправка текста от имени бота
     }
 });
 
@@ -3488,7 +3475,6 @@ async function checkMembersStatus() {
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
         const members = await guild.members.fetch();
-        logAndSend(`Всего мемберов в гильдии: ${members.size}`);
         
         members.forEach(member => {
             if (member.presence?.status === 'online') {
@@ -3511,7 +3497,6 @@ async function checkMembersStatus() {
             }
         });
 
-        logAndSend(`Статус участников проверен в ${new Date().toISOString()}`);
     } catch (error) {
         console.error('Ошибка проверки статуса участников:', error);
     }
