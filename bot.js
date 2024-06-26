@@ -223,10 +223,6 @@ const commands = [
         .setName('sendcustommessage')
         .setDescription('Отправляет кастомное сообщение в указанный канал.')
         .addStringOption(option =>
-            option.setName('channelid')
-                .setDescription('ID канала для отправки сообщения')
-                .setRequired(true))
-        .addStringOption(option =>
             option.setName('message')
                 .setDescription('Текст сообщения')
                 .setRequired(true))
