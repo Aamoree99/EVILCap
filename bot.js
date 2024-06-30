@@ -106,8 +106,8 @@ client.once('ready', async () => {
     await updateMoonMessage();
     scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
-    cron.schedule('0 12 * * 0', async () => {
-        calculateAndAwardMedals();
+    cron.schedule('0 12 * * 1', async () => {
+        await calculateAndAwardMedals();
         resetWeeklyActivity();
     });
     checkMembersStatus();
@@ -3623,7 +3623,6 @@ async function calculateAndAwardMedals() {
 
         const results = await queryDatabase(query);
 
-
         if (!results || results.length === 0) {
             console.log('Нет данных для создания топа.');
             return;
@@ -3639,9 +3638,9 @@ async function calculateAndAwardMedals() {
 async function awardMedals(users) {
     if (!users.length) return;
 
-    const topChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
+    const topChannel = client.channels.cache.get(LOG_CHANNEL_ID);
     if (!topChannel) {
-        console.error(`Канал с ID ${MAIN_CHANNEL_ID} не найден.`);
+        console.error(`Канал с ID ${LOG_CHANNEL_ID} не найден.`);
         return;
     }
 
