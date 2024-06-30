@@ -3647,7 +3647,9 @@ async function awardMedals(users) {
     let announcement = 'Топ активных участников за последнюю неделю:\n';
     let awardedUser = null;
     let awardedMedal = null;
+    let awardedReward = null;
     let awardGiven = false; 
+
     for (const [index, user] of users.entries()) {
         const place = index + 1;
         const totalMessages = user.total_messages || 0;
@@ -3657,7 +3659,9 @@ async function awardMedals(users) {
             console.log(user, canAward);
 
             if (!awardGiven && canAward) {
-                awardedMedal = await awardUser(user.user_id, true);
+                const { medalName, reward } = await awardUser(user.user_id, true);
+                awardedMedal = medalName;
+                awardedReward = reward;
                 awardedUser = user.user_id;
                 announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений, получает медаль ${awardedMedal}\n`;
                 awardGiven = true; // Устанавливаем флаг, что медаль была присуждена
@@ -3673,12 +3677,12 @@ async function awardMedals(users) {
         try {
             const guild = client.guilds.cache.get(GUILD_ID);
             if (!guild) throw new Error('Гильдия не найдена.');
-            
+
             const imageBuffer = await generateProfileImage(awardedUser, guild);
             const attachment = new AttachmentBuilder(imageBuffer, { name: 'awarded-image.png' });
-            
+
             await topChannel.send({
-                content: `<@${awardedUser}> получил(а) ${awardedMedal}! За наградой 10 млн ISK обращайтесь к <@739618523076362310>.`,
+                content: `<@${awardedUser}> получил(а) ${awardedMedal}! За наградой ${awardedReward} млн ISK обращайтесь к <@739618523076362310>.`,
                 files: [attachment],
             });
         } catch (error) {
@@ -3741,10 +3745,12 @@ async function awardUser(userId, isFirstPlace) {
             const currentLevel = results[0].level;
 
             if (currentLevel >= maxLevel) {
-                return (await queryDatabase(
+                const medalName = (await queryDatabase(
                     'SELECT name FROM MedalNames WHERE level = ?',
                     [currentLevel]
                 ))[0].name;
+                const reward = 10 + ((currentLevel - 1) * 40 / (maxLevel - 1));
+                return { medalName, reward: Math.round(reward * 10) / 10 };
             }
 
             if (isFirstPlace) {
@@ -3757,11 +3763,11 @@ async function awardUser(userId, isFirstPlace) {
                 level = currentLevel;
             }
         } else if (isFirstPlace) {
-                console.log(`Inserting new medal for user ${userId}`);
-                await queryDatabase(
-                    'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, 1, NOW())',
-                    [userId]
-                );
+            console.log(`Inserting new medal for user ${userId}`);
+            await queryDatabase(
+                'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, 1, NOW())',
+                [userId]
+            );
         }
 
         const medalNameResults = await queryDatabase(
@@ -3769,12 +3775,15 @@ async function awardUser(userId, isFirstPlace) {
             [level]
         );
 
-        return medalNameResults[0].name;
+        const medalName = medalNameResults[0].name;
+        const reward = 10 + ((level - 1) * 40 / (maxLevel - 1));
+        return { medalName, reward: Math.round(reward * 10) / 10 };
     } catch (err) {
         console.error('Ошибка присуждения медали:', err);
         throw err;
     }
 }
+
 
 
 function resetWeeklyActivity() {
