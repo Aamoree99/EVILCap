@@ -3638,9 +3638,9 @@ async function calculateAndAwardMedals() {
 async function awardMedals(users) {
     if (!users.length) return;
 
-    const topChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+    const topChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
     if (!topChannel) {
-        console.error(`Канал с ID ${LOG_CHANNEL_ID} не найден.`);
+        console.error(`Канал с ID ${MAIN_CHANNEL_ID} не найден.`);
         return;
     }
 
