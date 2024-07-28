@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "_start_concurrently": "concurrently \"node app.js\" \"node bot.js\"",
+    "_start_concurrently": "concurrently \"node app.js\" \"node bot.js\" \"node welcome_bot.js\"",
     "start": "node app.js",
     "bot": "node bot.js"
   },

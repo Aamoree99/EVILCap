@@ -118,9 +118,9 @@ client.on('guildMemberAdd', async member => {
 
         // Установка прав для нового участника
         await instructionChannel.permissionOverwrites.create(member, {
-            VIEW_CHANNEL: true,
-            SEND_MESSAGES: false,
-            READ_MESSAGE_HISTORY: true
+            ViewChannel: true,
+            SendMessages: false,
+            ReadMessageHistory: true
         });
 
         console.log(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${guild.id}`);
@@ -128,7 +128,6 @@ client.on('guildMemberAdd', async member => {
         console.error("Error in guildMemberAdd event handler:", error);
     }
 });
-
 
 async function checkAndSendWelcomeMessage() {
     const channel = await client.channels.fetch(WELCOME_CHANNEL_ID);

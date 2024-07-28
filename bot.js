@@ -104,7 +104,7 @@ client.once('ready', async () => {
         await findTopMessage();
     });
     await updateMoonMessage();
-    scheduleDailyMessage();
+    //scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
     cron.schedule('0 12 * * 0', async () => {
         await calculateAndAwardMedals();
@@ -702,14 +702,29 @@ client.on('interactionCreate', async interaction => {
                     await interaction.reply({ content: "Эта команда доступна только в лог-канале.", ephemeral: true });
                     return;
                 }
+        
                 const guild = client.guilds.cache.get(GUILD_ID);
                 const name = interaction.options.getString('name');
                 const tag = interaction.options.getString('tag');
+        
+                // Быстрый ответ на взаимодействие для предотвращения таймаута
+                await interaction.reply({ content: 'Создание категории и ролей началось...', ephemeral: true });
+        
+                // Дальнейшие асинхронные операции
                 await createСategory(guild, name, tag);
-                await interaction.reply({ content: `Категория ${name} создана.`, ephemeral: true });
+        
+                // Сообщение после успешного выполнения
+                await interaction.followUp({ content: `Категория "${name}" с тегом "${tag}" успешно создана!`, ephemeral: true });
             } catch (error) {
                 console.error(error);
-                await interaction.reply({ content: 'Произошла ошибка при создании категории.', ephemeral: true });
+        
+                // Если ошибка произошла до первого ответа на взаимодействие
+                if (!interaction.replied) {
+                    await interaction.reply({ content: 'Произошла ошибка при создании категории.', ephemeral: true });
+                } else {
+                    // Если ошибка произошла после первого ответа
+                    await interaction.followUp({ content: 'Произошла ошибка при создании категории.', ephemeral: true });
+                }
             }
         },
 
@@ -2152,7 +2167,6 @@ async function getLastResponseTimestamp(userId) {
     }
 }
 
-// Вспомогательная функция для обновления времени последнего ответа
 async function updateLastResponseTimestamp(userId, timestamp) {
     try {
         await connection.promise().query(
@@ -2164,11 +2178,10 @@ async function updateLastResponseTimestamp(userId, timestamp) {
     }
 }
 
-// Функция для проверки, являются ли две даты из одного календарного дня
 function isSameCalendarDay(date1, date2) {
     return date1.toISOString().split('T')[0] === date2.toISOString().split('T')[0];
 }
-
+/*
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
@@ -2201,7 +2214,7 @@ client.on('messageCreate', async (message) => {
     // Обновляем время последнего ответа в БД
     await updateLastResponseTimestamp(message.author.id, currentDate);
 });
-
+*/
 async function startCasinoGame(interaction) {
     if (!interaction.isCommand() && !interaction.isButton()) {
         return interaction.reply({ content: 'Ошибка: Неправильный тип взаимодействия.', ephemeral: true });
@@ -2532,6 +2545,7 @@ async function loadActiveGames() {
     }
 }
 
+/*
 const phrases = [
     "Я смотрю Гачи и я горжусь этим",
     "Аниме для мужиков",
@@ -2568,7 +2582,7 @@ const phrases = [
       sendRandomPhrase();
       scheduleDailyMessage(); 
     });
-  }
+  } */
 
 async function updateMoonMessage() {
     const channel = client.channels.cache.get(MOON_CHANNEL_ID);
@@ -2631,7 +2645,7 @@ function createMoonMessage(date) {
     
 }
 
-const MIN_MESSAGES = 70;
+/* const MIN_MESSAGES = 70;
 const MAX_MESSAGES = 100;
 
 let messageCount = 0;
@@ -2639,9 +2653,7 @@ let nextMessageThreshold = getRandomInt(MIN_MESSAGES, MAX_MESSAGES);
 let lastPhraseIndex = -1;  // Хранит индекс последнего отправленного сообщения
 
 const channelInfo = "\n\nВыбрать роль можно в канале <#1163428374493003826>,\n\nОзнакомиться можно в канале <#1211698477151817789>.";
- // замените на ваши ID каналов
 
-// Список фраз с пропагандой тыловых операций
 const scheduledPhrases = [
   "USG Ishimura тоже копала луны и к чему это привело? Лучше поддержите атаку Дредноута. " + channelInfo,
   "USM Valor был на боевом дежурстве в тыловых работах и к чему это привело? Лучше копайте Металименальный метеороид. " + channelInfo,
@@ -2716,7 +2728,7 @@ async function sendScheduledPhrase() {
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+} */
 
 async function createСategory(guild, name, tag) {
     try {
@@ -3279,47 +3291,6 @@ async function alliancePermissions(roleIds) {
     }
 }
 
-
-
-async function respondToMessage(message, pingUser = false) {
-    const payload = {
-        model: 'gpt-3.5-turbo-0125',
-        messages: [
-            { role: 'system', content: 'Вы - профессиональный помощник в корпорации EVE Online. Вас изгнали из главного канала, и теперь вы в специальном канале. Отвечайте грустно, но по делу, предоставляя точную и полезную информацию на русском языке.' },
-            { role: 'user', content: message.content }
-        ]
-    };
-
-    try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            payload,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${chatApi}`
-                }
-            }
-        );
-
-        const botReply = response.data.choices[0].message.content;
-
-        const replyContent = pingUser ? `<@${message.author.id}> ${botReply}` : botReply;
-        await message.channel.send(replyContent);
-    } catch (error) {
-        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
-        await message.channel.send('НАЩАЛЬНИКА АЩИБКА');
-    }
-}
-
-client.on('messageCreate', async message => {
-    if (message.author.bot) return;
-
-    if (message.channel.id === TARGET_CHANNEL_ID) {
-        await respondToMessage(message);
-    }
-});
-
 async function fleetNotify(fc, eventType) {
     const guild = await client.guilds.fetch(GUILD_ID);
     const category = guild.channels.cache.get(HOMEFRONTS_ID);
@@ -3483,7 +3454,6 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-// Обработка сообщений и обновление данных
 client.on('messageCreate', message => {
     if (!message.guild || message.author.bot) return;
 
