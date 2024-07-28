@@ -66,6 +66,12 @@ client.once(Events.ClientReady, async () => {
     await checkAndSendWelcomeMessage();
     updateBotStatus();
     setInterval(updateBotStatus, 20000);
+    const channel = client.channels.cache.get('1239085828395892796');
+    if (channel) {
+        channel.send('Работник прибыл на рецепцию, <@235822777678954496>.');
+    } else {
+        console.error('Channel not found.');
+    }
 });
 
 async function registerCommands(client, guildId) {
