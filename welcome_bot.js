@@ -710,6 +710,11 @@ async function handleCloseChannel(interaction) {
                     value: role.id
                 }));
 
+            roles.push({
+                label: interaction.guild.roles.cache.get('1239714360503308348').name,
+                value: '1239714360503308348'
+            });
+
             if (roles.length === 0) {
                 return i.followUp({ content: 'На сервере нет доступных ролей для выбора.', ephemeral: true });
             }
@@ -737,7 +742,6 @@ async function handleCloseChannel(interaction) {
                 await roleInteraction.update({ content: 'Роль назначена. Канал будет закрыт.', components: [], ephemeral: true });
                 await closeRecruitChannel(roleInteraction.channel);
 
-                // Удаление доступа пользователя из канала 1266810861209522286
                 const welcomeChannel = interaction.guild.channels.cache.get('1266810861209522286');
                 if (welcomeChannel) {
                     await welcomeChannel.permissionOverwrites.delete(recruitUser.id);
