@@ -669,6 +669,15 @@ async function handleCloseChannel(interaction) {
         return interaction.reply({ content: 'Вы не можете закрыть этот канал.', ephemeral: true });
     }
 
+    // Получение тега роли для корпорации
+    const [corporations] = await connection.promise().query('SELECT * FROM corporations WHERE id = ?', [recruits[0].corporation_id]);
+
+    if (corporations.length === 0) {
+        return interaction.reply({ content: 'Не удалось найти корпорацию для рекрута.', ephemeral: true });
+    }
+
+    const roleTag = corporations[0].role_tag;
+
     // Спрашиваем о результате собеседования
     const row = new ActionRowBuilder()
         .addComponents(
@@ -693,8 +702,9 @@ async function handleCloseChannel(interaction) {
             await closeRecruitChannel(i.channel);
         } else if (i.customId === 'interview_accepted') {
             await i.update({ content: 'Пожалуйста, выберите роль для нового участника:', components: [], ephemeral: true });
+
             const roles = interaction.guild.roles.cache
-                .filter(role => /Пилот|Pilot/i.test(role.name))
+                .filter(role => /пилот|офицер|pilot|officer/i.test(role.name) && new RegExp(roleTag, 'i').test(role.name))
                 .map(role => ({
                     label: role.name,
                     value: role.id
@@ -708,7 +718,7 @@ async function handleCloseChannel(interaction) {
                 .addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId('select_pilot_role')
-                        .setPlaceholder('Выберите роль пилота')
+                        .setPlaceholder('Выберите роль для нового участника')
                         .addOptions(roles)
                 );
 
@@ -736,7 +746,6 @@ async function handleCloseChannel(interaction) {
         }
     });
 }
-
 async function closeRecruitChannel(channel) {
     await connection.promise().query('UPDATE recruit_channels SET closed_at = NOW() WHERE channel_id = ?', [channel.id]);
     await channel.delete();
