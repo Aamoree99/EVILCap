@@ -3,3 +3,6 @@ package-lock.json
 package.json
 complianceData.json
 .env
+permissions.py
+ad_check.js
+permissions_report.txt

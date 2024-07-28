@@ -43,18 +43,52 @@ document.addEventListener('DOMContentLoaded', function () {
                 text: `Вы решили присоединиться к нам — отличный выбор! В игре обращайтесь к <span class="contact-name">DonaldKrak</span>, чтобы начать, или нажмите кнопку ниже, чтобы присоединиться к нашему Discord и стать частью нашего процветающего сообщества. Мы рады приветствовать вас в наших рядах и начать совместное путешествие. Давайте достигнем великолепия вместе!`,
                 note: `Введите ваш ник в формате "ник EVE (реальное имя)" и укажите корпорацию при присоединении к серверу.`
             }            
+        },
+        header: {
+            en: { officers: "Officers", zkillboard: "ZKillBoard", hf_waitlist: "Homefronts" },
+            ru: { officers: "Офицеры", zkillboard: "Киллборда", hf_waitlist: "Тыловые районы" }
         }            
     };
 
-    let userScrolling = false;
-    let currentSlide = 1;
-    let maxSlides = document.querySelectorAll('.slide').length;
-    let lastScrollTime = 0;
+    function detectLanguage() {
+        const userLang = navigator.language || navigator.userLanguage;
+        const lang = ['ru', 'uk', 'be', 'kk'].some(code => userLang.includes(code)) ? 'ru' : 'en';
+        return lang;
+    }
 
-    function stopAutoScroll() {
-        userScrolling = true;
-        clearInterval(interval);
-        removeZoomEffect(); // Убираем эффект увеличения, когда автопрокрутка останавливается
+    function applyTranslations(lang) {
+        document.querySelectorAll('.slide').forEach((slide, index) => {
+            const data = translations[index + 1][lang];
+            slide.querySelector('.slide-content h1').innerHTML = data.title;
+            slide.querySelector('.slide-content p').innerHTML = data.text;
+            if (data.note) {
+                const noteElement = slide.querySelector('.slide-content small');
+                if (noteElement) {
+                    noteElement.innerHTML = data.note;
+                }
+            }
+        });
+
+        const headerLinks = document.querySelectorAll('.header-links a');
+        const headerTranslations = translations.header[lang];
+        headerLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === '/officers') {
+                link.innerHTML = headerTranslations.officers;
+            } else if (href.includes('zkillboard')) {
+                link.innerHTML = headerTranslations.zkillboard;
+            } else if (href.includes('/hf_waitlist')) {
+                link.innerHTML = headerTranslations.hf_waitlist;
+            }
+        });
+
+        // Сдвиг переключателя
+        const switchSlider = document.querySelector('.switch-slider');
+        if (lang === 'ru') {
+            switchSlider.style.left = '50%';
+        } else {
+            switchSlider.style.left = '0';
+        }
     }
 
     function copyName(detectedLang) {
@@ -76,34 +110,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000);
     }
 
-    function detectLanguage() {
-        const lang = navigator.language;
-        const detectedLang = /ru|uk|kk/.test(lang) ? 'ru' : 'en';
-        
-        // Находим кнопку, соответствующую обнаруженному языку
-        const detectedButton = document.querySelector(`.language-switch button[data-lang="${detectedLang}"]`);
-        // Добавляем класс active к найденной кнопке
-        if (detectedButton) {
-            detectedButton.classList.add('active');
-        }
-        
-        return detectedLang;
-    }
+    let userScrolling = false;
+    let currentSlide = 1;
+    let maxSlides = document.querySelectorAll('.slide').length;
+    let lastScrollTime = 0;
 
-    function applyTranslations(lang) {
-        document.querySelectorAll('.slide').forEach((slide, index) => {
-            const data = translations[index + 1][lang];
-            slide.querySelector('.slide-content h1').innerHTML = data.title;
-            slide.querySelector('.slide-content p').innerHTML = data.text;
-            if (data.note) {
-                const noteElement = slide.querySelector('.slide-content small');
-                if (noteElement) {
-                    noteElement.innerHTML = data.note;
-                }
-            }
-        });
+    function stopAutoScroll() {
+        userScrolling = true;
+        clearInterval(interval);
+        removeZoomEffect();
     }
-    
 
     function setCurrentSlide(n) {
         document.querySelectorAll('.slide').forEach(slide => {
@@ -117,13 +133,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('.dot:nth-child(' + n + ')').classList.add('active');
     }
 
-    const languageSwitchButtons = document.querySelectorAll('.language-switch button');
+    const languageSwitchButtons = document.querySelectorAll('.lang-button');
 
     languageSwitchButtons.forEach(button => {
         button.addEventListener('click', function () {
-            // Удалить класс .active у всех кнопок
             languageSwitchButtons.forEach(btn => btn.classList.remove('active'));
-            // Добавить класс .active к выбранной кнопке
             this.classList.add('active');
             applyTranslations(this.dataset.lang);
         });
@@ -133,9 +147,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!userScrolling) {
             currentSlide = (currentSlide % maxSlides) + 1;
             setCurrentSlide(currentSlide);
-            applyZoomEffect(); // Применяем эффект увеличения при автопрокрутке
+            applyZoomEffect();
         } else {
-            removeZoomEffect(); // Удаляем эффект увеличения, если пользователь взаимодействовал
+            removeZoomEffect();
         }
     }, 10000);
 
@@ -152,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function () {
             activeSlide.classList.remove('zoom-effect');
         }
     }
-    
 
     function debounce(func, wait, immediate) {
         var timeout;
@@ -167,21 +180,20 @@ document.addEventListener('DOMContentLoaded', function () {
             timeout = setTimeout(later, wait);
             if (callNow) func.apply(context, args);
         };
-    };
-    
+    }
+
     const handleScroll = debounce(function(event) {
-        stopAutoScroll(); // Останавливаем автопрокрутку
+        stopAutoScroll();
         if (event.deltaY < 0 && currentSlide > 1) {
             currentSlide--;
         } else if (event.deltaY > 0 && currentSlide < maxSlides) {
             currentSlide++;
         }
         setCurrentSlide(currentSlide);
-    }, 250, true); // Задержка в 250 мс между обработками скролла
+    }, 250, true);
     
     document.querySelector('.slider').addEventListener('wheel', handleScroll);
      
-    
     document.querySelector('.slider').addEventListener('touchstart', event => {
         touchStart = event.touches[0].clientY;
     }, false);
@@ -189,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.slider').addEventListener('touchend', event => {
         let touchEnd = event.changedTouches[0].clientY;
         stopAutoScroll();
-        if (Math.abs(touchEnd - touchStart) > 10) { // Добавляем минимальный порог движения для активации
+        if (Math.abs(touchEnd - touchStart) > 10) {
             if (touchEnd > touchStart && currentSlide > 1) {
                 currentSlide--;
             } else if (touchEnd < touchStart && currentSlide < maxSlides) {
@@ -210,7 +222,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    applyTranslations(detectLanguage());
+    const detectedLang = detectLanguage();
+    applyTranslations(detectedLang);
     setCurrentSlide(1);
-    copyName(detectLanguage());
+    copyName(detectedLang);
 });

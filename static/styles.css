@@ -65,27 +65,54 @@
             }
         }
 
-        .language-switch button {
-            background: none;
-            border: 2px solid transparent; 
+        .lang-switch {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+            margin-right: 20px;
+        }
+        
+        .switch-container {
+            position: relative;
+            width: 120px;
+            height: 40px;
+            background: #e0e0e07d;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .switch-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: #464646;
+            border-radius: 20px;
+            transition: left 0.3s;
+        }
+        
+        .lang-button {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: transparent;
+            border: none;
             color: white;
-            padding: 10px 20px;
+            font-weight: bold;
             cursor: pointer;
-            height: auto;
-            font-size: 2vw;
-            font-family: 'Orbitron', sans-serif;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            outline: none;
+            z-index: 1;
         }
-
-        .language-switch button:hover {
-            background-color: white;
-            color: #0A3E5D;
-            border-color: white;
+        
+        .lang-button:first-child {
+            left: 0;
         }
-
-        .language-switch button.active {
-            background-color: rgba(255, 255, 255, 0.8);
-            color: #0A3E5D;
+        
+        .lang-button:last-child {
+            right: 0;
         }
 
         main {

@@ -89,10 +89,10 @@ client.once('ready', async () => {
     logAndSend(`<@235822777678954496>, я восстал из пепла!`);
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
-    cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
+    //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     scheduleDailyActivity(client);
     createRoleMessage();
-    scheduleTransactionCheck();
+    //scheduleTransactionCheck();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
         checkBirthdays();
@@ -106,7 +106,7 @@ client.once('ready', async () => {
     await updateMoonMessage();
     scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
-    cron.schedule('0 12 * * 1', async () => {
+    cron.schedule('0 12 * * 0', async () => {
         await calculateAndAwardMedals();
         resetWeeklyActivity();
     });
@@ -155,7 +155,7 @@ const commands = [
             option.setName('name')
                 .setDescription('Название системы')
                 .setRequired(true)),
-    new SlashCommandBuilder()
+    /*new SlashCommandBuilder()
         .setName('winners')
         .setDescription('Выплаты казино'),
     new SlashCommandBuilder()
@@ -163,7 +163,7 @@ const commands = [
         .setDescription('Начать казино игру'),
     new SlashCommandBuilder()
         .setName('show_sessions')
-        .setDescription('Показывает активные сессии и их уникальные коды с возможностью удаления'),
+        .setDescription('Показывает активные сессии и их уникальные коды с возможностью удаления'),*/
     new SlashCommandBuilder()
         .setName('hf')
         .setDescription('Пинг и показать количество участников'),
@@ -225,7 +225,11 @@ const commands = [
         .setDescription('Отправляет кастомное сообщение в указанный канал.'),
     new SlashCommandBuilder()
         .setName('topweekly')
-        .setDescription('Показывает топ-10 пользователей за неделю'),
+        .setDescription('Показывает топ-10 пользователей за неделю')
+        .addBooleanOption(option =>
+            option.setName('все')
+                  .setDescription('Включить всех пользователей (по умолчанию: да)')
+                  .setRequired(true)),
     new SlashCommandBuilder()
         .setName('topalltime')
         .setDescription('Показывает топ-10 пользователей за все время'),
@@ -858,7 +862,8 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
             }
-            const userId = options.getString('id');
+            const userInput = interaction.options.getString('id');
+            const userId = userInput.replace(/[<@!>]/g, '');
             
             try {
                 const [results] = await queryDatabase(
@@ -921,23 +926,39 @@ client.on('interactionCreate', async interaction => {
         },
 
         async topweekly() {
+            const allUsers = interaction.options.getBoolean('все', true);
             if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
             }
             try {
-                const results = await queryDatabase(
-                    `SELECT user_id, messages_count, last_visit, online_time 
-                     FROM UserActivityWeekly
-                     ORDER BY messages_count DESC 
-                     LIMIT 10`
-                );
-
+                let query = `
+                    SELECT user_id, messages_count, last_visit, online_time 
+                    FROM UserActivityWeekly
+                    ORDER BY messages_count DESC 
+                    LIMIT 10
+                `;
+    
+                if (!allUsers) {
+                    const guild = await interaction.client.guilds.fetch(GUILD_ID);
+                    const channelMembers = await getChannelMembers(guild, '1213973137176133772');
+                    const excludedUserIds = channelMembers.map(member => member.id).join(',');
+                    query = `
+                        SELECT user_id, messages_count, last_visit, online_time 
+                        FROM UserActivityWeekly
+                        WHERE user_id NOT IN (${excludedUserIds})
+                        ORDER BY messages_count DESC 
+                        LIMIT 10
+                    `;
+                }
+    
+                const results = await queryDatabase(query);
+    
                 if (!results || results.length === 0) {
                     await interaction.reply({ content: 'Нет данных для отображения.', ephemeral: true });
                     return;
                 }
-
+    
                 let replyMessage = 'Топ-10 пользователей за неделю:\n';
                 results.forEach((user, index) => {
                     const lastVisit = user.last_visit ?? 'null';
@@ -946,8 +967,8 @@ client.on('interactionCreate', async interaction => {
                                     `последнее посещение: ${lastVisit}, ` +
                                     `общее время онлайн: ${onlineTime} часов\n`;
                 });
-
-                await interaction.reply({ content: replyMessage});
+    
+                await interaction.reply({ content: replyMessage });
             } catch (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка выполнения запроса к базе данных. Попробуйте позже.', ephemeral: true });
@@ -1074,6 +1095,16 @@ client.on('interactionCreate', async interaction => {
         await confirmTransaction(interaction);
     }
 });
+
+async function getChannelMembers(guild, channelId) {
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel || !channel.isTextBased()) {
+        throw new Error('Channel not found or is not a text channel.');
+    }
+
+    const members = channel.members;
+    return members.map(member => member.user);
+}
 
 client.on('messageCreate', async (message) => {
     const allowedUserId = '235822777678954496'; // ID разрешенного пользователя
@@ -1204,7 +1235,7 @@ async function checkBirthdays() {
     }
 }
 
-
+/*
 client.on('guildMemberAdd', async member => {
     try {
         const channel = member.guild.channels.cache.get(W_CHANNEL_ID);
@@ -1338,6 +1369,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
         console.error("Error in messageReactionAdd event handler:", error);
     }
 });
+*/
 
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -2187,8 +2219,8 @@ async function startCasinoGame(interaction) {
         return interaction.reply({ content: 'You have already started a game. Please finish your current game before starting a new one.', ephemeral: true });
     }
 
-    const uniqueCode = generateUniqueCode();
-    const initialBalance = await checkBalance();
+    //const uniqueCode = generateUniqueCode();
+    //const initialBalance = await checkBalance();
     const startTime = new Date();
 
     const row = new ActionRowBuilder()
@@ -3647,7 +3679,9 @@ async function awardMedals(users) {
     let announcement = 'Топ активных участников за последнюю неделю:\n';
     let awardedUser = null;
     let awardedMedal = null;
+    let awardedReward = null;
     let awardGiven = false; 
+
     for (const [index, user] of users.entries()) {
         const place = index + 1;
         const totalMessages = user.total_messages || 0;
@@ -3657,7 +3691,9 @@ async function awardMedals(users) {
             console.log(user, canAward);
 
             if (!awardGiven && canAward) {
-                awardedMedal = await awardUser(user.user_id, true);
+                const { medalName, reward } = await awardUser(user.user_id, true);
+                awardedMedal = medalName;
+                awardedReward = reward;
                 awardedUser = user.user_id;
                 announcement += `${place}. <@${user.user_id}> - ${totalMessages} сообщений, получает медаль ${awardedMedal}\n`;
                 awardGiven = true; // Устанавливаем флаг, что медаль была присуждена
@@ -3673,12 +3709,12 @@ async function awardMedals(users) {
         try {
             const guild = client.guilds.cache.get(GUILD_ID);
             if (!guild) throw new Error('Гильдия не найдена.');
-            
+
             const imageBuffer = await generateProfileImage(awardedUser, guild);
             const attachment = new AttachmentBuilder(imageBuffer, { name: 'awarded-image.png' });
-            
+
             await topChannel.send({
-                content: `<@${awardedUser}> получил(а) ${awardedMedal}! За наградой 10 млн ISK обращайтесь к <@739618523076362310>.`,
+                content: `<@${awardedUser}> получил(а) ${awardedMedal}! За наградой ${awardedReward} млн ISK обращайтесь к <@739618523076362310>.`,
                 files: [attachment],
             });
         } catch (error) {
@@ -3741,10 +3777,12 @@ async function awardUser(userId, isFirstPlace) {
             const currentLevel = results[0].level;
 
             if (currentLevel >= maxLevel) {
-                return (await queryDatabase(
+                const medalName = (await queryDatabase(
                     'SELECT name FROM MedalNames WHERE level = ?',
                     [currentLevel]
                 ))[0].name;
+                const reward = 10 + ((currentLevel - 1) * 40 / (maxLevel - 1));
+                return { medalName, reward: Math.round(reward * 10) / 10 };
             }
 
             if (isFirstPlace) {
@@ -3757,11 +3795,11 @@ async function awardUser(userId, isFirstPlace) {
                 level = currentLevel;
             }
         } else if (isFirstPlace) {
-                console.log(`Inserting new medal for user ${userId}`);
-                await queryDatabase(
-                    'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, 1, NOW())',
-                    [userId]
-                );
+            console.log(`Inserting new medal for user ${userId}`);
+            await queryDatabase(
+                'INSERT INTO Medals (user_id, level, awarded_at) VALUES (?, 1, NOW())',
+                [userId]
+            );
         }
 
         const medalNameResults = await queryDatabase(
@@ -3769,12 +3807,15 @@ async function awardUser(userId, isFirstPlace) {
             [level]
         );
 
-        return medalNameResults[0].name;
+        const medalName = medalNameResults[0].name;
+        const reward = 10 + ((level - 1) * 40 / (maxLevel - 1));
+        return { medalName, reward: Math.round(reward * 10) / 10 };
     } catch (err) {
         console.error('Ошибка присуждения медали:', err);
         throw err;
     }
 }
+
 
 
 function resetWeeklyActivity() {
