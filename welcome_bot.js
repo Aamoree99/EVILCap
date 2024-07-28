@@ -578,20 +578,16 @@ async function handleCorporationSelection(interaction) {
         const userId = interaction.customId.split('_').pop();
         const corporationId = interaction.values[0];
         
-        // Получение информации из кэша
         const { gameName, realName, referral } = roleSelectionCache.get(userId);
 
-        // Сохранение рекрутской анкеты в БД и получение ID записи
         const [result] = await connection.promise().query(
             'INSERT INTO recruits (user_id, game_name, real_name, referral, corporation_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
             [userId, gameName, realName, referral, corporationId]
         );
         const recruitId = result.insertId;
 
-        // Очистка кэша
         roleSelectionCache.delete(userId);
 
-        // Получение информации о корпорации
         const [corporations] = await connection.promise().query('SELECT * FROM corporations WHERE id = ?', [corporationId]);
         if (corporations.length === 0) {
             return interaction.reply({ content: 'Корпорация не найдена.', ephemeral: true });
@@ -605,7 +601,7 @@ async function handleCorporationSelection(interaction) {
         const channelName = `вербовка-${recruitId}`;
         const recruitChannel = await guild.channels.create({
             name: channelName,
-            type: 0, // Тип канала: 0 для текстовых каналов
+            type: 0, 
             parent: category.id,
             permissionOverwrites: [
                 {
@@ -616,6 +612,10 @@ async function handleCorporationSelection(interaction) {
                     id: userId,
                     allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
                 },
+                {
+                    id: SUPER_ADMIN_ID,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.ManageMessages], // Полный доступ для суперадмина
+                },
                 ...JSON.parse(corporation.roles).map(roleId => ({
                     id: roleId,
                     allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
@@ -623,7 +623,6 @@ async function handleCorporationSelection(interaction) {
             ]
         });
 
-        // Запись информации о канале в БД
         await connection.promise().query(
             'INSERT INTO recruit_channels (channel_id, recruit_id, created_at) VALUES (?, ?, NOW())',
             [recruitChannel.id, recruitId]
