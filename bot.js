@@ -276,7 +276,7 @@ client.on('messageCreate', message => {
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
-    const VOICE_CHANNEL_ID = '1212507833552080998';
+    const VOICE_CHANNEL_ID = '1212507874593349732';
     const USER_ID_TO_MONITOR = '739618523076362310';
 
     if (newState.channelId === VOICE_CHANNEL_ID) {
