@@ -13,11 +13,14 @@ const {
     ButtonBuilder,
     ButtonStyle,
     PermissionsBitField,
-    ActivityType
+    ActivityType,
+    EmbedBuilder
 } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const mysql = require('mysql2');
 require('dotenv').config();
+const { format } = require('date-fns');
+const { ru } = require('date-fns/locale');
 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -204,18 +207,16 @@ client.on(Events.InteractionCreate, async interaction => {
                 await handleRecruitModal(interaction);
             }
         } else if (interaction.isButton()) {
-            // Обработка кнопки начала рекрутинга
             if (interaction.customId === 'start_recruiting') {
                 await handleStartRecruiting(interaction);
             } else {
-                // Разбивка customId для других действий
-                const [action, corporationId] = interaction.customId.split('_');
+                const [action, id] = interaction.customId.split('_');
                 if (action === 'editroles') {
-                    await handleEditRoles(interaction, corporationId);
+                    await handleEditRoles(interaction, id);
                 } else if (action === 'editdata') {
-                    await handleEditData(interaction, corporationId);
+                    await handleEditData(interaction, id);
                 } else if (action === 'delete') {
-                    await handleDeleteCorporation(interaction, corporationId);
+                    await handleDeleteCorporation(interaction, id);
                 }
             }
         }
@@ -226,12 +227,103 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+async function createCorporationHistoryEmbed(gameName) {
+    try {
+        const characterId = await fetchCharacterId(gameName);
+        const history = await fetchCorporationHistory(characterId);
+        const npcCorporations = await fetchNpcCorporations();
+        const formattedHistory = formatHistory(history, npcCorporations);
+
+        const embed = new EmbedBuilder()
+            .setTitle(`*История корпораций для ${gameName}*`)
+            .setDescription(formattedHistory)
+            .setColor(0x1E90FF)
+            .setFooter({ text: 'Данные предоставлены через открытые источники EVE Online'});
+        return embed;
+    } catch (error) {
+        console.error('Error creating history embed:', error);
+        throw error;
+    }
+}
+
+function formatHistory(history, npcCorporations) {
+    return history.map((item, index, array) => {
+        const startDate = format(new Date(item.startDate), 'dd.MM.yyyy', { locale: ru });
+        const endDate = index === 0 ? 'настоящее время' : format(new Date(array[index - 1].startDate), 'dd.MM.yyyy', { locale: ru });
+        const npcTag = npcCorporations.includes(item.corporationId) ? ' [NPC]' : '';
+        return `**${item.name}${npcTag}**\n${startDate} - ${endDate}`;
+    }).join('\n\n');
+}
+
+async function fetchCorporationHistory(characterId) {
+    try {
+        const response = await fetch(`https://esi.evetech.net/latest/characters/${characterId}/corporationhistory/?datasource=tranquility`);
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('Unexpected data format from corporation history API');
+
+        if (data.length === 0) throw new Error('No history found');
+
+        const uniqueCorporationIds = [...new Set(data.map(entry => entry.corporation_id))];
+        const namesResponse = await fetch('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(uniqueCorporationIds),
+        });
+        const namesData = await namesResponse.json();
+
+        if (!Array.isArray(namesData)) {
+            console.error('Expected namesData to be an array but received:', namesData);
+            throw new Error('Unexpected data format from universe names API');
+        }
+
+        const corporationNamesMap = {};
+        for (const corp of namesData) {
+            corporationNamesMap[corp.id] = corp.name;
+        }
+
+        const history = data.map(entry => {
+            const corporationName = corporationNamesMap[entry.corporation_id] || 'Unknown Corporation';
+            return {
+                corporationId: entry.corporation_id,
+                name: corporationName,
+                startDate: entry.start_date,
+            };
+        });
+
+        return history;
+    } catch (error) {
+        console.error('Error fetching corporation history:', error);
+        throw error;
+    }
+}
+
+
+async function fetchNpcCorporations() {
+    const response = await fetch('https://esi.evetech.net/latest/corporations/npccorps/?datasource=tranquility');
+    return response.json();
+}
+
+async function fetchCharacterId(gameName) {
+    const response = await fetch('https://esi.evetech.net/latest/universe/ids/?datasource=tranquility&language=en', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([gameName]),
+    });
+    const data = await response.json();
+    if (data.characters && data.characters.length > 0) {
+        return data.characters[0].id;
+    }
+    throw new Error('Character not found');
+}
 async function handleAddCorporationCommand(interaction) {
     if (interaction.user.id !== SUPER_ADMIN_ID) {
         return interaction.reply({ content: 'У вас нет прав на выполнение этой команды.', ephemeral: true });
     }
 
-    // Фильтрация ролей по ключевым словам
     const keywords = ['Офицер', 'СЕО', 'Officer', 'CEO'];
     const guildRoles = interaction.guild.roles.cache
         .filter(role => keywords.some(keyword => role.name.toLowerCase().includes(keyword.toLowerCase())))
@@ -629,15 +721,19 @@ async function handleCorporationSelection(interaction) {
         );
 
         const corpRolesMention = JSON.parse(corporation.roles).map(roleId => `<@&${roleId}>`).join(', ');
-        await recruitChannel.send(`Приветствуем, ${corpRolesMention}! Новый рекрут хочет присоединиться к вашей корпорации. 
-        **Игровое имя:** ${gameName} 
-        **Реальное имя:** ${realName} 
-        **Источник информации о нас:** ${referral}`);
+        const embed = await createCorporationHistoryEmbed(gameName);
 
-        // Установка никнейма пользователя
+        await recruitChannel.send({
+            content: `Приветствуем, ${corpRolesMention}! Новый рекрут хочет присоединиться к вашей корпорации. \n**Игровое имя:** ${gameName}\n**Реальное имя:** ${realName}\n**Источник информации о нас:** ${referral}\n`,
+            embeds: [embed]
+        });
+
         await interaction.guild.members.cache.get(userId).setNickname(`${gameName} (${realName})`);
 
-        await interaction.reply({ content: 'Ваш выбор корпорации сохранен. Вас свяжут в ближайшее время.', ephemeral: true });
+        await interaction.update({
+            content: `Вы выбрали корпорацию: ${corporation.name}. Вас свяжут в ближайшее время.`,
+            components: []
+        });
     } catch (error) {
         console.error('Error handling corporation selection:', error);
         await interaction.reply({ content: 'Произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте позже.', ephemeral: true });
