@@ -280,11 +280,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     const USER_ID_TO_MONITOR = '739618523076362310';
 
     if (newState.channelId === VOICE_CHANNEL_ID) {
-        // Проверка для основного пользователя
         if (newState.id === USER_ID_TO_MONITOR) {
             const textChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
             if (textChannel) {
-                textChannel.send(`Пользователь <@${USER_ID_TO_MONITOR}> находится в голосовом канале <#${VOICE_CHANNEL_ID}>. Присоединяйтесь к беседе!`);
+                const voiceChannelLink = `https://discord.com/channels/${GUILD_ID}/${VOICE_CHANNEL_ID}`;
+                textChannel.send(`Пользователь <@${USER_ID_TO_MONITOR}> находится в голосовом канале. Присоединяйтесь к беседе!\n${voiceChannelLink}`);
             } else {
                 console.error(`Text channel with ID ${MAIN_CHANNEL_ID} not found.`);
             }
