@@ -31,7 +31,8 @@ const client = new Client({
         GatewayIntentBits.DirectMessageReactions,
         GatewayIntentBits.DirectMessageTyping,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildPresences
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -277,11 +278,16 @@ client.on('messageCreate', message => {
 client.on('voiceStateUpdate', (oldState, newState) => {
     const VOICE_CHANNEL_ID = '1212507833552080998';
     const USER_ID_TO_MONITOR = '739618523076362310';
-    
-    if (newState.channelId === VOICE_CHANNEL_ID && newState.id === USER_ID_TO_MONITOR) {
-        const textChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
-        if (textChannel) {
-            textChannel.send(`Пользователь <@${USER_ID_TO_MONITOR}> находится в голосовом канале <#${VOICE_CHANNEL_ID}>. Присоединяйтесь к беседе!`);
+
+    if (newState.channelId === VOICE_CHANNEL_ID) {
+        // Проверка для основного пользователя
+        if (newState.id === USER_ID_TO_MONITOR) {
+            const textChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
+            if (textChannel) {
+                textChannel.send(`Пользователь <@${USER_ID_TO_MONITOR}> находится в голосовом канале <#${VOICE_CHANNEL_ID}>. Присоединяйтесь к беседе!`);
+            } else {
+                console.error(`Text channel with ID ${MAIN_CHANNEL_ID} not found.`);
+            }
         }
     }
 });
