@@ -3,7 +3,7 @@ const connection = require('./db_connect');
 const mysql = require('mysql2');
 const path = require('path');
 const fs = require('fs').promises;
-const { Client, GatewayIntentBits, EmbedBuilder, ActivityType, Events,  REST, Routes } = require('discord.js');
+const { Client, Intents, GatewayIntentBits, EmbedBuilder, ActivityType, Events,  REST, Routes, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -224,14 +224,14 @@ async function handleIceCommand(interaction) {
 
         if (alts.length === 0) {
             // If no alts, send a message directly using the cleaned nickname
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Флот на лед')
                 .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}`)
                 .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
                 .setFooter({ text: `Флот создан ${userMention}` });
 
-            const en_embed = new MessageEmbed()
+            const en_embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Ice Fleet')
                 .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}`)
@@ -249,18 +249,18 @@ async function handleIceCommand(interaction) {
                 await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
             }
         } else {
-            // If alts are present, offer a dropdown for selection
+            alts.push({ alt_name: cleanedNickname });
             const options = alts.map(alt => ({
                 label: alt.alt_name,
                 value: alt.alt_name,
             }));
 
-            const row = new MessageActionRow()
+            const row = new ActionRowBuilder()
                 .addComponents(
-                    new MessageSelectMenu()
+                    new StringSelectMenuBuilder()
                         .setCustomId('select-character')
                         .setPlaceholder('Выберите персонажа')
-                        .addOptions(options),
+                        .addOptions(options)
                 );
 
             await interaction.reply({
@@ -276,14 +276,14 @@ async function handleIceCommand(interaction) {
                 if (i.isSelectMenu()) {
                     const selectedCharacter = i.values[0];
                     
-                    const embed = new MessageEmbed()
+                    const embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Флот на лед')
                         .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}`)
                         .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
                         .setFooter({ text: `Флот создан ${userMention}` });
 
-                    const en_embed = new MessageEmbed()
+                    const en_embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Ice Fleet')
                         .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}`)
@@ -335,13 +335,13 @@ async function handleGravCommand(interaction) {
 
         if (alts.length === 0) {
             // If no alts, send a message directly using the cleaned nickname
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Флот на гравик')
                 .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}`)
                 .setFooter({ text: `Флот создан ${userMention}` });
 
-            const en_embed = new MessageEmbed()
+            const en_embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Grav Fleet')
                 .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}`)
@@ -358,18 +358,18 @@ async function handleGravCommand(interaction) {
                 await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
             }
         } else {
-            // If alts are present, offer a dropdown for selection
+            alts.push({ alt_name: cleanedNickname });
             const options = alts.map(alt => ({
                 label: alt.alt_name,
                 value: alt.alt_name,
             }));
 
-            const row = new MessageActionRow()
+            const row = new ActionRowBuilder()
                 .addComponents(
-                    new MessageSelectMenu()
+                    new StringSelectMenuBuilder()
                         .setCustomId('select-character')
                         .setPlaceholder('Выберите персонажа')
-                        .addOptions(options),
+                        .addOptions(options)
                 );
 
             await interaction.reply({
@@ -385,13 +385,13 @@ async function handleGravCommand(interaction) {
                 if (i.isSelectMenu()) {
                     const selectedCharacter = i.values[0];
 
-                    const embed = new MessageEmbed()
+                    const embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Флот на гравик')
                         .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}`)
                         .setFooter({ text: `Флот создан ${userMention}` });
 
-                    const en_embed = new MessageEmbed()
+                    const en_embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Grav Fleet')
                         .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}`)
@@ -442,13 +442,13 @@ async function handleEvgenCommand(interaction) {
 
         if (alts.length === 0) {
             // If no alts, use the main character's cleaned nickname directly
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Флот на белт')
                 .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}\nВо имя <@350931081194897409>`)
                 .setFooter({ text: `Флот создан ${userMention}` });
 
-            const en_embed = new MessageEmbed()
+            const en_embed = new EmbedBuilder()
                 .setColor('#0099ff') // Blue color
                 .setTitle('Fleet to the belt')
                 .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}\nIn the name of <@350931081194897409>`)
@@ -465,19 +465,18 @@ async function handleEvgenCommand(interaction) {
                 await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
             }
         } else {
-            // If there are alts, present a dropdown menu
             const options = [{ label: cleanedNickname, value: cleanedNickname }];
             options.push(...alts.map(alt => ({
                 label: alt.alt_name,
                 value: alt.alt_name,
             })));
 
-            const row = new MessageActionRow()
+            const row = new ActionRowBuilder()
                 .addComponents(
-                    new MessageSelectMenu()
+                    new StringSelectMenuBuilder()
                         .setCustomId('select-character')
                         .setPlaceholder('Выберите персонажа')
-                        .addOptions(options),
+                        .addOptions(options)
                 );
 
             await interaction.reply({
@@ -493,13 +492,13 @@ async function handleEvgenCommand(interaction) {
                 if (i.isSelectMenu()) {
                     const selectedCharacter = i.values[0];
 
-                    const embed = new MessageEmbed()
+                    const embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Флот на белт')
                         .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}\nВо имя <@350931081194897409>`)
                         .setFooter({ text: `Флот создан ${userMention}` });
 
-                    const en_embed = new MessageEmbed()
+                    const en_embed = new EmbedBuilder()
                         .setColor('#0099ff') // Blue color
                         .setTitle('Fleet to the belt')
                         .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}\nIn the name of <@350931081194897409>`)
