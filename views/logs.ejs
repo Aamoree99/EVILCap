@@ -70,11 +70,13 @@
                     <input type="text" id="datepicker" class="form-control" style="width: auto; display: inline-block;">
                     <input type="hidden" id="date" name="date" value="<%= selectedDate %>">
                     <button type="button" id="nextDay" class="btn btn-secondary">&gt;</button>
-                    <a href="/moon" class="btn btn-warning">Home</a>
                 </div>
             </div>
         </form>
-
+        <a href="/moon" class="btn btn-warning">Home</a>
+        <div class="button-container">
+            <button id="copyButton" class="btn btn-primary">Скопировать данные</button>
+        </div>
         <h2>Summary Data</h2>
         <table class="table" id="summaryTable">
             <thead>
@@ -197,6 +199,62 @@
             if ($("#date").val()) {
                 $("#datepicker").datepicker("setDate", $("#date").val());
             }
+
+            // Copy Button Functionality
+            $('#copyButton').on('click', function() {
+                let logData = [];
+                let summaryData = [];
+                let allData = [];
+
+                // Collecting data from the Detailed Log table
+                $('#logTable tbody tr').each(function() {
+                    let row = $(this).find('td').map(function() {
+                        return $(this).text();
+                    }).get();
+                    logData.push(row.join('\t'));
+                });
+
+                // Collecting data from the Summary table
+                $('#summaryTable tbody tr').each(function() {
+                    let row = $(this).find('td').map(function() {
+                        // Extracting the href attribute from the link
+                        if ($(this).find('a').length > 0) {
+                            return $(this).find('a').attr('href');
+                        } else {
+                            return $(this).text();
+                        }
+                    }).get();
+                    summaryData.push(row.join('\t'));
+                });
+
+                // Collecting data from the Total table (highlight-all)
+                $('#specialEntryTable tbody tr').each(function() {
+                    let row = $(this).find('td').map(function() {
+                        // Extracting the href attribute from the link
+                        if ($(this).find('a').length > 0) {
+                            return $(this).find('a').attr('href');
+                        } else {
+                            return $(this).text();
+                        }
+                    }).get();
+                    allData.push(row.join('\t'));
+                });
+
+                // Column headers in Russian
+                let logHeaders = "Дата\tКорпорация\tШахтер\tМатериал\tКоличество\tОбъем\n";
+                let summaryHeaders = "Дата\tПилот\tСсылка на Janice\tСумма\tНалог\tВыплата\tСтатус\n";
+                let allHeaders = "Дата\tПилот\tСсылка на Janice\tСумма\tНалог\tВыплата\tСтатус\n";
+
+                // Final formatted text
+                let formattedData = logHeaders + logData.join('\n') + '\n\n' + summaryHeaders + summaryData.join('\n') + '\n\n' + allHeaders + allData.join('\n');
+                
+                // Copying to clipboard
+                navigator.clipboard.writeText(formattedData).then(function() {
+                    alert("Данные скопированы в буфер обмена!");
+                }, function(err) {
+                    alert("Не удалось скопировать данные: ", err);
+                });
+            });
         });
     </script>
 </body>
