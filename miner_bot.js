@@ -178,7 +178,7 @@ async function handleMoonCommand(interaction) {
                 const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
                 const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
 
-                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
+                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay}:${minutesUntilNextEvenDay}.`;
             } else {
                 if (nextEvenDay <= now || !isEvenDay) {
                     nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
@@ -187,7 +187,7 @@ async function handleMoonCommand(interaction) {
                 const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
                 const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
 
-                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
+                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay}:${minutesUntilNextEvenDay}.`;
             }
         }
 
