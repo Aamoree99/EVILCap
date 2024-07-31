@@ -18,6 +18,7 @@ const {
 } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const connection = require('./db_connect');
+const mysql = require('mysql');
 require('dotenv').config();
 const { format } = require('date-fns');
 const { ru } = require('date-fns/locale');

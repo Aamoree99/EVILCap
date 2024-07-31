@@ -1,5 +1,6 @@
 require('dotenv').config();
 const connection = require('./db_connect');
+const mysql = require('mysql');
 const path = require('path');
 const fs = require('fs').promises;
 const { Client, GatewayIntentBits, EmbedBuilder, ActivityType, REST, Routes } = require('discord.js');

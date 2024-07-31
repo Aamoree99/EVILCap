@@ -30,6 +30,7 @@ const { randomInt } = require('crypto');
 const { log } = require('console');
 const moment = require('moment');
 const connection = require('./db_connect');
+const mysql = require('mysql');
 
 const client = new Client({
     intents: [
