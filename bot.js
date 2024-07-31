@@ -6,11 +6,9 @@ const {
     ActionRowBuilder, 
     ButtonBuilder, 
     ButtonStyle, 
-    Events, 
     ActivityType, 
     PermissionsBitField, 
     ChannelType, 
-    AutoModerationRuleKeywordPresetType, 
     AttachmentBuilder, 
     EmbedBuilder  
 } = require('discord.js');
@@ -50,7 +48,6 @@ const client = new Client({
 });
 
 const GUILD_ID = '1159107187407335434';
-const W_CHANNEL_ID = '1159107187986157599'; 
 const LOG_CHANNEL_ID = '1239085828395892796'; 
 const REPORT_CHANNEL_ID= '1230611265794080848';
 const MAIN_CHANNEL_ID= '1172972375688626276';
@@ -60,11 +57,8 @@ const EN_MAIN_CHANNEL_ID= '1212507080934686740';
 const TARGET_CHANNEL_ID = '1242246489787334747';
 const HOMEFRONTS_ID='1243701044157091860';
 const allowedUserId = '235822777678954496';
-const chatApi = process.env.OPENAI_API_KEY;
 const guildId = GUILD_ID;
 
-const waitList = new Map();
-const messageMap = new Map();
 
 let tokenCache = {
     accessToken: null,
@@ -158,16 +152,6 @@ const commands = [
     new SlashCommandBuilder()
         .setName('members')
         .setDescription('Показать участников корпы сейчас'),
-    new SlashCommandBuilder()
-        .setName('moon')
-        .setDescription('Создать уведомление о луне.'),
-    new SlashCommandBuilder()
-        .setName('evgen')
-        .setDescription('Создать уведомление о белте во имя Евгения.')
-        .addStringOption(option =>
-            option.setName('name')
-                .setDescription('Название системы')
-                .setRequired(true)),
     /*new SlashCommandBuilder()
         .setName('winners')
         .setDescription('Выплаты казино'),
@@ -189,20 +173,6 @@ const commands = [
                 .setDescription('Тег для ролей')
                 .setRequired(true)),
     new SlashCommandBuilder()
-        .setName('ice')
-        .setDescription('Создает уведомление о льде.')
-        .addStringOption(option =>
-            option.setName('name')
-                .setDescription('название системы')
-                .setRequired(true)),
-    new SlashCommandBuilder()
-        .setName('grav')
-        .setDescription('Создает уведомление о льде.')
-        .addStringOption(option =>
-            option.setName('name')
-                .setDescription('название системы')
-                .setRequired(true)),
-    new SlashCommandBuilder()
         .setName('channel_info')
         .setDescription('TEST')
         .addStringOption(option =>
@@ -216,13 +186,6 @@ const commands = [
             option.setName('date')
                     .setDescription('Введите дату в формате ДД.ММ.ГГГГ или ДД.ММ')
                     .setRequired(true)),
-    new SlashCommandBuilder()
-        .setName('addtowaitlist')
-        .setDescription('Add to waitlist')
-        .addStringOption(option => 
-            option.setName('id')
-                .setDescription('People ID')
-                .setRequired(true)),
     new SlashCommandBuilder()
         .setName('userinfo')
         .setDescription('Показать информацию о пользователе')
@@ -841,13 +804,6 @@ client.on('interactionCreate', async interaction => {
             }
         },
 
-        async addtowaitlist() {
-            const memberId = interaction.options.getString('id');
-            waitList.set(memberId, Date.now());
-            console.log(waitList);
-            await interaction.reply(`Пользователь с ID ${memberId} был добавлен в waitList.`);
-        },
-
         async sendcustommessage() {
             const allowedUserId = '235822777678954496'; // ID разрешенного пользователя
 
@@ -858,7 +814,8 @@ client.on('interactionCreate', async interaction => {
         
             StealthBot = !StealthBot;
             await interaction.reply({ content: `StealthBot режим ${StealthBot ? 'включен' : 'выключен'}.`, ephemeral: true });
-        }, async userinfo() {
+        }, 
+        async userinfo() {
             if (interaction.channel.id !== LOG_CHANNEL_ID) {
                 await interaction.reply({ content: "Пошел нахуй", ephemeral: true });
                 return;
@@ -1236,143 +1193,6 @@ async function checkBirthdays() {
     }
 }
 
-/*
-client.on('guildMemberAdd', async member => {
-    try {
-        const channel = member.guild.channels.cache.get(W_CHANNEL_ID);
-        if (!channel) {
-            logAndSend(`Channel with ID ${W_CHANNEL_ID} not found in guild ${member.guild.id}`);
-            return;
-        }
-
-        logAndSend(`New member joined: ${member.user.tag} (ID: ${member.id}) in guild ${member.guild.id}`);
-        if (!/^[\w\s]+ \([\w]+\)$/.test(member.displayName)) {
-            logAndSend(`Member ${member.user.tag} (ID: ${member.id}) does not match the required nickname format.`);
-            channel.send(`${member.toString()}, добро пожаловать!\n\nНа нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Captain Price, Серега.`);
-            waitList.set(member.id, { joinedAt: Date.now(), reminded: false });
-            console.log(waitList);
-        } else {
-            logAndSend(`Member ${member.user.tag} (ID: ${member.id}) matches the required nickname format.`);
-        }
-    } catch (error) {
-        console.error("Error in guildMemberAdd event handler:", error);
-    }
-});
-
-const CHECK_INTERVAL = 5 * 60 * 1000; // 5 минут в миллисекундах
-
-setInterval(async () => {
-    const now = Date.now();
-    for (const [memberId, data] of waitList.entries()) {
-        const { joinedAt, reminded } = data;
-
-        if (!reminded && now - joinedAt >= CHECK_INTERVAL) {
-            try {
-                const member = await client.users.fetch(memberId);
-                if (!member) continue;
-
-                const guild = await client.guilds.fetch(GUILD_ID);
-                if (!guild) continue;
-
-                const channel = guild.channels.cache.get(W_CHANNEL_ID);
-                if (!channel) continue;
-
-                channel.send(`${member.toString()}, напоминаем, что на нашем сервере мы используем формат никнейма "Ник в игре (Реальное имя)".\n\nПожалуйста, напиши сообщение или ответь боту с твоим ником и именем, разделенными запятой, например: Kratos, Олег.`);
-                waitList.set(memberId, { joinedAt, reminded: true });
-            } catch (error) {
-                console.error(`Error reminding member ${memberId}:`, error);
-            }
-        }
-    }
-}, CHECK_INTERVAL);
-
-client.on('messageCreate', async message => {
-    try {
-        if (message.author.bot || message.channel.id !== W_CHANNEL_ID || !message.content.trim() || !waitList.has(message.author.id)) return;
-
-        let content = message.content;
-
-        content = content.replace(/<@!?\d+>/g, '').trim();
-
-        if (content.includes(',')) {
-            const parts = content.split(',', 2);
-            if (parts.length === 2) {
-                const newNick = `${parts[0].trim()} (${parts[1].trim()})`;
-                try {
-                    // Попытка изменить никнейм пользователя
-                    await message.member.setNickname(newNick);
-                    const responseMessage = await message.channel.send(`Спасибо! Твой никнейм был изменен на ${newNick}. Ты по поводу какой корпорации? Нажми реакцию 1 для Cosmic Capybara Crew, реакцию 2 для Yellow Foxes или реакцию 3 для другой корпорации.`);
-                    await responseMessage.react('1️⃣');
-                    await responseMessage.react('2️⃣');
-                    await responseMessage.react('3️⃣');
-
-                    // Удаляем пользователя из списка ожидания
-                    waitList.delete(message.author.id);
-
-                    // Запоминаем ID сообщения для обработки реакций
-                    messageMap.set(responseMessage.id, message.author.id);
-                } catch (error) {
-                    message.channel.send("У меня недостаточно прав для изменения никнеймов.");
-                    console.error("Permission denied to change nickname:", error);
-                }
-            } else {
-                message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
-            }
-        } else {
-            message.channel.send(`${message.author.toString()}, твой ответ должен содержать ник и имя, разделенные запятой.`);
-        }
-    } catch (error) {
-        console.error("Error in messageCreate event handler:", error);
-    }
-});
-
-
-client.on('messageReactionAdd', async (reaction, user) => {
-    try {
-        if (user.bot || reaction.message.channel.id !== W_CHANNEL_ID) return;
-
-        const originalUserId = messageMap.get(reaction.message.id);
-        if (!originalUserId || user.id !== originalUserId) return; // Убедимся, что реакцию ставит нужный пользователь
-
-        if (reaction.emoji.name === '1️⃣') {
-            logAndSend(`Пользователь <@${user.id}> выбрал корпорацию Cosmic Capybara Crew.`);
-            try {
-                const role = reaction.message.guild.roles.cache.get('1239714360503308348');
-                if (!role) {
-                    logAndSend(`Role with ID '1239714360503308348' not found in guild ${reaction.message.guild.id}`);
-                    return;
-                }
-
-                const member = reaction.message.guild.members.cache.get(user.id);
-                if (!member) {
-                    logAndSend(`Member with ID ${user.id} not found in guild ${reaction.message.guild.id}`);
-                    return;
-                }
-
-                await member.roles.add(role);
-                logAndSend(`Роль <@&${role.id}> была успешно добавлена пользователю <@${user.id}>.`);
-
-                const welcomeChannel = reaction.message.guild.channels.cache.get(REPORT_CHANNEL_ID);
-                if (welcomeChannel) {
-                    await welcomeChannel.send(`Добро пожаловать на сервер, ${user.toString()}! Мы рады видеть тебя в рядах Пилотов CCCrew! Ты можешь выбрать интересующие тебя активности в канале <#1163428374493003826>. Пожалуйста, ознакомься с нашими правилами и поставь реакцию в канале <#1239710611890376744>.`);
-                } else {
-                    logAndSend('Канал для приветствия не найден.');
-                }
-            } catch (error) {
-                console.error('Ошибка при добавлении роли:', error);
-            }
-        } else if (reaction.emoji.name === '3️⃣') {
-                reaction.message.channel.send(`${user.toString()}, ты выбрал другие корпорации. <@739618523076362310>, пожалуйста, помоги!`);
-        } else if (reaction.emoji.name === '2️⃣') {
-                reaction.message.channel.send(`${user.toString()}, ты выбрал вторую опцию. <@&1244286820292755466> и <@&1244286817344159755>, пожалуйста, помогите!`);
-        }
-    } catch (error) {
-        console.error("Error in messageReactionAdd event handler:", error);
-    }
-});
-*/
-
-
 client.on('messageReactionAdd', async (reaction, user) => {
     try {
         if (reaction.message.partial) await reaction.message.fetch();
@@ -1615,7 +1435,7 @@ async function checkDiscordMembersAgainstGameList() {
 
             let reportMessage = 'Пожалуйста, проверьте этих пользователей на соответствие их игровому имени или наличию в корпорации:';
 
-            const roleIds = ["1239714360503308348", "1230610682018529280"]; // Замените SECOND_ROLE_ID на ID второй роли
+            const roleIds = ["1239714360503308348", "1230610682018529280"]; 
 
             roleIds.forEach(roleId => {
                 members.forEach(member => {
@@ -1887,126 +1707,6 @@ async function cleanupOldMessages(before = null) {
     }
 }
 
-const specialResponse = "бобр курва";
-const specialTriggerWord = "боброе утро";
-
-const triggerWords = [
-    "доброе утро",
-    "добрый день",
-    "добрый вечер",
-    "доброго утра",
-    "доброго дня",
-    "доброго вечера",
-    "привет",
-    "здравствуйте",
-    "здорово",
-    "хай",
-    "приветствую",
-    "приветик",
-    "здравствуй",
-    "добрейшего утра",
-    "добрейший день",
-    "добрейший вечер",
-    "утро доброе",
-    "день добрый",
-    "вечер добрый",
-    "утра доброго",
-    "дня доброго",
-    "вечера доброго",
-    "добро пожаловать",
-    "рад видеть",
-    "рад приветствовать"
-];
-
-
-const specialPersonTrigger = "739618523076362310"; // Замените на ID нужного пользователя
-
-async function generateStalkerResponse(userMessage) {
-    const payload = {
-        model: 'gpt-3.5-turbo-0125',
-        messages: [
-            { role: 'system', content: 'поприветствуй в ответ в стиле дворецкого. Сообщение должно быть не более 60 символов, в конце обязательно добавь "дон" после запятой.' },
-            { role: 'user', content: userMessage }
-        ]
-    };
-
-    try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            payload,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${chatApi}`
-                }
-            }
-        );
-
-        return response.data.choices[0].message.content;
-    } catch (error) {
-        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
-        return 'НАЧАЛЬНИКА ОШИБКА';
-    }
-}
-
-async function generateCommanderResponse(userMessage) {
-    const payload = {
-        model: 'gpt-3.5-turbo-0125',
-        messages: [
-            { role: 'system', content: 'Придумай известного персонажа-предводителя и напиши только ответ на его приветствие, будто я его подчиненный. Приветствие может быть типа "Доброе утро", "Привет" и т.д. Начни сообщение с извинений за то, что бот заебывает.' },
-            { role: 'user', content: userMessage }
-        ]
-    };
-
-    try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            payload,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${chatApi}`
-                }
-            }
-        );
-
-        const originalResponse = response.data.choices[0].message.content;
-        const overheatingPercentage = Math.floor(Math.random() * 1001); // Генерирует случайное число от 0 до 100
-        const finalResponse = `${originalResponse} Бот перегрет на ${overheatingPercentage}%.`;
-
-        return finalResponse;
-    } catch (error) {
-        console.error('Ошибка при обращении к OpenAI API:', error.response ? error.response.data : error.message);
-        return 'НАЧАЛЬНИКА ОШИБКА';
-    }
-}
-
-async function getLastResponseTimestamp(userId) {
-    try {
-        const [rows] = await connection.promise().query(
-            'SELECT lastResponseTime FROM UserResponses WHERE userId = ?', [userId]
-        );
-        return rows.length > 0 ? rows[0].lastResponseTime : null;
-    } catch (err) {
-        console.error('Ошибка при получении времени последнего ответа:', err);
-        return null;
-    }
-}
-
-async function updateLastResponseTimestamp(userId, timestamp) {
-    try {
-        await connection.promise().query(
-            'INSERT INTO UserResponses (userId, lastResponseTime) VALUES (?, ?) ON DUPLICATE KEY UPDATE lastResponseTime = VALUES(lastResponseTime)',
-            [userId, timestamp]
-        );
-    } catch (err) {
-        console.error('Ошибка при обновлении времени последнего ответа:', err);
-    }
-}
-
-function isSameCalendarDay(date1, date2) {
-    return date1.toISOString().split('T')[0] === date2.toISOString().split('T')[0];
-}
 /*
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
@@ -2370,45 +2070,6 @@ async function loadActiveGames() {
         activeGames = {};
     }
 }
-
-/*
-const phrases = [
-    "Я смотрю Гачи и я горжусь этим",
-    "Аниме для мужиков",
-    "Жожо лучшее произведение человечества",
-    "Никто не может противостоять моему ORA ORA ORA!",
-    "Хентай с глубоким сюжетом",
-    "2D лучше, чем 3D",
-    "Яой для ценителей высокого искусства",
-    "Утренние аниме-марафоны — лучший способ начать день",
-    "Повязка на глаз — символ мужества",
-    "Всегда держи масло под рукой",
-    "Никто не может устоять перед моим YES SIR!",
-    "Ремень — лучший аксессуар",
-    "Жизнь в джимме — жизнь по-настоящему",
-    "Всё лучшее происходит в душе"
-  ];
-  
-  async function sendRandomPhrase() {
-    const channel = await client.channels.fetch(MAIN_CHANNEL_ID);
-    const randomPhrase = phrases[randomInt(phrases.length)];
-    channel.send(randomPhrase);
-  }
-  
-  function scheduleDailyMessage() {
-    const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    
-    const randomHour = randomInt(24);
-    const randomMinute = randomInt(60);
-  
-    tomorrow.setHours(randomHour, randomMinute, 0);
-  
-    scheduleJob(tomorrow, function() {
-      sendRandomPhrase();
-      scheduleDailyMessage(); 
-    });
-  } */
 
 async function updateMoonMessage() {
     const channel = client.channels.cache.get(MOON_CHANNEL_ID);
@@ -3268,7 +2929,7 @@ client.on('messageCreate', async (message) => {
             const channels = [];
 
             guild.channels.cache.forEach(channel => {
-                if (channel.type === 4) { // Проверка на тип категории (GUILD_CATEGORY)
+                if (channel.type === 4) {
                     categories.push({ id: channel.id, name: channel.name });
                 } else {
                     channels.push({ id: channel.id, name: channel.name, parentId: channel.parentId });
@@ -3283,10 +2944,8 @@ client.on('messageCreate', async (message) => {
 client.on('messageCreate', message => {
     if (!message.guild || message.author.bot) return;
 
-    // Логика обновления данных при получении сообщений
     updateUserActivity(message.author.id);
 
-    // Обновление времени последнего сообщения
     const userId = message.author.id;
     const now = Date.now();
     if (!userSessions[userId]) {
@@ -3330,7 +2989,6 @@ async function checkMembersStatus() {
     }
 }
 
-// Обновление времени в онлайне в базе данных
 function updateOnlineTime(userId, duration) {
     // Обновляем общее время в онлайне
     queryDatabase(
@@ -3624,7 +3282,6 @@ function resetWeeklyActivity() {
         });
 }
 
-// Обертка для запросов к базе данных с обработкой ошибок
 function queryDatabase(query, params) {
     return new Promise((resolve, reject) => {
         connection.query(query, params, (err, results) => {
