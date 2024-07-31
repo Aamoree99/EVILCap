@@ -1,6 +1,19 @@
 console.log('bot.js запущен');
 
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ActivityType, PermissionsBitField, ChannelType, AutoModerationRuleKeywordPresetType, AttachmentBuilder  } = require('discord.js');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    Events, 
+    ActivityType, 
+    PermissionsBitField, 
+    ChannelType, 
+    AutoModerationRuleKeywordPresetType, 
+    AttachmentBuilder, 
+    EmbedBuilder  
+} = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -266,7 +279,7 @@ let activeGames = {};
 
 client.on('messageCreate', message => {
     if (message.content === '!reboot') {
-        if (message.author.id === '235822777678954496') { // Укажите ID пользователя явно
+        if (message.author.id === '235822777678954496') { 
             message.channel.send('Перезагружаюсь...')
                 .then(() => process.exit(0));
         } else {
@@ -476,30 +489,37 @@ client.on('interactionCreate', async interaction => {
                 let responseMessage = '';
         
                 if (ignoreList.includes(authorUsername)) {
-                    const phrases = [
-                        "Пришло время заработать немного ISK!",
-                        "Давайте наберем побольше прибыли!",
-                        "Не упустим возможность заработать!",
-                        "Пора пополнить наши кошельки!",
-                        "Время действовать и зарабатывать!"
-                    ];
-                    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                    const baseMessage = "<@&1163380015191302214> Луна взорвана!";
+                    const baseMessage = "<@&1163380015191302214>";
+                    const en_baseMessage = "<@&1163380015191302214>";
                     const channel = client.channels.cache.get('1172972375688626276');
-                    const en_phrases = [
-                        "Time to make some ISK!",
-                        "Let's rack up some profits!",
-                        "Don't miss the chance to earn!",
-                        "Time to fill our wallets!",
-                        "Time to act and earn!"
-                    ];
-                    const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-                    const en_baseMessage = "<@&1163380015191302214> The moon has exploded.";
                     const en_channel = client.channels.cache.get('1212507080934686740');
         
-                    if (channel) {
-                        await channel.send(`${baseMessage} ${randomPhrase}`);
-                        await en_channel.send(`${en_baseMessage} ${en_randomPhrase}`);
+                    if (channel && en_channel) {
+                        const todayDate = new Date().getDate();
+                        const stationName = `**Pashanai - Ore ${Math.floor(todayDate / 2)}**`;
+        
+                        const embedRU = new EmbedBuilder()
+                        .setTitle("*Лунные продукты готовы к сбору.*")
+                        .addFields(
+                            { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "Станция", value: stationName, inline: true }
+                        )
+                        .setColor("#A52A2A")
+                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+    
+                    const embedEN = new EmbedBuilder()
+                        .setTitle("*The moon products are ready to be harvested.*")
+                        .addFields(
+                            { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "Station", value: stationName, inline: true }
+                        )
+                        .setColor("#A52A2A")
+                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+    
+        
+                        await channel.send({ content: baseMessage, embeds: [embedRU] });
+                        await en_channel.send({ content: en_baseMessage, embeds: [embedEN] });
+        
                         responseMessage = "Сообщение отправлено.";
                     } else {
                         responseMessage = "Канал не найден.";
@@ -776,7 +796,7 @@ client.on('interactionCreate', async interaction => {
                     "Time to act and collect ice!"
                 ];
                 const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-                const en_baseMessage = `<@&1163379553348096070> The Orca is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
+                const en_baseMessage = `<@&1163379553348096070> The Orca for ice is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
                 const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
 
                 if (channel && en_channel) {
@@ -805,7 +825,7 @@ client.on('interactionCreate', async interaction => {
                 const userMention = `<@${interaction.user.id}>`;
                 const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
                 const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-                const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
+                const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet for Grav is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
                 const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
 
                 if (channel && en_channel) {
