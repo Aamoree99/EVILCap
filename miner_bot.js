@@ -336,15 +336,17 @@ async function handleGravCommand(interaction) {
         if (alts.length === 0) {
             // If no alts, send a message directly using the cleaned nickname
             const embed = new EmbedBuilder()
-                .setColor('#0099ff') // Blue color
+                .setColor('#6A6A6A') // Blue color
                 .setTitle('Флот на гравик')
                 .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}`)
+                .setImage('https://wiki.eveuniversity.org/images/0/06/Ore_ueganite.png')
                 .setFooter({ text: `Флот создан ${userMention}` });
 
             const en_embed = new EmbedBuilder()
-                .setColor('#0099ff') // Blue color
+                .setColor('#6A6A6A') // Blue color
                 .setTitle('Grav Fleet')
                 .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}`)
+                .setImage('https://wiki.eveuniversity.org/images/0/06/Ore_ueganite.png')
                 .setFooter({ text: `Fleet created by ${userMention}` });
 
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
@@ -386,15 +388,17 @@ async function handleGravCommand(interaction) {
                     const selectedCharacter = i.values[0];
 
                     const embed = new EmbedBuilder()
-                        .setColor('#0099ff') // Blue color
+                        .setColor('#6A6A6A') // Blue color
                         .setTitle('Флот на гравик')
                         .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}`)
+                        .setImage('https://wiki.eveuniversity.org/images/0/06/Ore_ueganite.png')
                         .setFooter({ text: `Флот создан ${userMention}` });
 
                     const en_embed = new EmbedBuilder()
-                        .setColor('#0099ff') // Blue color
+                        .setColor('#6A6A6A') // Blue color
                         .setTitle('Grav Fleet')
                         .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}`)
+                        .setImage('https://wiki.eveuniversity.org/images/0/06/Ore_ueganite.png')
                         .setFooter({ text: `Fleet created by ${userMention}` });
 
                     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
@@ -443,15 +447,17 @@ async function handleEvgenCommand(interaction) {
         if (alts.length === 0) {
             // If no alts, use the main character's cleaned nickname directly
             const embed = new EmbedBuilder()
-                .setColor('#0099ff') // Blue color
+                .setColor('#FFD700') // Blue color
                 .setTitle('Флот на белт')
                 .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}\nВо имя <@350931081194897409>`)
+                .setImage('https://wiki.eveuniversity.org/images/thumb/8/81/Asteroid-belt-ingame.jpg/500px-Asteroid-belt-ingame.jpg')
                 .setFooter({ text: `Флот создан ${userMention}` });
 
             const en_embed = new EmbedBuilder()
-                .setColor('#0099ff') // Blue color
+                .setColor('#FFD700') // Blue color
                 .setTitle('Fleet to the belt')
                 .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}\nIn the name of <@350931081194897409>`)
+                .setImage('https://wiki.eveuniversity.org/images/thumb/8/81/Asteroid-belt-ingame.jpg/500px-Asteroid-belt-ingame.jpg')
                 .setFooter({ text: `Fleet created by ${userMention}` });
 
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
@@ -493,15 +499,17 @@ async function handleEvgenCommand(interaction) {
                     const selectedCharacter = i.values[0];
 
                     const embed = new EmbedBuilder()
-                        .setColor('#0099ff') // Blue color
+                        .setColor('#FFD700') // Blue color
                         .setTitle('Флот на белт')
                         .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}\nВо имя <@350931081194897409>`)
+                        .setImage('https://wiki.eveuniversity.org/images/thumb/8/81/Asteroid-belt-ingame.jpg/500px-Asteroid-belt-ingame.jpg')
                         .setFooter({ text: `Флот создан ${userMention}` });
 
                     const en_embed = new EmbedBuilder()
-                        .setColor('#0099ff') // Blue color
+                        .setColor('#FFD700') // Blue color
                         .setTitle('Fleet to the belt')
                         .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}\nIn the name of <@350931081194897409>`)
+                        .setImage('https://wiki.eveuniversity.org/images/thumb/8/81/Asteroid-belt-ingame.jpg/500px-Asteroid-belt-ingame.jpg')
                         .setFooter({ text: `Fleet created by ${userMention}` });
 
                     const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
