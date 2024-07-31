@@ -5,3 +5,5 @@ complianceData.json
 permissions.py
 ad_check.js
 permissions_report.txt
+db_data_check.js
+db_logs_check.js

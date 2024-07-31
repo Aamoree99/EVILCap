@@ -2,6 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const axios = require('axios');
+const connection = require('./db_connect');
+const mysql = require('mysql2');
+const moment = require('moment');
 const querystring = require('querystring');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -17,7 +20,11 @@ const scope = 'publicData esi-skills.read_skills.v1 esi-fleets.read_fleet.v1 esi
 const stateStore = new Map();
 const rooms = new Map();
 
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 app.use(session({
     secret: process.env.SESSION_SECRET, // Замените на ваш секретный ключ
@@ -32,6 +39,8 @@ app.use(session({
 
 const staticPath = path.join(__dirname, 'static');
 app.use(express.static(staticPath));
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
 
 const templatesPath = path.join(__dirname, 'templates');
 
@@ -404,9 +413,281 @@ app.post('/invite-to-fleet', (req, res) => {
         res.status(403).send({ success: false, message: 'Not authorized or room not found' });
     }
 });
+
 function generateState() {
     return crypto.randomBytes(16).toString('hex');
 }
+
+app.get('/upload', (req, res) => {
+    res.sendFile(path.join(templatesPath, 'upload.html'));
+});
+
+app.post('/upload', async (req, res) => {
+    const percentage = parseFloat(req.body.percentage) / 100;
+    const rawData = req.body.log_data;
+
+    if (!rawData) {
+        console.error('No data received');
+        return res.status(400).send('No data received');
+    }
+
+    const data = parseRawData(rawData);
+    await insertIntoMiningLogs(data);
+    await processMiningData(data, percentage);
+
+    res.redirect('/logs');
+});
+
+function parseRawData(rawData) {
+    const lines = rawData.split('\n');
+    return lines.map(line => {
+        const [date, corporation, altName, oreType, quantity, volume] = line.split('\t');
+        return { date, corporation, altName, oreType, quantity, volume };
+    });
+}
+
+app.get('/logs', async (req, res) => {
+    try {
+        const selectedDate = req.query.date || moment().format('YYYY-MM-DD');
+        // Форматирование даты в логах и суммарных данных
+        const [summaryResults] = await connection.promise().query('SELECT * FROM mining_data WHERE date = ? ORDER BY pilot_name', [selectedDate]);
+        const [logResults] = await connection.promise().query('SELECT * FROM mining_logs WHERE date = ? ORDER BY date DESC, corporation, miner', [selectedDate]);
+        const [uniqueDatesResults] = await connection.promise().query(
+            'SELECT DISTINCT date FROM mining_data UNION SELECT DISTINCT date FROM mining_logs'
+        );
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ISK', minimumFractionDigits: 2 }).format(num).replace('ISK', '') + ' ISK';
+        };
+        // Преобразование формата дат
+        const formattedSummaryResults = summaryResults.map(row => ({
+            ...row,
+            date: moment(row.date).format('YYYY-MM-DD')
+        }));
+        
+        const formattedLogResults = logResults.map(row => ({
+            ...row,
+            date: moment(row.date).format('YYYY-MM-DD')
+        }));
+        const highlightedDates = uniqueDatesResults.map(row => moment(row.date).format('YYYY-MM-DD'));
+        res.render('logs', { 
+            summaryData: formattedSummaryResults, 
+            logData: formattedLogResults, 
+            selectedDate, 
+            highlightedDates,
+            formatNumber: formatNumber
+        });
+    } catch (err) {
+        console.error('Ошибка получения данных:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+async function insertIntoMiningLogs(data) {
+    const query = 'INSERT INTO mining_logs (date, corporation, miner, material, quantity, volume) VALUES ?';
+    const values = data.map(item => [item.date, item.corporation, item.altName, item.oreType, item.quantity, item.volume]);
+    await connection.promise().query(query, [values]);
+}
+
+
+async function processMiningData(data, percentage) {
+    const altsMap = await getAltsMap();
+    const pilotsData = {};
+    const allData = {};
+
+    const date = data[0].date; 
+
+    data.forEach(item => {
+        const altName = item.altName;
+        const mainName = altsMap[altName] || altName;
+        const oreType = item.oreType;
+        const quantity = parseInt(item.quantity, 10);
+
+        if (!pilotsData[mainName]) pilotsData[mainName] = {};
+        if (!pilotsData[mainName][oreType]) pilotsData[mainName][oreType] = 0;
+        pilotsData[mainName][oreType] += quantity;
+
+        if (!allData[oreType]) allData[oreType] = 0;
+        allData[oreType] += quantity;
+    });
+
+    for (const [pilot, ores] of Object.entries(pilotsData)) {
+        const requestBody = formatRequestBody(ores);
+        const response = await getJaniceData(requestBody, percentage);
+        const janiceLink = response.janiceLink;
+        const totalBuyPrice = response.totalBuyPrice;
+        const tax = totalBuyPrice * 0.1;
+        const payout = totalBuyPrice - tax;
+
+        insertIntoMiningData({
+            date: date, 
+            pilot_name: pilot,
+            janice_link: janiceLink,
+            total_amount: totalBuyPrice,
+            tax,
+            payout
+        });
+    }
+
+    const allRequestBody = formatRequestBody(allData);
+    const allResponse = await getJaniceData(allRequestBody, percentage);
+    const allJaniceLink = allResponse.janiceLink;
+    const allTotalBuyPrice = allResponse.totalBuyPrice;
+    const allTax = allTotalBuyPrice * 0.1;
+    const allPayout = allTotalBuyPrice - allTax;
+
+    insertIntoMiningData({
+        date: date, 
+        pilot_name: 'ALL',
+        janice_link: allJaniceLink,
+        total_amount: allTotalBuyPrice,
+        tax: allTax,
+        payout: allPayout
+    });
+}
+
+async function getAltsMap() {
+    const query = 'SELECT alt_name, main_name FROM alts';
+    const [results] = await connection.promise().query(query);
+    return results.reduce((map, row) => {
+        map[row.alt_name] = row.main_name;
+        return map;
+    }, {});
+}
+
+function formatRequestBody(ores) {
+    return Object.entries(ores).map(([oreType, quantity]) => `${oreType}\t${quantity}`).join('\n');
+}
+
+async function getJaniceData(requestBody, percentage) {
+    const apiKey = 'G9KwKq3465588VPd6747t95Zh94q3W2E';
+    const apiUrl = `https://janice.e-351.com/api/rest/v2/appraisal?market=2&designation=appraisal&pricing=sell&pricingVariant=immediate&persist=true&compactize=true&pricePercentage=${percentage}`;
+    const response = await axios.post(apiUrl, requestBody, {
+        headers: {
+            'accept': 'application/json',
+            'X-ApiKey': apiKey,
+            'Content-Type': 'text/plain'
+        }
+    });
+    const data = response.data;
+    return {
+        janiceLink: `https://janice.e-351.com/a/${data.code}`,
+        totalBuyPrice: data.effectivePrices.totalBuyPrice
+    };
+}
+
+
+function insertIntoMiningData({ date, pilot_name, janice_link, total_amount, tax, payout }) {
+    const query = 'INSERT INTO mining_data (date, pilot_name, janice_link, total_amount, tax, payout) VALUES (?, ?, ?, ?, ?, ?)';
+    connection.query(query, [date, pilot_name, janice_link, total_amount, tax, payout], (err, results) => {
+        if (err) {
+            console.error('Ошибка вставки данных:', err);
+        } 
+    });
+}
+
+app.get('/moon', async (req, res) => {
+    try {
+        // Получение последней уникальной даты и данных по этой дате
+        const [latestDateResult] = await connection.promise().query(`SELECT MAX(date) as date FROM mining_logs`);
+        const latestDate = latestDateResult[0].date;
+        const [latestData] = await connection.promise().query(`SELECT * FROM mining_logs WHERE date = ?`, [latestDate]);
+
+        // Получение данных для топов по сумме значений для пилота/майнера
+        const [topQuantity] = await connection.promise().query(`
+            SELECT miner, SUM(quantity) as quantity
+            FROM mining_logs
+            GROUP BY miner
+            ORDER BY quantity DESC
+            LIMIT 1
+        `);
+
+        const [topVolume] = await connection.promise().query(`
+            SELECT miner, SUM(volume) as volume
+            FROM mining_logs
+            GROUP BY miner
+            ORDER BY volume DESC
+            LIMIT 1
+        `);
+
+        const [topPayout] = await connection.promise().query(`
+            SELECT pilot_name, SUM(payout) as payout
+            FROM mining_data
+            WHERE pilot_name != 'ALL'
+            GROUP BY pilot_name
+            ORDER BY payout DESC
+            LIMIT 1
+        `);
+
+        const formattedDate = moment(latestDate).format('YYYY-MM-DD');
+
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ISK', minimumFractionDigits: 2 }).format(num).replace('ISK', '');
+        };
+
+        res.render('moon', {
+            topQuantity: topQuantity[0],
+            topVolume: topVolume[0],
+            topPayout: topPayout[0],
+            latestData: latestData,
+            latestDate: formattedDate,
+            formatNumber: formatNumber
+        });
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        res.status(500).send('Server error');
+    }
+});
+
+app.get('/stats', async (req, res) => {
+    try {
+        // Получение данных из временной таблицы pilot_stats
+        const [pilotStats] = await connection.promise().query(`
+            SELECT 
+                pilot_name,
+                total_earned,
+                total_quantity,
+                total_volume
+            FROM pilot_stats
+            ORDER BY total_earned DESC
+        `);
+
+        res.render('stats', {
+            pilotStats: pilotStats
+        });
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        res.status(500).send('Server error');
+    }
+});
+
+
+const updatePilotStats = async () => {
+    try {
+        await connection.promise().query(`
+            INSERT INTO pilot_stats (pilot_name, total_earned, total_quantity, total_volume)
+            SELECT 
+                pilot_name,
+                SUM(total_amount) AS total_earned,
+                SUM(quantity) AS total_quantity,
+                SUM(volume) AS total_volume
+            FROM mining_data
+            JOIN mining_logs ON mining_data.pilot_name = mining_logs.miner
+            WHERE pilot_name IS NOT NULL AND pilot_name != 'ALL'
+            GROUP BY pilot_name
+            ON DUPLICATE KEY UPDATE
+                total_earned = VALUES(total_earned),
+                total_quantity = VALUES(total_quantity),
+                total_volume = VALUES(total_volume)
+        `);
+    } catch (err) {
+        console.error('Error updating pilot stats:', err);
+    }
+};
+
+app.get('/rules', (req, res) => {
+    res.render('rules');
+});
+
 
 app.listen(port, () => {
     console.log(`Сервер запущен на http://localhost:${port}`);
