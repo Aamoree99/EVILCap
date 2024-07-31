@@ -592,31 +592,37 @@ app.get('/moon', async (req, res) => {
         const latestDate = latestDateResult[0].date;
         const [latestData] = await connection.promise().query(`SELECT * FROM mining_logs WHERE date = ?`, [latestDate]);
 
-        // Получение данных для топов по сумме значений для пилота/майнера
+        const currentYearMonth = new Date().toISOString().slice(0, 7); // Формат 'YYYY-MM'
+
+        // Запрос для топа по количеству за текущий месяц
         const [topQuantity] = await connection.promise().query(`
             SELECT miner, SUM(quantity) as quantity
             FROM mining_logs
+            WHERE DATE_FORMAT(date, '%Y-%m') = ?
             GROUP BY miner
             ORDER BY quantity DESC
             LIMIT 1
-        `);
-
+        `, [currentYearMonth]);
+        
+        // Запрос для топа по объему за текущий месяц
         const [topVolume] = await connection.promise().query(`
             SELECT miner, SUM(volume) as volume
             FROM mining_logs
+            WHERE DATE_FORMAT(date, '%Y-%m') = ?
             GROUP BY miner
             ORDER BY volume DESC
             LIMIT 1
-        `);
-
+        `, [currentYearMonth]);
+        
+        // Запрос для топа по выплатам за текущий месяц
         const [topPayout] = await connection.promise().query(`
             SELECT pilot_name, SUM(payout) as payout
             FROM mining_data
-            WHERE pilot_name != 'ALL'
+            WHERE pilot_name != 'ALL' AND DATE_FORMAT(date, '%Y-%m') = ?
             GROUP BY pilot_name
             ORDER BY payout DESC
             LIMIT 1
-        `);
+        `, [currentYearMonth]);
 
         const formattedDate = moment(latestDate).format('YYYY-MM-DD');
 
@@ -663,22 +669,48 @@ app.get('/stats', async (req, res) => {
 
 const updatePilotStats = async () => {
     try {
+        await connection.promise().query(`TRUNCATE TABLE pilot_stats`);
+        // Этап 1: Обновление total_earned из mining_data
         await connection.promise().query(`
-            INSERT INTO pilot_stats (pilot_name, total_earned, total_quantity, total_volume)
+            INSERT INTO pilot_stats (pilot_name, total_earned)
             SELECT 
                 pilot_name,
-                SUM(total_amount) AS total_earned,
-                SUM(quantity) AS total_quantity,
-                SUM(volume) AS total_volume
+                SUM(payout) AS total_earned
             FROM mining_data
-            JOIN mining_logs ON mining_data.pilot_name = mining_logs.miner
             WHERE pilot_name IS NOT NULL AND pilot_name != 'ALL'
             GROUP BY pilot_name
             ON DUPLICATE KEY UPDATE
-                total_earned = VALUES(total_earned),
-                total_quantity = VALUES(total_quantity),
-                total_volume = VALUES(total_volume)
+                total_earned = VALUES(total_earned)
         `);
+
+        // Этап 2: Обновление total_quantity и total_volume из mining_logs
+        const [rows] = await connection.promise().query(`
+            SELECT pilot_name
+            FROM pilot_stats
+        `);
+
+        for (const row of rows) {
+            const { pilot_name } = row;
+
+            const [result] = await connection.promise().query(`
+                SELECT 
+                    SUM(quantity) AS total_quantity,
+                    SUM(volume) AS total_volume
+                FROM mining_logs
+                WHERE miner = ?
+                GROUP BY miner
+            `, [pilot_name]);
+
+            if (result.length > 0) {
+                const { total_quantity, total_volume } = result[0];
+
+                await connection.promise().query(`
+                    UPDATE pilot_stats
+                    SET total_quantity = ?, total_volume = ?
+                    WHERE pilot_name = ?
+                `, [total_quantity, total_volume, pilot_name]);
+            }
+        }
     } catch (err) {
         console.error('Error updating pilot stats:', err);
     }
