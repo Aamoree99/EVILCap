@@ -176,7 +176,8 @@ async function updateBotStatus() {
     const recruitCount = openRecruits[0].count;
     const statuses = [
         { name: 'за всеми', type: ActivityType.Watching },
-        { name: ` ${recruitCount} рекрутов`, type: ActivityType.Watching }
+        { name: ` ${recruitCount} рекрутов`, type: ActivityType.Watching },
+        { name: 'Пугает Олегов', type: ActivityType.Custom }
     ];
 
     client.user.setPresence({

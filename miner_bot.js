@@ -50,7 +50,7 @@ client.once('ready', async () => {
             { body: commands },
         );
         client.user.setPresence({
-            activities: [{ name: 'копает велдспар', type: ActivityType.Playing }],
+            activities: [{ name: 'Копает велдспар', type: ActivityType.Custom }],
             status: 'online',
         });
         await notifyDatabaseConnection();
