@@ -175,8 +175,8 @@ async function updateBotStatus() {
     const [openRecruits] = await connection.promise().query('SELECT COUNT(*) as count FROM recruit_channels WHERE closed_at IS NULL');
     const recruitCount = openRecruits[0].count;
     const statuses = [
-        { name: 'за всеми', type: ActivityType.Watching },
-        { name: ` ${recruitCount} рекрутов`, type: ActivityType.Watching },
+        { name: 'Следит за всеми!', type: ActivityType.Custom },
+        { name: `Ведет ${recruitCount} рекрутов`, type: ActivityType.Custom },
         { name: 'Пугает Олегов', type: ActivityType.Custom }
     ];
 

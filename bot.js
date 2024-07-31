@@ -77,7 +77,7 @@ let StealthBot = false;
 
 client.once('ready', async () => {
     client.user.setPresence({
-        activities: [{ name: 'Гачи с Дональдом', type: ActivityType.Watching }],
+        activities: [{ name: 'Руководит процессами', type: ActivityType.Custom }],
         status: 'online'
     });
     await notifyDatabaseConnection();
