@@ -9,7 +9,12 @@ const {
     ChannelType, 
     AttachmentBuilder, 
     EmbedBuilder,
-    Events
+    Events,
+    TextInputComponent,
+    TextInputStyle,
+    ModalBuilder,
+    TextInputBuilder
+
 } = require('discord.js');
 
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -225,7 +230,11 @@ const commands = [
         .addStringOption(option => 
             option.setName('input')
                 .setDescription('Формат: уровень: имя медали. Пример: 3: Золотая звезда')
-                .setRequired(false))
+                .setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('alts')
+        .setDescription('Запись альтов')
+
 ]
     .map(command => command.toJSON());
 
@@ -1050,7 +1059,47 @@ client.on('interactionCreate', async interaction => {
                 console.error('Ошибка выполнения запроса:', err);
                 await interaction.reply({ content: 'Ошибка получения данных. Попробуйте позже.', ephemeral: true });
             }
-        }
+        },
+
+        async alts() {
+            let userNickname = interaction.member.nickname || interaction.user.username;
+            let cleanedNickname = userNickname.replace(/<[^>]*>/g, '').split('(')[0].trim();
+          
+            try {
+              const [alts] = await connection.promise().query(
+                'SELECT alt_name FROM alts WHERE main_name = ?',
+                [cleanedNickname]
+              );
+          
+              let altNames = '';
+              if (alts.length > 0) {
+                altNames = alts.map(row => row.alt_name).join(', ');
+              }
+          
+              const modal = new ModalBuilder()
+                .setCustomId('altsModal')
+                .setTitle('Управление альтами');
+
+            const input = new TextInputBuilder()
+                .setCustomId('altsInput')
+                .setLabel('Введите ваши альты, разделенные запятыми')
+                .setStyle(TextInputStyle.Short)
+                .setValue(altNames)
+                .setPlaceholder('Для удаления всех альтов введите "REMOVE_ALL"'); 
+
+          
+              const actionRow = new ActionRowBuilder().addComponents(input);
+              modal.addComponents(actionRow);
+          
+              await interaction.showModal(modal);
+          
+            } catch (error) {
+              console.error('Database query failed:', error);
+              await interaction.reply({ content: 'Failed to retrieve your alts.', ephemeral: true });
+            }
+          }
+          
+          
     };
 
     if (interaction.isCommand()) {
@@ -1064,6 +1113,70 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isModalSubmit() || interaction.customId !== 'altsModal') return;
+  
+    let userNickname = interaction.member.nickname || interaction.user.username;
+    let cleanedNickname = userNickname.replace(/<[^>]*>/g, '').split('(')[0].trim();
+    let altInput = interaction.fields.getTextInputValue('altsInput').trim();
+  
+    try {
+      if (!connection) {
+        throw new Error('Database connection is not defined.');
+      }
+  
+      if (altInput === 'REMOVE_ALL') {
+        // Удаление всех альтов
+        await connection.promise().query(
+          'DELETE FROM alts WHERE main_name = ?', [cleanedNickname]
+        );
+        await interaction.reply({ content: 'All alts have been removed!', ephemeral: true });
+        return;
+      }
+  
+      let altNames = altInput.split(',').map(name => name.trim()).filter(name => name);
+  
+      // Получение существующих альтов
+      const [existingAlts] = await connection.promise().query(
+        'SELECT alt_name FROM alts WHERE main_name = ?',
+        [cleanedNickname]
+      );
+  
+      const existingAltNames = new Set(existingAlts.map(row => row.alt_name.toLowerCase()));
+      const inputAltNames = new Set(altNames.map(name => name.toLowerCase()));
+  
+      // Определение альтов для добавления
+      const altsToAdd = altNames.filter(altName => !existingAltNames.has(altName.toLowerCase()));
+  
+      // Определение альтов для удаления
+      const altsToRemove = existingAlts
+        .filter(row => !inputAltNames.has(row.alt_name.toLowerCase()))
+        .map(row => row.alt_name);
+  
+      // Добавление новых альтов
+      if (altsToAdd.length > 0) {
+        const addQueries = altsToAdd.map(altName => connection.promise().query(
+          'INSERT INTO alts (alt_name, main_name) VALUES (?, ?)', [altName, cleanedNickname]
+        ));
+        await Promise.all(addQueries);
+      }
+  
+      // Удаление альтов, которые отсутствуют в новом списке
+      if (altsToRemove.length > 0) {
+        const removeQueries = altsToRemove.map(altName => connection.promise().query(
+          'DELETE FROM alts WHERE alt_name = ? AND main_name = ?', [altName, cleanedNickname]
+        ));
+        await Promise.all(removeQueries);
+      }
+  
+      await interaction.reply({ content: 'Alts have been updated!', ephemeral: true });
+    } catch (error) {
+      console.error('Database operation failed:', error);
+      await interaction.reply({ content: 'Failed to update your alts.', ephemeral: true });
+    }
+  });
+  
+  
 async function getChannelMembers(guild, channelId) {
     const channel = await guild.channels.fetch(channelId);
     if (!channel || !channel.isTextBased()) {
