@@ -209,33 +209,99 @@ async function handleIceCommand(interaction) {
             return;
         }
 
-        const userMention = `<@${interaction.user.id}>`;
-        const phrases = [
-            "Давайте наберем побольше льда!",
-            "Не упустим возможность пополнить запасы!",
-            "Пора пополнить наши склады льдом!",
-            "Время действовать и собирать лед!"
-        ];
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}! ${randomPhrase} Флот создан господином ${userMention}`; 
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+        const userId = interaction.user.id;
+        const userMention = `<@${userId}>`;
 
-        const en_phrases = [
-            "Let's gather as much ice as we can!",
-            "Don't miss the chance to stock up!",
-            "Time to fill our warehouses with ice!",
-            "Time to act and collect ice!"
-        ];
-        const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-        const en_baseMessage = `<@&1163379553348096070> The Orca for ice is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+        // Get and clean the user's nickname
+        let userNickname = interaction.member.nickname || interaction.user.username;
+        let cleanedNickname = userNickname.replace(/<[^>]*>/g, '').split('(')[0].trim();
 
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        // Fetch alts from the database using the cleaned nickname
+        const [alts] = await connection.promise().query(
+            'SELECT alt_name FROM alts WHERE main_name = ?',
+            [cleanedNickname]
+        );
+
+        if (alts.length === 0) {
+            // If no alts, send a message directly using the cleaned nickname
+            const embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Флот на лед')
+                .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}`)
+                .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
+                .setFooter({ text: `Флот создан ${userMention}` });
+
+            const en_embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Ice Fleet')
+                .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}`)
+                .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
+                .setFooter({ text: `Fleet created by ${userMention}` });
+
+            const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+            const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+            if (channel && en_channel) {
+                await channel.send({ content: `<@&1163379553348096070> ${userMention}`, embeds: [embed] });
+                await en_channel.send({ content: `<@&1163379553348096070> ${userMention}`, embeds: [en_embed] });
+                await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
+            } else {
+                await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            }
         } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            // If alts are present, offer a dropdown for selection
+            const options = alts.map(alt => ({
+                label: alt.alt_name,
+                value: alt.alt_name,
+            }));
+
+            const row = new MessageActionRow()
+                .addComponents(
+                    new MessageSelectMenu()
+                        .setCustomId('select-character')
+                        .setPlaceholder('Выберите персонажа')
+                        .addOptions(options),
+                );
+
+            await interaction.reply({
+                content: 'Выберите персонажа для флота:',
+                components: [row],
+                ephemeral: true
+            });
+
+            const filter = i => i.customId === 'select-character' && i.user.id === userId;
+            const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+            collector.on('collect', async i => {
+                if (i.isSelectMenu()) {
+                    const selectedCharacter = i.values[0];
+                    
+                    const embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Флот на лед')
+                        .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}`)
+                        .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
+                        .setFooter({ text: `Флот создан ${userMention}` });
+
+                    const en_embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Ice Fleet')
+                        .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}`)
+                        .setImage('https://wiki.eveuniversity.org/images/b/b1/Ice_glacial_mass.png')
+                        .setFooter({ text: `Fleet created by ${userMention}` });
+
+                    const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
+                    const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+
+                    if (channel && en_channel) {
+                        await channel.send({ content: `<@&1163379553348096070> ${userMention}`, embeds: [embed] });
+                        await en_channel.send({ content: `<@&1163379553348096070> ${userMention}`, embeds: [en_embed] });
+                        await i.reply({ content: "Сообщение отправлено.", ephemeral: true });
+                    } else {
+                        await i.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                    }
+                }
+            });
         }
     } catch (error) {
         console.error(error);
@@ -248,23 +314,101 @@ async function handleGravCommand(interaction) {
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
+
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
 
-        const userMention = `<@${interaction.user.id}>`;
-        const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-        const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet for Grav is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
+        const userId = interaction.user.id;
+        const userMention = `<@${userId}>`;
 
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
+        // Get and clean the user's nickname
+        let userNickname = interaction.member.nickname || interaction.user.username;
+        let cleanedNickname = userNickname.replace(/<[^>]*>/g, '').split('(')[0].trim();
+
+        // Fetch alts from the database using the cleaned nickname
+        const [alts] = await connection.promise().query(
+            'SELECT alt_name FROM alts WHERE main_name = ?',
+            [cleanedNickname]
+        );
+
+        if (alts.length === 0) {
+            // If no alts, send a message directly using the cleaned nickname
+            const embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Флот на гравик')
+                .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}`)
+                .setFooter({ text: `Флот создан ${userMention}` });
+
+            const en_embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Grav Fleet')
+                .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}`)
+                .setFooter({ text: `Fleet created by ${userMention}` });
+
+            const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+            const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+            if (channel && en_channel) {
+                await channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [embed] });
+                await en_channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [en_embed] });
+                await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
+            } else {
+                await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            }
         } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            // If alts are present, offer a dropdown for selection
+            const options = alts.map(alt => ({
+                label: alt.alt_name,
+                value: alt.alt_name,
+            }));
+
+            const row = new MessageActionRow()
+                .addComponents(
+                    new MessageSelectMenu()
+                        .setCustomId('select-character')
+                        .setPlaceholder('Выберите персонажа')
+                        .addOptions(options),
+                );
+
+            await interaction.reply({
+                content: 'Выберите персонажа для флота:',
+                components: [row],
+                ephemeral: true
+            });
+
+            const filter = i => i.customId === 'select-character' && i.user.id === userId;
+            const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+            collector.on('collect', async i => {
+                if (i.isSelectMenu()) {
+                    const selectedCharacter = i.values[0];
+
+                    const embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Флот на гравик')
+                        .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}`)
+                        .setFooter({ text: `Флот создан ${userMention}` });
+
+                    const en_embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Grav Fleet')
+                        .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}`)
+                        .setFooter({ text: `Fleet created by ${userMention}` });
+
+                    const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+                    const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+                    if (channel && en_channel) {
+                        await channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [embed] });
+                        await en_channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [en_embed] });
+                        await i.reply({ content: "Сообщения отправлены.", ephemeral: true });
+                    } else {
+                        await i.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                    }
+                }
+            });
         }
     } catch (error) {
         console.error(error);
@@ -274,27 +418,105 @@ async function handleGravCommand(interaction) {
 
 async function handleEvgenCommand(interaction) {
     try {
+        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const name = interaction.options.getString('name');
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
+
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
 
-        const userMention = `<@${interaction.user.id}>`;
-        const baseMessage = `Флот отправляется на белт в системе ${name} господином ${userMention}! Во имя <@350931081194897409>`;
-        const en_baseMessage = `Fleet is heading to the belt in the ${name} system by the master ${userMention}! In the name of <@350931081194897409>`;
+        const userId = interaction.user.id;
+        const userMention = `<@${userId}>`;
 
-        const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
-        const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+        // Get and clean the user's nickname
+        let userNickname = interaction.member.nickname || interaction.user.username;
+        let cleanedNickname = userNickname.replace(/<[^>]*>/g, '').split('(')[0].trim();
 
-        if (channel && en_channel) {
-            await channel.send(baseMessage);
-            await en_channel.send(en_baseMessage);
-            await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
+        // Fetch alts from the database using the cleaned nickname
+        const [alts] = await connection.promise().query(
+            'SELECT alt_name FROM alts WHERE main_name = ?',
+            [cleanedNickname]
+        );
+
+        if (alts.length === 0) {
+            // If no alts, use the main character's cleaned nickname directly
+            const embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Флот на белт')
+                .setDescription(`Система: ${name}\nОрка на: ${cleanedNickname}\nВо имя <@350931081194897409>`)
+                .setFooter({ text: `Флот создан ${userMention}` });
+
+            const en_embed = new MessageEmbed()
+                .setColor('#0099ff') // Blue color
+                .setTitle('Fleet to the belt')
+                .setDescription(`System: ${name}\nOrca on: ${cleanedNickname}\nIn the name of <@350931081194897409>`)
+                .setFooter({ text: `Fleet created by ${userMention}` });
+
+            const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+            const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+            if (channel && en_channel) {
+                await channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [embed] });
+                await en_channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [en_embed] });
+                await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
+            } else {
+                await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            }
         } else {
-            await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+            // If there are alts, present a dropdown menu
+            const options = [{ label: cleanedNickname, value: cleanedNickname }];
+            options.push(...alts.map(alt => ({
+                label: alt.alt_name,
+                value: alt.alt_name,
+            })));
+
+            const row = new MessageActionRow()
+                .addComponents(
+                    new MessageSelectMenu()
+                        .setCustomId('select-character')
+                        .setPlaceholder('Выберите персонажа')
+                        .addOptions(options),
+                );
+
+            await interaction.reply({
+                content: 'Выберите персонажа для флота:',
+                components: [row],
+                ephemeral: true
+            });
+
+            const filter = i => i.customId === 'select-character' && i.user.id === userId;
+            const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+            collector.on('collect', async i => {
+                if (i.isSelectMenu()) {
+                    const selectedCharacter = i.values[0];
+
+                    const embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Флот на белт')
+                        .setDescription(`Система: ${name}\nОрка на: ${selectedCharacter}\nВо имя <@350931081194897409>`)
+                        .setFooter({ text: `Флот создан ${userMention}` });
+
+                    const en_embed = new MessageEmbed()
+                        .setColor('#0099ff') // Blue color
+                        .setTitle('Fleet to the belt')
+                        .setDescription(`System: ${name}\nOrca on: ${selectedCharacter}\nIn the name of <@350931081194897409>`)
+                        .setFooter({ text: `Fleet created by ${userMention}` });
+
+                    const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+                    const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+                    if (channel && en_channel) {
+                        await channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [embed] });
+                        await en_channel.send({ content: `<@&1163380100520214591> ${userMention}`, embeds: [en_embed] });
+                        await i.reply({ content: "Сообщения отправлены.", ephemeral: true });
+                    } else {
+                        await i.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
+                    }
+                }
+            });
         }
     } catch (error) {
         console.error(error);
