@@ -104,7 +104,6 @@ client.once('ready', async () => {
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
-    scheduleDailyActivity(client);
     createRoleMessage();
     //scheduleTransactionCheck();
     cron.schedule('0 11 * * *', () => {
@@ -178,9 +177,6 @@ const commands = [
     new SlashCommandBuilder()
         .setName('show_sessions')
         .setDescription('Показывает активные сессии и их уникальные коды с возможностью удаления'),*/
-    new SlashCommandBuilder()
-        .setName('hf')
-        .setDescription('Пинг и показать количество участников'),
     new SlashCommandBuilder()
         .setName('create_category')
         .setDescription('Создает новую категорию с каналами и ролями.')
@@ -686,55 +682,6 @@ client.on('interactionCreate', async interaction => {
                 setTimeout(() => confirmationMessage.delete(), 5000);
             });
         },
-
-        async hf() {
-            try {
-                const data = await readData();
-                const participants = data.participants || {};
-                const maxParticipants = 5;
-        
-                const roleChannel = await client.channels.fetch('1163428374493003826');
-                const role = await interaction.guild.roles.fetch('1163379884039618641');
-        
-                if (!role || !roleChannel) {
-                    await interaction.reply({ content: 'Канал или роль не найдены.', ephemeral: true });
-                    return;
-                }
-        
-                const participantEntries = Object.entries(participants);
-        
-                const participantNames = await Promise.all(
-                    participantEntries.map(async ([id, count]) => {
-                        const member = await interaction.guild.members.fetch(id);
-                        return `${member.toString()}: ${count}`;
-                    })
-                );
-        
-                const replyMessage = `${role}, приглашаем вас принять участие в канале ${roleChannel}! На данный момент зарегистрированы следующие участники: ${participantNames.join(', ')}. Не упустите шанс, присоединяйтесь к нам!`;
-        
-                const forbiddenCategoryId = '1212808485172154449';
-                const channel = await interaction.channel.fetch();
-                if (channel.parentId !== forbiddenCategoryId) {
-                    await interaction.channel.send(replyMessage);
-                    await interaction.reply({ content: 'Сообщение отправлено.', ephemeral: true });
-                } else {
-                    await interaction.reply({ content: 'Сообщение не может быть отправлено в этом канале.', ephemeral: true });
-                }
-        
-                setTimeout(async () => {
-                    try {
-                        console.log('Очистка участников через 4 часа.');
-                    } catch (error) {
-                        console.error('Error clearing participants:', error);
-                    }
-                }, 4 * 60 * 60 * 1000);
-        
-            } catch (error) {
-                console.error("Error in hf function:", error);
-                await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-            }
-        },
-
         async create_category() {
             try {
                 if (channelId !== LOG_CHANNEL_ID) {
@@ -1469,166 +1416,6 @@ client.on('messageReactionRemove', async (reaction, user) => {
         console.error("Error in messageReactionRemove event handler:", error);
     }
 });
-
-async function scheduleDailyActivity(client) {
-    try {
-        logAndSend(`Пытаюсь получить гильдию с ID: ${GUILD_ID}`);
-
-        const guild = client.guilds.cache.get(GUILD_ID);
-        if (!guild) return logAndSend("Гильдия не найдена");
-
-        const channel = guild.channels.cache.get('1163428374493003826');
-        if (!channel) return logAndSend("Канал не найден");
-
-        const mainChannel = guild.channels.cache.get(MAIN_CHANNEL_ID);
-        if (!mainChannel) {
-            logAndSend("Основной канал не найден");
-            return;
-        }
-
-        let activityData = await readFromJSON(DATA_FILE);
-        if (!activityData.eventId) {
-            activityData.eventId = [];
-        }
-        if (!activityData.participants) {
-            activityData.participants = {};
-        }
-
-        let message;
-        let totalAccounts = 0;
-        let collector;
-
-        if (activityData.eventId.length > 0) {
-            try {
-                message = await channel.messages.fetch(activityData.eventId[0]);
-                logAndSend("Возобновление существующего сообщения для сбора участников.");
-            } catch (error) {
-                console.error('Ошибка при получении существующего сообщения:', error);
-            }
-        }
-
-        if (!message) {
-            message = await channel.send({
-                content: '<@&1163379884039618641> <@&1230610682018529280>, хотите поучаствовать сегодня в тыловых? Нажмите на кнопку ниже!',
-                components: [
-                    new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('participate')
-                            .setLabel('Участвовать')
-                            .setStyle(ButtonStyle.Primary),
-                        new ButtonBuilder()
-                            .setCustomId('participate_multi')
-                            .setLabel('Добавить окно')
-                            .setStyle(ButtonStyle.Secondary)
-                    )
-                ]
-            });
-            activityData.eventId = [message.id];
-            await writeToJSON(DATA_FILE, activityData);
-            logAndSend(`Сохранено новое сообщение с ID: ${message.id}`);
-        }
-
-        let inactivityTimeout;
-        let isCountingDown = false;
-
-        async function startCountdown() {
-            if (isCountingDown) return;
-            isCountingDown = true;
-
-            inactivityTimeout = setTimeout(async () => {
-                logAndSend("Время ожидания истекло, сбрасываем список участников.");
-                activityData.participants = {};
-                await writeToJSON(DATA_FILE, activityData);
-                isCountingDown = false;
-            }, 4 * 60 * 60 * 1000); // 4 часа
-        }
-
-        function resetCountdown() {
-            if (inactivityTimeout) {
-                clearTimeout(inactivityTimeout);
-                inactivityTimeout = null;
-                isCountingDown = false;
-            }
-        }
-
-        collector = message.createMessageComponentCollector({ componentType: 2 }); // 2 is Button
-
-        collector.on('collect', async (interaction) => {
-            logAndSend(`Кнопка ${interaction.customId} была нажата пользователем ${interaction.user.username}.`);
-
-            if (!isCountingDown) {
-                startCountdown();
-            }
-
-            if (interaction.customId === 'participate') {
-                await interaction.deferUpdate();
-                if (!activityData.participants[interaction.user.id]) {
-                    activityData.participants[interaction.user.id] = 1; // Регистрируем основное участие
-                    totalAccounts += 1;
-                    await writeToJSON(DATA_FILE, activityData);
-                    await interaction.followUp({ content: 'Вы успешно записаны на участие одним окном!', ephemeral: true });
-                } else {
-                    await interaction.followUp({ content: 'Вы уже записаны!', ephemeral: true });
-                }
-            } else if (interaction.customId === 'participate_multi') {
-                await interaction.deferUpdate();
-                if (activityData.participants[interaction.user.id]) {
-                    activityData.participants[interaction.user.id] += 1; // Добавляем дополнительное окно
-                    totalAccounts += 1;
-                    await writeToJSON(DATA_FILE, activityData);
-                    await interaction.followUp({ content: 'Дополнительное окно добавлено!', ephemeral: true });
-                } else {
-                    await interaction.followUp({ content: 'Сначала зарегистрируйте основное участие!', ephemeral: true });
-                }
-            }
-
-            if (totalAccounts >= 5) {
-                let participantsDetail = Object.entries(activityData.participants)
-                    .map(([id, count]) => `<@${id}> (${count} окон)`)
-                    .join(', ');
-
-                await mainChannel.send(`<@&1163379884039618641> Флот полностью сформирован с участием следующих пилотов: ${participantsDetail}. Приглашаем новых участников к следующему сбору!`);
-                scheduleEvent();
-                activityData.participants = {};
-                await writeToJSON(DATA_FILE, activityData);
-                resetCountdown();
-            }
-        });
-
-        async function scheduleEvent() {
-            const now = new Date();
-            const startTime = new Date(now.getTime() + 30 * 60000);
-            const endTime = new Date(startTime.getTime() + 60 * 60000);
-
-            try {
-                const event = await guild.scheduledEvents.create({
-                    name: 'Homefronts',
-                    description: 'Time to make some ISK!',
-                    scheduledStartTime: startTime,
-                    scheduledEndTime: endTime,
-                    privacyLevel: 2,
-                    entityType: 3,
-                    entityMetadata: {
-                        location: 'Dodixie'
-                    }
-                });
-                Object.keys(activityData.participants).forEach(async (userId) => {
-                    const user = await client.users.fetch(userId);
-                    if (user && !user.bot) {
-                        user.send(`Группа собрана! Старт через 30 минут. Вот ссылка: ${event.url}`);
-                    }
-                });
-                logAndSend(`Событие "${event.name}" успешно создано и начнется в ${startTime.toISOString()}.`);
-            } catch (error) {
-                console.error('Ошибка при создании события:', error);
-            }
-        }
-    } catch (error) {
-        console.error("Ошибка в scheduleDailyActivity:", error);
-    }
-}
-
-
 
 async function logAndSend(message) {
     try {
