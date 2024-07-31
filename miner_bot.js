@@ -1,5 +1,5 @@
 require('dotenv').config();
-const mysql = require('mysql2');
+const connection = require('./db_connect');
 const path = require('path');
 const fs = require('fs').promises;
 const { Client, GatewayIntentBits, EmbedBuilder, ActivityType, REST, Routes } = require('discord.js');
@@ -11,21 +11,6 @@ const MAIN_CHANNEL_ID = '1172972375688626276';
 const EN_MAIN_CHANNEL_ID = '1212507080934686740';
 const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
-const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-connection.connect((err) => {
-    if (err) {
-        console.error('Ошибка подключения к базе данных:', err.stack);
-        return;
-    }
-    console.log('Подключение к базе данных установлено, ID подключения:', connection.threadId);
-});
 
 const commands = [
     new SlashCommandBuilder()
@@ -62,6 +47,17 @@ client.once('ready', async () => {
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: commands },
         );
+        if (connection.state === 'authenticated') {
+            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+            if (logChannel) {
+                logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
+                    .catch(console.error);
+            } else {
+                console.error('Не удалось найти лог-канал.');
+            }
+        } else {
+            console.error('Ошибка подключения к базе данных.');
+        }
         client.user.setPresence({
             activities: [{ name: 'копает велдспар', type: ActivityType.Playing }],
             status: 'online',

@@ -17,26 +17,11 @@ const {
     EmbedBuilder
 } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const mysql = require('mysql2');
+const connection = require('./db_connect');
 require('dotenv').config();
 const { format } = require('date-fns');
 const { ru } = require('date-fns/locale');
 
-const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-connection.connect((err) => {
-    if (err) {
-        console.error('Ошибка подключения к базе данных:', err.stack);
-        return;
-    }
-    console.log('Подключение к базе данных установлено, ID подключения:', connection.threadId);
-});
 
 const client = new Client({
     intents: [
@@ -58,6 +43,17 @@ let guild;
 
 client.once(Events.ClientReady, async () => {
     console.log('Bot is ready!');
+    if (connection.state === 'authenticated') {
+        const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+        if (logChannel) {
+            logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
+                .catch(console.error);
+        } else {
+            console.error('Не удалось найти лог-канал.');
+        }
+    } else {
+        console.error('Ошибка подключения к базе данных.');
+    }
     guild = client.guilds.cache.first();
     if (!guild) {
         console.error('Bot is not in any guilds.');
