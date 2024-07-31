@@ -8,7 +8,8 @@ const {
     PermissionsBitField, 
     ChannelType, 
     AttachmentBuilder, 
-    EmbedBuilder  
+    EmbedBuilder,
+    Events
 } = require('discord.js');
 
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -30,7 +31,7 @@ const { randomInt } = require('crypto');
 const { log } = require('console');
 const moment = require('moment');
 const connection = require('./db_connect');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 
 const client = new Client({
     intents: [
@@ -79,17 +80,7 @@ client.once('ready', async () => {
         activities: [{ name: 'Гачи с Дональдом', type: ActivityType.Watching }],
         status: 'online'
     });
-    if (connection.state === 'authenticated') {
-        const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-        if (logChannel) {
-            logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
-                .catch(console.error);
-        } else {
-            console.error('Не удалось найти лог-канал.');
-        }
-    } else {
-        console.error('Ошибка подключения к базе данных.');
-    }
+    await notifyDatabaseConnection();
     logAndSend(`<@235822777678954496>, я восстал из пепла!`);
     await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
@@ -118,6 +109,29 @@ client.once('ready', async () => {
         checkMembersStatus();
     });
 });
+
+async function notifyDatabaseConnection() {
+    try {
+        connection.ping((err) => {
+            if (err) {
+                console.error('Ошибка при проверке подключения к базе данных:', err);
+                return;
+            }
+            
+            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+            if (logChannel) {
+                logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
+                    .then(() => console.log('Сообщение о подключении к базе данных отправлено в лог-канал.'))
+                    .catch(error => console.error('Ошибка при отправке сообщения в лог-канал:', error));
+            } else {
+                console.error('Не удалось найти лог-канал. Проверьте LOG_CHANNEL_ID.');
+            }
+        });
+
+    } catch (error) {
+        console.error('Ошибка в функции notifyDatabaseConnection:', error);
+    }
+}
 
 const clientId = '1238628917900738591'; 
 const token = process.env.DISCORD_TOKEN; // Токен, хранящийся в переменных окружения

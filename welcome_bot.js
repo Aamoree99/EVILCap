@@ -18,7 +18,7 @@ const {
 } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const connection = require('./db_connect');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 require('dotenv').config();
 const { format } = require('date-fns');
 const { ru } = require('date-fns/locale');
@@ -38,28 +38,19 @@ const client = new Client({
 const SUPER_ADMIN_ID = '235822777678954496';
 const WELCOME_CHANNEL_ID = '1266810861209522286'; // Channel ID for the welcome message
 const RECRUITMENT_CATEGORY_ID = '1159112666799951873'; // Category ID for recruitment channels
+const LOG_CHANNEL_ID = '1239085828395892796'; 
 const roleSelectionCache = new Map();
 let currentStatusIndex = 0;
 let guild;
 
 client.once(Events.ClientReady, async () => {
     console.log('Bot is ready!');
-    if (connection.state === 'authenticated') {
-        const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-        if (logChannel) {
-            logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
-                .catch(console.error);
-        } else {
-            console.error('Не удалось найти лог-канал.');
-        }
-    } else {
-        console.error('Ошибка подключения к базе данных.');
-    }
     guild = client.guilds.cache.first();
     if (!guild) {
         console.error('Bot is not in any guilds.');
         return;
     }
+    await notifyDatabaseConnection();
     const GUILD_ID = guild.id;
     console.log(`Using guild ID: ${GUILD_ID}`);
     await registerCommands(client, GUILD_ID);
@@ -73,6 +64,29 @@ client.once(Events.ClientReady, async () => {
         console.error('Channel not found.');
     }
 });
+
+async function notifyDatabaseConnection() {
+    try {
+        connection.ping((err) => {
+            if (err) {
+                console.error('Ошибка при проверке подключения к базе данных:', err);
+                return;
+            }
+            
+            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+            if (logChannel) {
+                logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
+                    .then(() => console.log('Сообщение о подключении к базе данных отправлено в лог-канал.'))
+                    .catch(error => console.error('Ошибка при отправке сообщения в лог-канал:', error));
+            } else {
+                console.error('Не удалось найти лог-канал. Проверьте LOG_CHANNEL_ID.');
+            }
+        });
+
+    } catch (error) {
+        console.error('Ошибка в функции notifyDatabaseConnection:', error);
+    }
+}
 
 async function registerCommands(client, guildId) {
     const commands = [

@@ -1,15 +1,16 @@
 require('dotenv').config();
 const connection = require('./db_connect');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const path = require('path');
 const fs = require('fs').promises;
-const { Client, GatewayIntentBits, EmbedBuilder, ActivityType, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActivityType, Events,  REST, Routes } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const GUILD_ID = '1159107187407335434';
 const MAIN_CHANNEL_ID = '1172972375688626276';
 const EN_MAIN_CHANNEL_ID = '1212507080934686740';
+const LOG_CHANNEL_ID = '1239085828395892796'; 
 const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
 
@@ -48,21 +49,11 @@ client.once('ready', async () => {
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: commands },
         );
-        if (connection.state === 'authenticated') {
-            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-            if (logChannel) {
-                logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
-                    .catch(console.error);
-            } else {
-                console.error('Не удалось найти лог-канал.');
-            }
-        } else {
-            console.error('Ошибка подключения к базе данных.');
-        }
         client.user.setPresence({
             activities: [{ name: 'копает велдспар', type: ActivityType.Playing }],
             status: 'online',
         });
+        await notifyDatabaseConnection();
         const channel = client.channels.cache.get('1239085828395892796');
         if (channel) {
             channel.send('Шахтер прибыл на работу, <@235822777678954496>.');
@@ -73,6 +64,29 @@ client.once('ready', async () => {
         console.error(error);
     }
 });
+
+async function notifyDatabaseConnection() {
+    try {
+        connection.ping((err) => {
+            if (err) {
+                console.error('Ошибка при проверке подключения к базе данных:', err);
+                return;
+            }
+            
+            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+            if (logChannel) {
+                logChannel.send(`Подключение к базе данных установлено, ID подключения: ${connection.threadId}`)
+                    .then(() => console.log('Сообщение о подключении к базе данных отправлено в лог-канал.'))
+                    .catch(error => console.error('Ошибка при отправке сообщения в лог-канал:', error));
+            } else {
+                console.error('Не удалось найти лог-канал. Проверьте LOG_CHANNEL_ID.');
+            }
+        });
+
+    } catch (error) {
+        console.error('Ошибка в функции notifyDatabaseConnection:', error);
+    }
+}
 
 async function readFromJSON(filePath) {
     try {
