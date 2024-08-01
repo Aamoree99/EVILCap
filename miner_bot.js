@@ -2,6 +2,7 @@ require('dotenv').config();
 const connection = require('./db_connect');
 const mysql = require('mysql2');
 const path = require('path');
+const { getMiningLedger } = require('./mining_ledgers');
 const fs = require('fs').promises;
 const { Client, Intents, GatewayIntentBits, EmbedBuilder, ActivityType, Events,  REST, Routes, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -39,6 +40,12 @@ const commands = [
             option.setName('name')
                 .setDescription('Название системы')
                 .setRequired(true)),
+    new SlashCommandBuilder()
+            .setName('ledger')
+            .setDescription('Тест журнала добычи')
+            .addIntegerOption(option =>
+                option.setName('percentage')
+                .setRequired(True))
 ];
 
 // Регистрация команд при запуске бота
@@ -102,7 +109,7 @@ client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
     const { commandName } = interaction;
-
+    
     if (commandName === 'moon') {
         await handleMoonCommand(interaction);
     } else if (commandName === 'ice') {
@@ -111,6 +118,8 @@ client.on('interactionCreate', async (interaction) => {
         await handleGravCommand(interaction);
     } else if (commandName === 'evgen') {
         await handleEvgenCommand(interaction);
+    } else if (commandName === 'ledger') {
+        await handleMiningLedger(interaction);
     }
 });
 
@@ -530,5 +539,24 @@ async function handleEvgenCommand(interaction) {
         await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
     }
 }
+
+async function handleMiningLedger(interaction) {
+    try {
+      const percentage = interaction.options.getInteger('percentage');
+  
+      if (isNaN(percentage)) {
+        await interaction.reply('Please provide a valid percentage.');
+        return;
+      }
+  
+      await interaction.deferReply(); 
+  
+      const janiceData = await checkAndUpdateTokens(percentage);
+      await interaction.editReply(`Janice Link: ${janiceData.janiceLink}\nTotal Buy Price: ${janiceData.totalBuyPrice}`);      
+    } catch (error) {
+      console.error('An error occurred while processing the request:', error);
+      await interaction.editReply('An error occurred while processing your request.');
+    }
+  }
 
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);
