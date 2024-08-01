@@ -41,11 +41,12 @@ const commands = [
                 .setDescription('Название системы')
                 .setRequired(true)),
     new SlashCommandBuilder()
-            .setName('ledger')
-            .setDescription('Тест журнала добычи')
-            .addIntegerOption(option =>
-                option.setName('percentage')
-                .setRequired(True))
+        .setName('ledger')
+        .setDescription('Тест журнала добычи')  
+        .addIntegerOption(option =>
+            option.setName('percentage')
+            .setDescription('Процент для Janice')  
+            .setRequired(true))
 ];
 
 // Регистрация команд при запуске бота
@@ -542,21 +543,22 @@ async function handleEvgenCommand(interaction) {
 
 async function handleMiningLedger(interaction) {
     try {
-      const percentage = interaction.options.getInteger('percentage');
-  
-      if (isNaN(percentage)) {
-        await interaction.reply('Please provide a valid percentage.');
-        return;
-      }
-  
-      await interaction.deferReply(); 
-  
-      const janiceData = await checkAndUpdateTokens(percentage);
-      await interaction.editReply(`Janice Link: ${janiceData.janiceLink}\nTotal Buy Price: ${janiceData.totalBuyPrice}`);      
+        const percentage = interaction.options.getInteger('percentage');
+
+        if (isNaN(percentage)) {
+            await interaction.reply('Please provide a valid percentage.');
+            return;
+        }
+
+        await interaction.deferReply();
+
+        const janiceData = await checkAndUpdateTokens(percentage);
+        await interaction.editReply(`Janice Link: ${janiceData.janiceLink}\nTotal Buy Price: ${janiceData.totalBuyPrice}`);
     } catch (error) {
-      console.error('An error occurred while processing the request:', error);
-      await interaction.editReply('An error occurred while processing your request.');
+        console.error('An error occurred while processing the request:', error);
+        await interaction.editReply('An error occurred while processing your request.');
     }
-  }
+}
+
 
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);
