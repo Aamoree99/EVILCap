@@ -19,6 +19,7 @@ const scope = 'publicData esi-skills.read_skills.v1 esi-fleets.read_fleet.v1 esi
 
 const stateStore = new Map();
 const rooms = new Map();
+let dailyData = {};
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -635,8 +636,9 @@ app.get('/moon', async (req, res) => {
             topPayout: topPayout[0],
             latestData: latestData,
             latestDate: formattedDate,
-            formatNumber: formatNumber
-        });
+            formatNumber: formatNumber,
+            dailyData: dailyData
+          });          
     } catch (err) {
         console.error('Error fetching data:', err);
         res.status(500).send('Server error');
@@ -665,60 +667,56 @@ app.get('/stats', async (req, res) => {
     }
 });
 
+function formatNumber(number) {
+    return Number(number).toLocaleString('en-US').replace(/,/g, ' ');
+}
 
-const updatePilotStats = async () => {
-    try {
-        await connection.promise().query(`TRUNCATE TABLE pilot_stats`);
-        // Этап 1: Обновление total_earned из mining_data
-        await connection.promise().query(`
-            INSERT INTO pilot_stats (pilot_name, total_earned)
-            SELECT 
-                pilot_name,
-                SUM(payout) AS total_earned
-            FROM mining_data
-            WHERE pilot_name IS NOT NULL AND pilot_name != 'ALL'
-            GROUP BY pilot_name
-            ON DUPLICATE KEY UPDATE
-                total_earned = VALUES(total_earned)
-        `);
 
-        // Этап 2: Обновление total_quantity и total_volume из mining_logs
-        const [rows] = await connection.promise().query(`
-            SELECT pilot_name
-            FROM pilot_stats
-        `);
-
-        for (const row of rows) {
-            const { pilot_name } = row;
-
-            const [result] = await connection.promise().query(`
-                SELECT 
-                    SUM(quantity) AS total_quantity,
-                    SUM(volume) AS total_volume
-                FROM mining_logs
-                WHERE miner = ?
-                GROUP BY miner
-            `, [pilot_name]);
-
-            if (result.length > 0) {
-                const { total_quantity, total_volume } = result[0];
-
-                await connection.promise().query(`
-                    UPDATE pilot_stats
-                    SET total_quantity = ?, total_volume = ?
-                    WHERE pilot_name = ?
-                `, [total_quantity, total_volume, pilot_name]);
+function fetchDataFromDB() {
+    connection.query('SELECT SUM(volume) AS volume_sum, SUM(quantity) AS quantity_sum FROM mining_logs', (err, res1) => {
+      if (err) throw err;
+      const { volume_sum, quantity_sum } = res1[0];
+  
+      connection.query('SELECT SUM(payout) AS payout_sum, SUM(tax) AS tax_sum FROM mining_data WHERE pilot_name = "ALL"', (err, res2) => {
+        if (err) throw err;
+        const { payout_sum, tax_sum } = res2[0];
+  
+        connection.query('SELECT material FROM mining_logs', (err, res3) => {
+          if (err) throw err;
+          const materials = res3.map(row => row.material.replace('*', ''));
+  
+          const materialCount = {};
+          materials.forEach(material => {
+            if (materialCount[material]) {
+              materialCount[material]++;
+            } else {
+              materialCount[material] = 1;
             }
-        }
-    } catch (err) {
-        console.error('Error updating pilot stats:', err);
-    }
-};
+          });
+  
+          const mostCommonMaterial = Object.keys(materialCount).reduce((a, b) => materialCount[a] > materialCount[b] ? a : b);
+  
+          dailyData = {
+            volume_sum: `${formatNumber(volume_sum)} m³`,
+            quantity_sum: `${formatNumber(quantity_sum)} qty.`,
+            payout_sum: `${formatNumber(payout_sum)} ISK`,
+            tax_sum: `${formatNumber(tax_sum)} ISK`,
+            most_common_material: mostCommonMaterial
+          };          
+  
+          console.log('Data updated:', dailyData);
+        });
+      });
+    });
+  }
 
 app.get('/rules', (req, res) => {
     res.render('rules');
 });
 
+fetchDataFromDB();
+
+setInterval(fetchDataFromDB, 86400000);
 
 app.listen(port, () => {
     console.log(`Сервер запущен на http://localhost:${port}`);

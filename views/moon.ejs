@@ -87,9 +87,71 @@
             gap: 20px; /* Расстояние между кнопками */
             margin-bottom: 20px;
         }
+        section {
+    display: flex;
+    overflow-x: hidden;
+}
+
+.marquee {
+    font-size: 24px; /* Размер шрифта, адаптированный для вашей страницы */
+    font-family: sans-serif;
+    line-height: 1.3;
+    padding: 24px 0;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.marquee1 {
+    animation: marquee1 90s infinite linear;
+    animation-delay: -90s;
+}
+
+.marquee2 {
+    animation: marquee2 90s infinite linear;
+    animation-delay: -45s;
+}
+
+.marquee:after {
+    content: ' ';
+}
+
+@keyframes marquee1 {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes marquee2 {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-200%);
+    }
+}
+
     </style>
 </head>
 <body>
+    <section style="width: 100vw;">
+        <div class="marquee marquee1">
+            Total Mined Volume: <%= dailyData.volume_sum %> | 
+            Total Mined Quantity: <%= dailyData.quantity_sum %> | 
+            Total ISK Paid: <%= dailyData.payout_sum %> | 
+            Total Tax Paid: <%= dailyData.tax_sum %> | 
+            Most Common Mined Material: <%= dailyData.most_common_material %> | 
+        </div>
+        <div class="marquee marquee2">
+            Total Mined Volume: <%= dailyData.volume_sum %> | 
+            Total Mined Quantity: <%= dailyData.quantity_sum %> | 
+            Total ISK Paid: <%= dailyData.payout_sum %> | 
+            Total Tax Paid: <%= dailyData.tax_sum %> | 
+            Most Common Mined Material: <%= dailyData.most_common_material %> | 
+        </div>
+    </section>    
     <div class="container mt-5">
         <div class="button-container">
             <!-- <a href="/fits" class="btn">Fits</a> 
@@ -97,7 +159,7 @@
             <a href="/rules" class="btn">Rules</a>
             <a href="/stats" class="btn">Stats</a>
             <a href="/logs" class="btn">Logs</a>
-        </div>
+        </div>      
         <div class="top-container">
             <div class="top-block">
                 <div class="highlight">Monthly Top Quantity</div>
