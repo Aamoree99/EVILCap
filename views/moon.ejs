@@ -100,23 +100,38 @@
         </div>
         <div class="top-container">
             <div class="top-block">
-                <div class="highlight">Montly Top Quantity</div>
+                <div class="highlight">Monthly Top Quantity</div>
                 <div>
-                    <%= topQuantity.miner %>: <%= formatNumber(topQuantity.quantity) %> units
+                    <% if (topQuantity && topQuantity.miner && topQuantity.quantity) { %>
+                        <%= topQuantity.miner %>: <%= formatNumber(topQuantity.quantity) %> units
+                    <% } else { %>
+                        No data yet, you have a chance to become the top miner!
+                    <% } %>
                 </div>
             </div>
+            
             <div class="top-block">
-                <div class="highlight">Montly Top Mined Volume</div>
+                <div class="highlight">Monthly Top Mined Volume</div>
                 <div>
-                    <%= topVolume.miner %>: <%= topVolume.volume %> m³
+                    <% if (topVolume && topVolume.miner && topVolume.volume) { %>
+                        <%= topVolume.miner %>: <%= topVolume.volume %> m³
+                    <% } else { %>
+                        No data yet, you have a chance to become the top miner!
+                    <% } %>
                 </div>
             </div>
+            
             <div class="top-block">
-                <div class="highlight">Montly Top Payout</div>
+                <div class="highlight">Monthly Top Payout</div>
                 <div>
-                    <%= topPayout.pilot_name %>: <%= formatNumber(topPayout.payout) %> ISK
+                    <% if (topPayout && topPayout.pilot_name && topPayout.payout) { %>
+                        <%= topPayout.pilot_name %>: <%= formatNumber(topPayout.payout) %> ISK
+                    <% } else { %>
+                        No data yet, you have a chance to become the top earner!
+                    <% } %>
                 </div>
             </div>
+            
         </div>
         <div class="welcome-text">
             <p>Welcome to the Moon Mining page of Evil Capybara Incorporated, where we conquer the stars with efficiency and flair!</p>

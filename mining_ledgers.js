@@ -6,7 +6,31 @@ require('dotenv').config();
 const CLIENT_ID = process.env.MINING_CLIENT_ID;
 const CLIENT_SECRET = process.env.MINING_SECRET;
 
-async function getMinigLedger(percentage) {
+let miningDataCache = {};
+const CACHE_EXPIRATION_TIME = 60 * 60 * 1000;
+
+function cacheMiningData(percentage, data) {
+  miningDataCache[percentage] = {
+      data,
+      timestamp: Date.now()
+  };
+}
+
+function getCachedMiningData(percentage) {
+  const cacheEntry = miningDataCache[percentage];
+  if (cacheEntry && (Date.now() - cacheEntry.timestamp < CACHE_EXPIRATION_TIME)) {
+      return cacheEntry.data;
+  } else {
+      delete miningDataCache[percentage];
+      return null;
+  }
+}
+
+function clearMiningCache() {
+  miningDataCache = {};
+}
+
+async function getMiningLedger(percentage) {
   try {
     const [token] = await new Promise((resolve, reject) => {
       connection.query('SELECT * FROM tokens WHERE name = ?', ['mining_data'], (err, results) => {
@@ -61,13 +85,11 @@ async function getMinigLedger(percentage) {
           );
         });
 
-        console.log('Токены успешно обновлены.');
         return await getPlayerInfo(newAccessToken, percentage);
       } catch (error) {
         console.error('Ошибка при обновлении токенов через ESI:', error);
       }
     } else {
-      console.log('Токен действителен. Информация о владельце токена будет получена.');
       return await getPlayerInfo(accessToken, percentage);
     }
   } catch (error) {
@@ -92,7 +114,6 @@ async function getPlayerInfo(accessToken, percentage) {
     });
 
     const { corporation_id } = characterResponse.data;
-    console.log(`Corporation ID: ${corporation_id}`);
 
     return await getCorporationMiningObservers(corporation_id, accessToken, percentage);
   } catch (error) {
@@ -116,11 +137,8 @@ async function getCorporationMiningObservers(corporation_id, accessToken, percen
       return new Date(latest.last_updated) > new Date(current.last_updated) ? latest : current;
     });
 
-    console.log('Самая последняя запись обсерватории корпорации:', latestObserver);
-
     return await getCorporationMiningLedger(corporation_id, latestObserver.observer_id, latestObserver.last_updated, accessToken, percentage);
   } catch (error) {
-    console.error('Ошибка при получении данных об обсерваториях корпорации:', error.response ? error.response.data : error.message);
   }
 }
 
@@ -140,7 +158,6 @@ async function getCorporationMiningLedger(corporation_id, observer_id, structure
   while (hasMoreData) {
     try {
       const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/${observer_id}/?datasource=tranquility&page=${page}`;
-      console.log(`Requesting data from URL: ${url}`);
 
       const response = await axios.get(url, {
         headers: {
@@ -157,7 +174,6 @@ async function getCorporationMiningLedger(corporation_id, observer_id, structure
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        console.log('Нет данных на этой странице.');
         hasMoreData = false;
       } else {
         console.error('Ошибка при получении данных об обсерваториях корпорации:', error.response ? error.response.data : error.message);
@@ -174,18 +190,25 @@ async function getCorporationMiningLedger(corporation_id, observer_id, structure
   const namesMap = await fetchNames(characterAndCorpIds);
   const typeNamesMap = await fetchTypeNames(typeIds);
 
+  const minDate = allData.reduce((min, entry) => {
+    const entryDate = entry.last_updated.split('T')[0];
+    return entryDate < min ? entryDate : min;
+  }, allData[0].last_updated.split('T')[0]);
+
   const groupedData = allData.reduce((acc, entry) => {
-    const key = `${entry.character_id}-${entry.type_id}`;
-    if (!acc[key]) {
-      acc[key] = {
-        character_name: namesMap[entry.character_id],
-        corporation_name: namesMap[entry.recorded_corporation_id],
-        type_name: "Compressed " + typeNamesMap[entry.type_id],
-        quantity: 0
-      };
-    }
-    acc[key].quantity += entry.quantity;
-    return acc;
+      const key = `${entry.character_id}-${entry.type_id}`;
+      if (!acc[key]) {
+          acc[key] = {
+              date: minDate, 
+              character_name: namesMap[entry.character_id],
+              corporation_name: namesMap[entry.recorded_corporation_id],
+              type_name: "Compressed " + typeNamesMap[entry.type_id],
+              quantity: 0
+          };
+      }
+      acc[key].quantity += entry.quantity;
+      acc[key].volume = acc[key].quantity * 10;
+      return acc;
   }, {});
 
   const result = Object.values(groupedData);
@@ -194,10 +217,64 @@ async function getCorporationMiningLedger(corporation_id, observer_id, structure
 
   const janiceData = await getJaniceData(oreDataArray.join('\n'), percentage / 100);
 
-  console.log(`Janice Link: ${janiceData.janiceLink}`);
-  console.log(`Total Buy Price: ${janiceData.totalBuyPrice}`);
+  const pilotsGroupedData = await groupDataByPilot(result, percentage);
 
-  return { janiceLink: janiceData.janiceLink, totalBuyPrice: janiceData.totalBuyPrice };
+  const finalData = {
+    janiceLink: janiceData.janiceLink,
+    totalBuyPrice: janiceData.totalBuyPrice,
+    pilotsData: pilotsGroupedData,
+    mining_log: result
+  };
+
+  cacheMiningData(percentage, finalData);
+
+  return finalData;
+}
+
+async function groupDataByPilot(data, percentage) {
+  const pilotMap = {};
+
+  // Получение основных имен пилотов из таблицы alts
+  const altToMainMap = await getAltToMainMap();
+
+  for (let entry of data) {
+    const mainName = altToMainMap[entry.character_name] || entry.character_name;
+    if (!pilotMap[mainName]) {
+      pilotMap[mainName] = [];
+    }
+    pilotMap[mainName].push(entry);
+  }
+
+  const pilotLinks = {};
+
+  for (let [pilot, entries] of Object.entries(pilotMap)) {
+    const oreDataArray = entries.map(entry => `${entry.type_name} ${entry.quantity}`);
+    const janiceData = await getJaniceData(oreDataArray.join('\n'), percentage / 100);
+
+    pilotLinks[pilot] = {
+      janiceLink: janiceData.janiceLink,
+      totalBuyPrice: janiceData.totalBuyPrice,
+      data: entries
+    };
+  }
+
+  return pilotLinks;
+}
+
+async function getAltToMainMap() {
+  return new Promise((resolve, reject) => {
+    connection.query('SELECT alt_name, main_name FROM alts', (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        const map = results.reduce((acc, row) => {
+          acc[row.alt_name] = row.main_name;
+          return acc;
+        }, {});
+        resolve(map);
+      }
+    });
+  });
 }
 
 async function getJaniceData(requestBody, percentage) {
@@ -220,7 +297,6 @@ async function getJaniceData(requestBody, percentage) {
 async function fetchNames(ids) {
   try {
     const url = 'https://esi.evetech.net/latest/universe/names/?datasource=tranquility';
-    console.log(`Requesting names for IDs: ${ids}`);
 
     const response = await axios.post(url, ids, {
       headers: {
@@ -246,7 +322,6 @@ async function fetchTypeNames(typeIds) {
     for (let i = 0; i < typeIds.length; i += 1000) {
       const chunk = typeIds.slice(i, i + 1000);
       const url = 'https://esi.evetech.net/latest/universe/names/?datasource=tranquility';
-      console.log(`Requesting type names for IDs: ${chunk}`);
 
       const response = await axios.post(url, chunk, {
         headers: {
@@ -265,4 +340,97 @@ async function fetchTypeNames(typeIds) {
   }
 }
 
-module.exports = { getMinigLedger };
+function insertMiningData(percentage) {
+  return new Promise((resolve, reject) => {
+      const cachedData = getCachedMiningData(percentage);
+      if (!cachedData) {
+          console.error('Ошибка: не удалось получить данные из кэша.');
+          return reject(new Error('Ошибка: не удалось получить данные из кэша.'));
+      }
+
+      const { janiceLink, totalBuyPrice, pilotsData, mining_log } = cachedData;
+
+      // Вставка данных в таблицу mining_data
+      const insertPromises = [];
+
+      for (const [pilot, data] of Object.entries(pilotsData)) {
+          const totalAmount = data.totalBuyPrice;
+          const tax = totalAmount * 0.1;
+          const payout = totalAmount - tax;
+          const date = mining_log.length > 0 ? mining_log[0].date : null;
+
+          const query = `
+              INSERT INTO mining_data (date, pilot_name, janice_link, total_amount, tax, payout, status)
+              VALUES (?, ?, ?, ?, ?, ?, 'Pending')
+          `;
+
+          const values = [date, pilot, data.janiceLink, totalAmount, tax, payout];
+          insertPromises.push(
+              new Promise((resolve, reject) => {
+                  connection.query(query, values, (err, results) => {
+                      if (err) {
+                          console.error('Ошибка при вставке данных в таблицу mining_data:', err);
+                          return reject(err);
+                      }
+                      resolve();
+                  });
+              })
+          );
+      }
+
+      // Вставка общей ссылки Janice для всех пилотов
+      const totalAmountAll = totalBuyPrice;
+      const taxAll = totalAmountAll * 0.1;
+      const payoutAll = totalAmountAll - taxAll;
+      const dateAll = mining_log.length > 0 ? mining_log[0].date : null;
+
+      const queryAll = `
+          INSERT INTO mining_data (date, pilot_name, janice_link, total_amount, tax, payout, status)
+          VALUES (?, 'ALL', ?, ?, ?, ?, 'Paid')
+      `;
+
+      const valuesAll = [dateAll, janiceLink, totalAmountAll, taxAll, payoutAll];
+      insertPromises.push(
+          new Promise((resolve, reject) => {
+              connection.query(queryAll, valuesAll, (err, results) => {
+                  if (err) {
+                      console.error('Ошибка при вставке данных в таблицу mining_data:', err);
+                      return reject(err);
+                  }
+                  resolve();
+              });
+          })
+      );
+
+      // Вставка данных в таблицу mining_logs
+      for (const entry of mining_log) {
+          const queryLog = `
+              INSERT INTO mining_logs (date, corporation, miner, material, quantity, volume)
+              VALUES (?, ?, ?, ?, ?, ?)
+          `;
+
+          const valuesLog = [entry.date, entry.corporation_name, entry.character_name, entry.type_name, entry.quantity, entry.volume];
+          insertPromises.push(
+              new Promise((resolve, reject) => {
+                  connection.query(queryLog, valuesLog, (err, results) => {
+                      if (err) {
+                          console.error('Ошибка при вставке данных в таблицу mining_logs:', err);
+                          return reject(err);
+                      }
+                      resolve();
+                  });
+              })
+          );
+      }
+
+      Promise.all(insertPromises)
+          .then(() => {
+              clearMiningCache(percentage);
+              resolve();
+          })
+          .catch(err => reject(err));
+  });
+}
+
+
+module.exports = { getMiningLedger, clearMiningCache, getCachedMiningData, insertMiningData };

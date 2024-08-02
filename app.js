@@ -603,7 +603,6 @@ app.get('/moon', async (req, res) => {
             ORDER BY quantity DESC
             LIMIT 1
         `, [currentYearMonth]);
-        
         // Запрос для топа по объему за текущий месяц
         const [topVolume] = await connection.promise().query(`
             SELECT miner, SUM(volume) as volume

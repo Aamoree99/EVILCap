@@ -2,11 +2,24 @@ require('dotenv').config();
 const connection = require('./db_connect');
 const mysql = require('mysql2');
 const path = require('path');
-const { getMiningLedger } = require('./mining_ledgers');
+const { getMiningLedger, clearMiningCache, getCachedMiningData, insertMiningData } = require('./mining_ledgers');
 const fs = require('fs').promises;
-const { Client, Intents, GatewayIntentBits, EmbedBuilder, ActivityType, Events,  REST, Routes, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+const { Client,
+    GatewayIntentBits, 
+    EmbedBuilder, 
+    ActivityType,  
+    REST, 
+    Routes, 
+    StringSelectMenuBuilder, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    ModalBuilder, 
+    TextInputBuilder, 
+    TextInputStyle,
+    InteractionType } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const GUILD_ID = '1159107187407335434';
 const MAIN_CHANNEL_ID = '1172972375688626276';
@@ -46,7 +59,10 @@ const commands = [
         .addIntegerOption(option =>
             option.setName('percentage')
             .setDescription('Процент для Janice')  
-            .setRequired(true))
+            .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('moon_payout')
+        .setDescription('Выплаты по луне')
 ];
 
 // Регистрация команд при запуске бота
@@ -121,6 +137,8 @@ client.on('interactionCreate', async (interaction) => {
         await handleEvgenCommand(interaction);
     } else if (commandName === 'ledger') {
         await handleMiningLedger(interaction);
+    } else if (commandName === 'moon_payout') {
+        await handlePayouts(interaction);
     }
 });
 
@@ -541,24 +559,154 @@ async function handleEvgenCommand(interaction) {
     }
 }
 
-async function handleMiningLedger(interaction) {
+async function handleMiningLedger(interaction, initialPercentage = null) {
     try {
-        const percentage = interaction.options.getInteger('percentage');
+        const percentage = initialPercentage !== null ? initialPercentage : interaction.options.getInteger('percentage');
 
         if (isNaN(percentage)) {
             await interaction.reply('Please provide a valid percentage.');
             return;
         }
 
-        await interaction.deferReply();
+        // Отправляем кастомное сообщение
+        await interaction.deferReply({ fetchReply: false });
+        await interaction.editReply('Считаем камушки...');
 
-        const janiceData = await checkAndUpdateTokens(percentage);
-        await interaction.editReply(`Janice Link: ${janiceData.janiceLink}\nTotal Buy Price: ${janiceData.totalBuyPrice}`);
+        // Основной процесс обработки данных
+        const janiceData = await getMiningLedger(percentage);
+        const { janiceLink, totalBuyPrice, pilotsData } = janiceData;
+
+        // Формируем ответ в виде таблицы
+        let responseMessage = `**Janice Link:** [Click here](<${janiceLink}>)\n**Total Buy Price:** ${totalBuyPrice.toLocaleString()} ISK\n\n`;
+
+        responseMessage += '**Pilots Data:**\n';
+        responseMessage += `| Pilot | Janice Link | Total Buy Price |\n`;
+        responseMessage += `|-------|-------------|-----------------|\n`;
+
+        for (const [pilot, data] of Object.entries(pilotsData)) {
+            responseMessage += `| **${pilot}** | [Click here](<${data.janiceLink}>) | ${data.totalBuyPrice.toLocaleString()} ISK |\n`;
+        }
+
+        const buttons = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('accept')
+                    .setLabel('Устраивает')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('reject')
+                    .setLabel('Не устраивает')
+                    .setStyle(ButtonStyle.Danger),
+            );
+
+        await interaction.editReply({ content: responseMessage, components: [buttons] });
+
+        const filter = i => ['accept', 'reject', 'cancel'].includes(i.customId) && i.user.id === interaction.user.id;
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+        collector.on('collect', async i => {
+            if (i.customId === 'accept') {
+                const cachedData = getCachedMiningData(percentage);
+                if (cachedData) {
+                    await i.deferUpdate();
+                    await insertMiningData(percentage);
+                    await i.editReply({ content: 'Спасибо! Журнал выгружен.', components: [] });
+                    clearMiningCache(percentage);
+            
+                    const channelRU = await i.client.channels.fetch(MAIN_CHANNEL_ID);
+                    await channelRU.send('Здравствуйте! Последний журнал добычи успешно загружен на сайт. Вы молодцы, копатели! [Ссылка на журнал](<https://evil-capybara.space/logs>)');
+
+                    const channelEN = await i.client.channels.fetch(EN_MAIN_CHANNEL_ID);
+                    await channelEN.send('Hello! The latest mining log has been successfully uploaded to the site. Great job, miners! [Link to the log](<https://evil-capybara.space/logs>)');
+                } else {
+                    await i.update({ content: 'Ошибка: не удалось получить данные из кэша.', components: [] });
+                }
+            }   else if (i.customId === 'reject') {
+                await i.deferUpdate();
+                await i.editReply({ content: 'Пожалуйста, вызовите команду /ledger снова с новым процентом.', components: [] });
+                clearMiningCache();
+            }
+        });
+
+        collector.on('end', collected => {
+            if (collected.size === 0) {
+                interaction.editReply({ content: 'Время ожидания истекло.', components: [] });
+            }
+        });
     } catch (error) {
         console.error('An error occurred while processing the request:', error);
         await interaction.editReply('An error occurred while processing your request.');
     }
 }
 
+async function handlePayouts(interaction) {
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('specific')
+                .setLabel('Конкретным')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('all')
+                .setLabel('Всем')
+                .setStyle(ButtonStyle.Danger),
+        );
+
+    await interaction.reply({ content: 'Кому вы хотите подтвердить выплаты?', components: [row] });
+
+    const filter = i => i.customId === 'specific' || i.customId === 'all';
+    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+    collector.on('collect', async i => {
+        if (i.customId === 'all') {
+            const query = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending"';
+            connection.query(query, (error, results) => {
+                if (error) {
+                    console.error(error);
+                    return i.update({ content: 'Произошла ошибка при подтверждении выплат.'});
+                }
+                i.update({ content: 'Все выплаты подтверждены.', components: []});
+            });
+        } else if (i.customId === 'specific') {
+            const selectQuery = 'SELECT id, pilot_name, payout FROM mining_data WHERE status = "Pending"';
+            connection.query(selectQuery, (error, rows) => {
+                if (error) {
+                    console.error(error);
+                    return i.update({ content: 'Произошла ошибка при получении данных.', components: [] });
+                }
+                const options = rows.map(row => ({
+                    label: `${row.pilot_name} - ${row.payout}`,
+                    value: row.id.toString()
+                }));
+
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('select')
+                    .setPlaceholder('Выберите пилотов для выплаты')
+                    .addOptions(options)
+                    .setMaxValues(options.length); // Позволяет выбирать несколько значений
+
+                const selectRow = new ActionRowBuilder()
+                    .addComponents(selectMenu);
+
+                i.update({ content: 'Выберите пилотов для выплаты:', components: [selectRow] });
+
+                const selectFilter = i => i.customId === 'select';
+                const selectCollector = interaction.channel.createMessageComponentCollector({ selectFilter, time: 60000 });
+
+                selectCollector.on('collect', async selectInteraction => {
+                    const selectedIds = selectInteraction.values;
+                    const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE id IN (?)';
+                    connection.query(updateQuery, [selectedIds], (error, results) => {
+                        if (error) {
+                            console.error(error);
+                            return selectInteraction.update({ content: 'Произошла ошибка при подтверждении выплат.', components: [] });
+                        }
+                        selectInteraction.update({ content: 'Выплаты подтверждены.', components: [] });
+                    });
+                });
+            });
+        }
+    });
+}
 
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);
