@@ -87,7 +87,6 @@ client.once('ready', async () => {
     });
     await notifyDatabaseConnection();
     logAndSend(`<@235822777678954496>, я восстал из пепла!`);
-    await getAccessTokenUsingRefreshToken();
     logAndSend(`Logged in as ${client.user.tag}!`);
     //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     createRoleMessage();

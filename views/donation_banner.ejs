@@ -1,0 +1,84 @@
+<div class="donation-banner">
+    <h2>Save the galaxy</h2>
+    <div>
+        <p>Donate ISK to the player</p>
+        <button id="donate-btn" onclick="copyToClipboard('Aamoree')">Aamoree</button>
+    </div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Скопировано в буфер обмена / Copied to clipboard');
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    }
+    function updateProgressBar(percentage) {
+        var progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = percentage / 100 + '%';
+        progressBar.textContent = percentage / 100 + '%';
+    }
+
+    updateProgressBar(1378);
+</script>
+
+<style>
+    .donation-banner {
+        background: linear-gradient(45deg, #4a90e2, #9013fe);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+        width: 50%;
+        margin: 0 auto; /* Центрирование по горизонтали */
+        margin-top: 20px;
+    }
+    .donation-banner h2 {
+        margin: 0;
+        font-size: 2em;
+        text-transform: uppercase;
+    }
+    .donation-banner h3 {
+        margin: 0 0 20px;
+        font-size: 1em;
+    }
+    .donation-banner p {
+        margin: 5px 0;
+        font-size: 1em;
+    }
+    .donation-banner button {
+        background: #ffffff;
+        color: #4a90e2;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s, color 0.3s;
+    }
+    .donation-banner button:hover {
+        background: #4a90e2;
+        color: #ffffff;
+    }
+    .progress-container {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 20px;
+    }
+    .progress-bar {
+        width: 0;
+        height: 30px;
+        background-color: #76c7c0;
+        border-radius: 5px;
+        border: solid 1px #4e4e4e;
+        transition: width 0.5s;
+    }
+</style>

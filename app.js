@@ -704,7 +704,6 @@ function fetchDataFromDB() {
             most_common_material: mostCommonMaterial
           };          
   
-          console.log('Data updated:', dailyData);
         });
       });
     });

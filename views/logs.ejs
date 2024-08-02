@@ -64,16 +64,16 @@
 }
 
 .logo {
-    width: 50px; /* Размер логотипа, можете изменить при необходимости */
+    width: 50px; 
     height: auto;
     margin-right: 20px;
 }
 
 .header-text {
-    font-family: 'Arial', sans-serif; /* Вы можете выбрать любой классный шрифт */
+    font-family: 'Arial', sans-serif; 
     font-size: 48px;
-    color: #ffc107; /* Желтый цвет */
-    text-shadow: 2px 2px 4px #000; /* Тень для текста, чтобы он выглядел лучше */
+    color: #ffc107;
+    text-shadow: 2px 2px 4px #000; 
 }
 
 
@@ -85,7 +85,7 @@
             <img src="/static/logo.png" alt="Logo" class="logo">
             <span class="header-text">EVIL Capybara Inc.</span>
         </div>
-       
+        <%- include('donation_banner') %>
         <h1>Mining Data</h1>
         <form method="get" action="/logs">
             <div class="mb-3">
