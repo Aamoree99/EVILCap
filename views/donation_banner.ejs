@@ -1,4 +1,4 @@
-<div class="donation-banner">
+<div id="donation-banner" class="donation-banner" style="display: none;">
     <h2>Save the galaxy</h2>
     <div>
         <p>Donate ISK to the player</p>
@@ -23,7 +23,18 @@
         progressBar.textContent = percentage / 100 + '%';
     }
 
-    updateProgressBar(1378);
+    function checkDate() {
+        var today = new Date();
+        var day = today.getDate();
+        var month = today.getMonth() + 1; 
+
+        if (month > 8 || (month === 8 && day >= 9)) {
+            document.getElementById('donation-banner').style.display = 'block';
+            updateProgressBar(1378);
+        }
+    }
+
+    checkDate();
 </script>
 
 <style>
