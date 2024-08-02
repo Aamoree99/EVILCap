@@ -57,10 +57,35 @@
         .button-container .btn {
             margin: 0 5px;
         }
+        .header-logo {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+.logo {
+    width: 50px; /* Размер логотипа, можете изменить при необходимости */
+    height: auto;
+    margin-right: 20px;
+}
+
+.header-text {
+    font-family: 'Arial', sans-serif; /* Вы можете выбрать любой классный шрифт */
+    font-size: 48px;
+    color: #ffc107; /* Желтый цвет */
+    text-shadow: 2px 2px 4px #000; /* Тень для текста, чтобы он выглядел лучше */
+}
+
+
     </style>
 </head>
 <body>
     <div class="container mt-5" style="margin-bottom: 20px;">
+        <div class="header-logo">
+            <img src="/static/logo.png" alt="Logo" class="logo">
+            <span class="header-text">EVIL Capybara Inc.</span>
+        </div>
+       
         <h1>Mining Data</h1>
         <form method="get" action="/logs">
             <div class="mb-3">
