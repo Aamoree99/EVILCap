@@ -58,23 +58,41 @@
             margin: 0 5px;
         }
         .header-logo {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-}
+            display: flex;
+            align-items: center;
+            padding: 20px;
+        }
 
-.logo {
-    width: 50px; 
-    height: auto;
-    margin-right: 20px;
-}
+        .logo {
+            width: 50px; 
+            height: auto;
+            margin-right: 20px;
+        }
 
-.header-text {
-    font-family: 'Arial', sans-serif; 
-    font-size: 48px;
-    color: #ffc107;
-    text-shadow: 2px 2px 4px #000; 
-}
+        .header-text {
+            font-family: 'Arial', sans-serif; 
+            font-size: 48px;
+            color: #ffc107;
+            text-shadow: 2px 2px 4px #000; 
+        }
+        .copyable {
+            cursor: pointer;
+        }
+
+        .copyable:hover {
+            text-decoration: underline;
+        }
+        .ui-tooltip {
+        background: #333333;
+        color: #f0ad4e;
+        border: 1px solid #555555;
+        padding: 10px;
+        font-size: 14px;
+        max-width: 300px;
+        z-index: 9999; /* Высокий z-index для подсказки */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        word-wrap: break-word;
+    }
 
 
     </style>
@@ -120,12 +138,12 @@
                     if (row.pilot_name !== 'ALL') { %>
                         <tr>
                             <td><%= row.date %></td>
-                            <td><%= row.pilot_name %></td>
+                            <td class="copyable pilot"><%= row.pilot_name %></td>
                             <td><a href="<%= row.janice_link %>" target="_blank">Janice</a></td>
                             <td><%= formatNumber(row.total_amount) %></td>
                             <td><%= formatNumber(row.tax) %></td>
-                            <td><%= formatNumber(row.payout) %></td>
-                            <td><%= row.status %></td>
+                            <td class="copyable amount"><%= formatNumber(row.payout) %></td>
+                            <td title="<%= row.rejection_reason || '' %>"><%= row.status %></td>
                         </tr>
                 <% }}); %>
             </tbody>
@@ -224,6 +242,31 @@
             if ($("#date").val()) {
                 $("#datepicker").datepicker("setDate", $("#date").val());
             }
+
+            $(document).on('click', '.copyable.pilot', function() {
+                let pilotName = $(this).text();
+                navigator.clipboard.writeText(pilotName).then(function() {
+                    alert("Имя пилота скопировано в буфер обмена!");
+                }, function(err) {
+                    alert("Не удалось скопировать имя пилота: ", err);
+                });
+            });
+
+            $(document).on('click', '.copyable.amount', function() {
+                let amount = $(this).text().replace(/,/g, '').replace(' ISK', '');
+                navigator.clipboard.writeText(amount).then(function() {
+                    alert("Сумма скопирована в буфер обмена!");
+                }, function(err) {
+                    alert("Не удалось скопировать сумму: ", err);
+                });
+            });
+
+            $(document).tooltip({
+                items: "[title]",
+                content: function() {
+                    return $(this).attr('title');
+                }
+            });
 
             // Copy Button Functionality
             $('#copyButton').on('click', function() {

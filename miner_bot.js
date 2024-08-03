@@ -561,6 +561,10 @@ async function handleEvgenCommand(interaction) {
 
 async function handleMiningLedger(interaction, initialPercentage = null) {
     try {
+        if (interaction.channel.id !== LOG_CHANNEL_ID) {
+            await interaction.reply('Эту команду можно выполнять только в канале с логами.');
+            return;
+        }
         const percentage = initialPercentage !== null ? initialPercentage : interaction.options.getInteger('percentage');
 
         if (isNaN(percentage)) {
@@ -640,6 +644,12 @@ async function handleMiningLedger(interaction, initialPercentage = null) {
 }
 
 async function handlePayouts(interaction) {
+
+    if (interaction.channel.id !== LOG_CHANNEL_ID) {
+        await interaction.reply('Эту команду можно выполнять только в канале с логами.');
+        return;
+    }
+
     const row = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -650,11 +660,15 @@ async function handlePayouts(interaction) {
                 .setCustomId('all')
                 .setLabel('Всем')
                 .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId('all_except')
+                .setLabel('Всем кроме')
+                .setStyle(ButtonStyle.Secondary),
         );
 
     await interaction.reply({ content: 'Кому вы хотите подтвердить выплаты?', components: [row] });
 
-    const filter = i => i.customId === 'specific' || i.customId === 'all';
+    const filter = i => i.customId === 'specific' || i.customId === 'all' || i.customId === 'all_except';
     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 
     collector.on('collect', async i => {
@@ -663,9 +677,9 @@ async function handlePayouts(interaction) {
             connection.query(query, (error, results) => {
                 if (error) {
                     console.error(error);
-                    return i.update({ content: 'Произошла ошибка при подтверждении выплат.'});
+                    return i.update({ content: 'Произошла ошибка при подтверждении выплат.', components: [] });
                 }
-                i.update({ content: 'Все выплаты подтверждены.', components: []});
+                i.update({ content: 'Все выплаты подтверждены.', components: [] });
             });
         } else if (i.customId === 'specific') {
             const selectQuery = 'SELECT id, pilot_name, payout FROM mining_data WHERE status = "Pending"';
@@ -705,8 +719,73 @@ async function handlePayouts(interaction) {
                     });
                 });
             });
+        } else if (i.customId === 'all_except') {
+            const selectQuery = 'SELECT id, pilot_name, payout FROM mining_data WHERE status = "Pending"';
+            connection.query(selectQuery, (error, rows) => {
+                if (error) {
+                    console.error(error);
+                    return i.update({ content: 'Произошла ошибка при получении данных.', components: [] });
+                }
+                const options = rows.map(row => ({
+                    label: `${row.pilot_name} - ${row.payout}`,
+                    value: row.id.toString()
+                }));
+        
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('select_except')
+                    .setPlaceholder('Выберите пилотов для которых выплаты не будут произведены')
+                    .addOptions(options)
+                    .setMaxValues(options.length); 
+        
+                const selectRow = new ActionRowBuilder()
+                    .addComponents(selectMenu);
+        
+                i.update({ content: 'Выберите пилотов для которых выплаты не будут произведены:', components: [selectRow] });
+        
+                const selectFilter = i => i.customId === 'select_except';
+                const selectCollector = interaction.channel.createMessageComponentCollector({ selectFilter, time: 60000 });
+        
+                selectCollector.on('collect', async selectInteraction => {
+                    const selectedIds = selectInteraction.values;
+                    await selectInteraction.update({ content: 'Введите причину отклонения выплат:', components: [] });
+        
+                    const filter = response => response.author.id === interaction.user.id;
+                    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+        
+                    collector.on('collect', async response => {
+                        const reason = response.content;
+        
+                        // Обновляем все записи со статусом "Pending" и добавляем причину отклонения
+                        const rejectQuery = 'UPDATE mining_data SET status = "Rejected", rejection_reason = ? WHERE status = "Pending"';
+                        connection.query(rejectQuery, [reason], (error, results) => {
+                            if (error) {
+                                console.error(error);
+                                return response.reply('Произошла ошибка при отклонении выплат.');
+                            }
+        
+                            // Обновляем статус на "Paid" для тех пилотов, которые не были выбраны
+                            const updateQuery = 'UPDATE mining_data SET status = "Paid", rejection_reason = NULL WHERE status = "Pending" AND id NOT IN (?)';
+                            connection.query(updateQuery, [selectedIds], (error, results) => {
+                                if (error) {
+                                    console.error(error);
+                                    return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
+                                }
+        
+                                response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
+                            });
+                        });
+                    });        
+
+                    collector.on('end', collected => {
+                        if (collected.size === 0) {
+                            selectInteraction.followUp({ content: 'Время для ввода причины истекло.', components: [] });
+                        }
+                    });
+                });
+            });
         }
     });
 }
+
 
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);

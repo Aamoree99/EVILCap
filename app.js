@@ -450,26 +450,37 @@ function parseRawData(rawData) {
 app.get('/logs', async (req, res) => {
     try {
         const selectedDate = req.query.date || moment().format('YYYY-MM-DD');
+
         // Форматирование даты в логах и суммарных данных
         const [summaryResults] = await connection.promise().query('SELECT * FROM mining_data WHERE date = ? ORDER BY pilot_name', [selectedDate]);
         const [logResults] = await connection.promise().query('SELECT * FROM mining_logs WHERE date = ? ORDER BY date DESC, corporation, miner', [selectedDate]);
         const [uniqueDatesResults] = await connection.promise().query(
             'SELECT DISTINCT date FROM mining_data UNION SELECT DISTINCT date FROM mining_logs'
         );
+
+        // Логирование данных для диагностики
+        console.log('Summary Results:', summaryResults);
+        console.log('Unique Dates Results:', uniqueDatesResults);
+
         const formatNumber = (num) => {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ISK', minimumFractionDigits: 2 }).format(num).replace('ISK', '') + ' ISK';
         };
+
         // Преобразование формата дат
         const formattedSummaryResults = summaryResults.map(row => ({
             ...row,
             date: moment(row.date).format('YYYY-MM-DD')
         }));
-        
+
         const formattedLogResults = logResults.map(row => ({
             ...row,
             date: moment(row.date).format('YYYY-MM-DD')
         }));
+
         const highlightedDates = uniqueDatesResults.map(row => moment(row.date).format('YYYY-MM-DD'));
+
+        console.log('Formatted Summary Results:', formattedSummaryResults);
+
         res.render('logs', { 
             summaryData: formattedSummaryResults, 
             logData: formattedLogResults, 
@@ -709,12 +720,85 @@ function fetchDataFromDB() {
     });
   }
 
+  async function recalculatePilotStats() {
+    try {
+        // Очистка таблицы pilot_stats
+        await connection.promise().query('TRUNCATE TABLE pilot_stats');
+
+        // Подсчет и агрегация данных из таблицы mining_logs
+        const [miningLogsResults] = await connection.promise().query(`
+            SELECT 
+                miner AS pilot_name,
+                SUM(quantity) AS total_quantity,
+                SUM(volume) AS total_volume
+            FROM mining_logs
+            GROUP BY miner
+        `);
+
+        // Подсчет и агрегация данных из таблицы mining_data
+        const [miningDataResults] = await connection.promise().query(`
+            SELECT 
+                pilot_name,
+                SUM(payout) AS total_earned
+            FROM mining_data
+            WHERE pilot_name != 'ALL'
+            GROUP BY pilot_name
+        `);
+
+        // Создание мапы для удобного обновления данных
+        const pilotStatsMap = new Map();
+
+        // Обновление мапы данными из mining_logs
+        miningLogsResults.forEach(row => {
+            pilotStatsMap.set(row.pilot_name, {
+                pilot_name: row.pilot_name,
+                total_earned: 0,
+                total_quantity: row.total_quantity,
+                total_volume: row.total_volume
+            });
+        });
+
+        // Обновление мапы данными из mining_data
+        miningDataResults.forEach(row => {
+            if (pilotStatsMap.has(row.pilot_name)) {
+                pilotStatsMap.get(row.pilot_name).total_earned = row.total_earned;
+            } else {
+                pilotStatsMap.set(row.pilot_name, {
+                    pilot_name: row.pilot_name,
+                    total_earned: row.total_earned,
+                    total_quantity: 0,
+                    total_volume: 0
+                });
+            }
+        });
+
+        // Вставка данных в таблицу pilot_stats
+        const pilotStatsArray = Array.from(pilotStatsMap.values());
+        const insertValues = pilotStatsArray.map(row => [
+            row.pilot_name,
+            row.total_earned,
+            row.total_quantity,
+            row.total_volume
+        ]);
+
+        await connection.promise().query(`
+            INSERT INTO pilot_stats (pilot_name, total_earned, total_quantity, total_volume)
+            VALUES ?
+        `, [insertValues]);
+
+        console.log('Перерасчет данных в таблице pilot_stats завершен.');
+    } catch (error) {
+        console.error('Ошибка при перерасчете данных в таблице pilot_stats:', error);
+    }
+}
+
 app.get('/rules', (req, res) => {
     res.render('rules');
 });
 
 fetchDataFromDB();
-
+recalculatePilotStats();
+setInterval(recalculatePilotStats, 86400000);
 setInterval(fetchDataFromDB, 86400000);
 
 app.listen(port, () => {
