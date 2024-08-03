@@ -39,8 +39,7 @@ app.use(session({
 }));
 
 const staticPath = path.join(__dirname, 'static');
-app.use(express.static(staticPath));
-app.use('/static', express.static(path.join(__dirname, 'static')));
+app.use('/static', express.static(staticPath));
 
 
 const templatesPath = path.join(__dirname, 'templates');
@@ -458,9 +457,6 @@ app.get('/logs', async (req, res) => {
             'SELECT DISTINCT date FROM mining_data UNION SELECT DISTINCT date FROM mining_logs'
         );
 
-        // Логирование данных для диагностики
-        console.log('Summary Results:', summaryResults);
-        console.log('Unique Dates Results:', uniqueDatesResults);
 
         const formatNumber = (num) => {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ISK', minimumFractionDigits: 2 }).format(num).replace('ISK', '') + ' ISK';
@@ -478,8 +474,6 @@ app.get('/logs', async (req, res) => {
         }));
 
         const highlightedDates = uniqueDatesResults.map(row => moment(row.date).format('YYYY-MM-DD'));
-
-        console.log('Formatted Summary Results:', formattedSummaryResults);
 
         res.render('logs', { 
             summaryData: formattedSummaryResults, 
