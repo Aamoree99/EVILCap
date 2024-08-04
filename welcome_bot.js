@@ -808,7 +808,7 @@ async function handleCloseChannel(interaction) {
             await i.update({ content: 'Канал будет закрыт.', components: [], ephemeral: true });
             await closeRecruitChannel(i.channel);
         } else if (i.customId === 'interview_accepted') {
-            await i.update({ content: 'Пожалуйста, выберите роль для нового участника:', components: [], ephemeral: true });
+            await i.update({ content: 'Пожалуйста, выберите роли для нового участника:', components: [], ephemeral: true });
 
             const roles = interaction.guild.roles.cache
                 .filter(role => /пилот|офицер|pilot|officer/i.test(role.name) && new RegExp(roleTag, 'i').test(role.name))
@@ -830,23 +830,26 @@ async function handleCloseChannel(interaction) {
                 .addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId('select_pilot_role')
-                        .setPlaceholder('Выберите роль для нового участника')
+                        .setPlaceholder('Выберите роли для нового участника')
                         .addOptions(roles)
+                        .setMaxValues(roles.length) // Allows selecting multiple roles
                 );
 
-            await i.followUp({ content: 'Выберите роль для нового участника:', components: [roleRow], ephemeral: true });
+            await i.followUp({ content: 'Выберите роли для нового участника:', components: [roleRow], ephemeral: true });
 
             const roleCollector = i.channel.createMessageComponentCollector({ filter, max: 1 });
 
             roleCollector.on('collect', async roleInteraction => {
-                const selectedRole = roleInteraction.values[0];
+                const selectedRoles = roleInteraction.values;
                 const recruitUser = interaction.guild.members.cache.get(recruits[0].user_id);
                 
                 if (recruitUser) {
-                    await recruitUser.roles.add(selectedRole);
+                    for (const roleId of selectedRoles) {
+                        await recruitUser.roles.add(roleId);
+                    }
                 }
 
-                await roleInteraction.update({ content: 'Роль назначена. Канал будет закрыт.', components: [], ephemeral: true });
+                await roleInteraction.update({ content: 'Роли назначены. Канал будет закрыт.', components: [], ephemeral: true });
                 await closeRecruitChannel(roleInteraction.channel);
 
                 const welcomeChannel = interaction.guild.channels.cache.get('1266810861209522286');
@@ -857,6 +860,7 @@ async function handleCloseChannel(interaction) {
         }
     });
 }
+
 async function closeRecruitChannel(channel) {
     await connection.promise().query('UPDATE recruit_channels SET closed_at = NOW() WHERE channel_id = ?', [channel.id]);
     await channel.delete();

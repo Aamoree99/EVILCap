@@ -34,6 +34,24 @@ const connect = () => {
     });
 };
 
+const checkConnection = () => {
+    if (connection) {
+        connection.ping((err) => {
+            if (err) {
+                console.error('Потеряно соединение с базой данных. Пытаюсь переподключиться...', err);
+                connect();
+            } else {
+                console.log('Соединение с базой данных активно.');
+            }
+        });
+    } else {
+        console.log('Соединение с базой данных не установлено. Пытаюсь подключиться...');
+        connect();
+    }
+};
+
 connect();
+checkConnection();
+setInterval(checkConnection, 3600000); 
 
 module.exports = connection;

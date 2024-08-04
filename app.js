@@ -39,7 +39,8 @@ app.use(session({
 }));
 
 const staticPath = path.join(__dirname, 'static');
-app.use('/static', express.static(staticPath));
+app.use(express.static(staticPath));
+app.use('/static', express.static(path.join(__dirname, 'static')));
 
 
 const templatesPath = path.join(__dirname, 'templates');
