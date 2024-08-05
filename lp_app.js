@@ -46,9 +46,7 @@ cron.schedule('0 */5 * * *', () => {
   console.log('Running updatePricesForOtherRegions task every 5 hours');
   updatePricesForOtherRegions();
 });
-checkDonations();
-updatePricesForMainRegions();
-updatePricesForOtherRegions();
+
 function generateState() {
   return crypto.randomBytes(8).toString('hex');
 }

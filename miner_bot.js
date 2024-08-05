@@ -562,7 +562,7 @@ async function handleEvgenCommand(interaction) {
 async function handleMiningLedger(interaction, initialPercentage = null) {
     try {
         if (interaction.channel.id !== LOG_CHANNEL_ID) {
-            await interaction.reply('Эту команду можно выполнять только в канале с логами.');
+            await interaction.reply({ content: 'Эту команду можно выполнять только в канале с логами.', ephemeral: true });
             return;
         }
         const percentage = initialPercentage !== null ? initialPercentage : interaction.options.getInteger('percentage');
@@ -720,61 +720,45 @@ async function handlePayouts(interaction) {
                 });
             });
         } else if (i.customId === 'all_except') {
-            const selectQuery = 'SELECT id, pilot_name, payout FROM mining_data WHERE status = "Pending"';
-            connection.query(selectQuery, (error, rows) => {
-                if (error) {
-                    console.error(error);
-                    return i.update({ content: 'Произошла ошибка при получении данных.', components: [] });
+            await i.update({ content: 'Введите имена пилотов, которым НЕ будет произведена выплата, через запятую:', components: [] });
+
+            const filter = response => response.author.id === interaction.user.id;
+            const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
+
+            collector.on('collect', async response => {
+                const names = response.content.split(',').map(name => name.trim());
+
+                if (names.length === 0) {
+                    return response.reply('Не было введено ни одного имени.');
                 }
-                const options = rows.map(row => ({
-                    label: `${row.pilot_name} - ${row.payout}`,
-                    value: row.id.toString()
-                }));
-        
-                const selectMenu = new StringSelectMenuBuilder()
-                    .setCustomId('select_except')
-                    .setPlaceholder('Выберите пилотов для которых выплаты не будут произведены')
-                    .addOptions(options)
-                    .setMaxValues(options.length); 
-        
-                const selectRow = new ActionRowBuilder()
-                    .addComponents(selectMenu);
-        
-                i.update({ content: 'Выберите пилотов для которых выплаты не будут произведены:', components: [selectRow] });
-        
-                const selectFilter = i => i.customId === 'select_except';
-                const selectCollector = interaction.channel.createMessageComponentCollector({ selectFilter, time: 60000 });
-        
-                selectCollector.on('collect', async selectInteraction => {
-                    const selectedIds = selectInteraction.values;
-                    await selectInteraction.update({ content: 'Введите причину отклонения выплат:', components: [] });
-        
-                    const filter = response => response.author.id === interaction.user.id;
-                    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
-        
-                    collector.on('collect', async response => {
-                        const reason = response.content;
-        
-                        // Обновляем все записи со статусом "Pending" и добавляем причину отклонения
-                        const rejectQuery = 'UPDATE mining_data SET status = "Rejected", rejection_reason = ? WHERE status = "Pending"';
-                        connection.query(rejectQuery, [reason], (error, results) => {
+
+                const dateQuery = 'SELECT MAX(date) AS lastDate FROM mining_data WHERE status = "Pending"';
+                connection.query(dateQuery, (error, results) => {
+                    if (error) {
+                        console.error(error);
+                        return response.reply('Произошла ошибка при получении даты.');
+                    }
+
+                    const lastDate = results[0].lastDate;
+
+                    const rejectQuery = 'UPDATE mining_data SET status = "Rejected" WHERE pilot_name IN (?) AND status = "Pending" AND date = ?';
+                    connection.query(rejectQuery, [names, lastDate], (error, results) => {
+                        if (error) {
+                            console.error(error);
+                            return response.reply('Произошла ошибка при отклонении выплат.');
+                        }
+
+                        const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending" AND pilot_name NOT IN (?) AND date = ?';
+                        connection.query(updateQuery, [names, lastDate], (error, results) => {
                             if (error) {
                                 console.error(error);
-                                return response.reply('Произошла ошибка при отклонении выплат.');
+                                return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
                             }
-        
-                            // Обновляем статус на "Paid" для тех пилотов, которые не были выбраны
-                            const updateQuery = 'UPDATE mining_data SET status = "Paid", rejection_reason = NULL WHERE status = "Pending" AND id NOT IN (?)';
-                            connection.query(updateQuery, [selectedIds], (error, results) => {
-                                if (error) {
-                                    console.error(error);
-                                    return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
-                                }
-        
-                                response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
-                            });
+
+                            response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
                         });
-                    });        
+                    });
+     
 
                     collector.on('end', collected => {
                         if (collected.size === 0) {
