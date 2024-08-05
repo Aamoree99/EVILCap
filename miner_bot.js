@@ -692,17 +692,18 @@ async function handlePayouts(interaction) {
 
         // Формируем сообщение со списком пилотов
         let responseMessage = '**Pending Payouts:**\n';
-        responseMessage += '| **Pilot** | **Price** | **Date** |\n';
-        responseMessage += '|-----------|-----------|-----------|\n';
-
         for (const row of rows) {
-            responseMessage += `| ${row.pilot_name} | ${row.payout.toLocaleString()} ISK | ${row.date} |\n`;
+            responseMessage += `**${row.pilot_name}** - ${row.payout.toLocaleString()} ISK - ${row.date}\n`;
+        }
+
+        if (responseMessage.length > 2000) {
+            responseMessage = responseMessage.substring(0, 1997) + '...'; // Обрезаем сообщение, если оно слишком длинное
         }
 
         await interaction.reply({ content: responseMessage, components: [row] });
 
         const filter = i => i.customId === 'specific' || i.customId === 'all' || i.customId === 'all_except';
-        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 600000 });
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 
         collector.on('collect', async i => {
             if (i.customId === 'all') {
@@ -796,6 +797,5 @@ async function handlePayouts(interaction) {
         });
     });
 }
-
 
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);
