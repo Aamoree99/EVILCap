@@ -20,6 +20,7 @@ const App = {
       sortKey: '',
       sortOrder: 1,
       user: null,
+      esiStatus: null,
     };
   },
   async mounted() {
@@ -45,6 +46,7 @@ const App = {
       console.log("Corporations and regions fetched:", this.corporations, this.regions);
   
       await this.fetchRegionDetails(this.selectedRegion);
+      await this.fetchEsiStatus();
   
       try {
         const userResponse = await axios.get('/lp/api/profile');
@@ -71,6 +73,14 @@ const App = {
         this.mainCorp = regionDetails.mainCorp;
       } catch (error) {
         console.error("Error fetching region details:", error);
+      }
+    },
+    async fetchEsiStatus() {
+      try {
+        const response = await axios.get('https://esi.evetech.net/latest/status/?datasource=tranquility');
+        this.esiStatus = response.data;
+      } catch (error) {
+        console.error("Error fetching ESI status:", error);
       }
     },
     login() {
@@ -157,7 +167,7 @@ const App = {
         }
   
         offer.lp_isk = (offer.market_price !== 'N/A' && adjustedISKCost !== 'N/A') ? 
-          ((offer.market_price - adjustedISKCost) / offer.lp_cost).toFixed(4) : 'N/A';
+          ((offer.market_price * offer.quantity - adjustedISKCost) / offer.lp_cost).toFixed(4) : 'N/A';
         offer.loading = false;
       } catch (error) {
         console.error("Error fetching market price:", error);
@@ -370,6 +380,16 @@ const App = {
         </table>
         <p v-else>No available offers</p>
       </div>
+      <div class="esi-status">
+      <span v-if="esiStatus">
+        <span class="status-indicator" style="background-color: green;"></span> 
+        ESI Status: {{ esiStatus.players }} players online
+      </span>
+      <span v-else>
+        <span class="status-indicator" style="background-color: red;"></span> 
+        ESI Status: Unavailable
+      </span>
+    </div>
     </div>
   `
 };
