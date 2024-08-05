@@ -252,148 +252,157 @@ const App = {
     }
   },
   template: `
-    <div>
-      <div class="header">
-        <div class="header-left">
-          <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-          <button @click="goHome" class="btn btn-primary" style="display: inline; margin-left: 10px;">Home</button>
-        </div>
-        <div v-if="user">
-          <div class="profile-dropdown">
-            <span class="profile-name">{{ user.characterName }}</span>
-            <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
-            <div class="profile-dropdown-content">
-              <a href="#" @click="viewProfile">Profile</a>
-              <a href="#" @click="logout">Logout</a>
-            </div>
+  <div>
+    <div class="header">
+      <div class="header-left">
+        <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
+        <button @click="goHome" class="btn btn-primary" style="display: inline; margin-left: 10px;">Home</button>
+      </div>
+      <div v-if="user">
+        <div class="profile-dropdown">
+          <span class="profile-name">{{ user.characterName }}</span>
+          <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
+          <div class="profile-dropdown-content">
+            <a href="#" @click="viewProfile">Profile</a>
+            <a href="#" @click="logout">Logout</a>
           </div>
-        </div>
-        <div v-else>
-          <button @click="login" class="btn btn-primary">Login</button>
         </div>
       </div>
+      <div v-else>
+        <button @click="login" class="btn btn-primary">Login</button>
+      </div>
+    </div>
 
-      <div class="container mt-4">
-        <div class="controls d-flex flex-wrap">
-          <div class="me-3">
-            <label>Corporation</label>
-            <div class="d-flex align-items-center">
-              <select v-model="selectedCorp" class="form-select me-2">
-                <option v-for="corp in corporations" :key="corp.id" :value="corp.id">
-                  {{ corp.name }}
-                </option>
-              </select>
-              <button v-if="user" @click="setWaypoint(corporations.find(corp => corp.id === selectedCorp).stationID)" class="btn btn-secondary">Navigate</button>
-            </div>
-          </div>
-          <div class="me-3">
-            <label>Region</label>
-            <select v-model="selectedRegion" class="form-select">
-              <option v-for="region in regions" :key="region.id" :value="region.id">{{ region.name }}</option>
+    <div class="container mt-4">
+      <div class="controls d-flex flex-wrap">
+        <div class="control-item">
+          <label>Corporation</label>
+          <div class="d-flex align-items-center">
+            <select v-model="selectedCorp" class="form-select me-2">
+              <option v-for="corp in corporations" :key="corp.id" :value="corp.id">
+                {{ corp.name }}
+              </option>
             </select>
+            <button v-if="user" @click="setWaypoint(corporations.find(corp => corp.id === selectedCorp).stationID)" class="btn btn-secondary">Navigate</button>
           </div>
-          <div class="me-3">
-            <label>Order Type</label>
-            <div>
-              <label class="me-2">
-                <input type="radio" value="buy" v-model="orderType"> Buy
-              </label>
-              <label>
-                <input type="radio" value="sell" v-model="orderType"> Sell
-              </label>
-            </div>
-          </div>
-          <div class="me-3">
+        </div>
+        <div class="control-item">
+          <label>Region</label>
+          <select v-model="selectedRegion" class="form-select">
+            <option v-for="region in regions" :key="region.id" :value="region.id">{{ region.name }}</option>
+          </select>
+        </div>
+        <div class="control-item">
+          <label>Order Type</label>
+          <div>
+            <label class="me-2">
+              <input type="radio" value="buy" v-model="orderType"> Buy
+            </label>
             <label>
-              <input type="checkbox" v-model="includeBlueprints"> Include Blueprints
+              <input type="radio" value="sell" v-model="orderType"> Sell
             </label>
           </div>
-          <div class="me-3">
-            <label>Buy Resources</label>
-            <select v-model="buyResources" class="form-select">
-              <option value="none">None</option>
-              <option value="buy">Buy Orders</option>
-              <option value="sell">Sell Orders</option>
-            </select>
-          </div>
+        </div>
+        <div class="control-item">
+          <label>
+            <input type="checkbox" v-model="includeBlueprints"> Include Blueprints
+          </label>
+        </div>
+        <div class="control-item">
+          <label>Buy Resources</label>
+          <select v-model="buyResources" class="form-select">
+            <option value="none">None</option>
+            <option value="buy">Buy Orders</option>
+            <option value="sell">Sell Orders</option>
+          </select>
+        </div>
+        <div class="control-item">
           <button @click="fetchOffers" class="btn btn-primary">Search</button>
         </div>
       </div>
-      <div class="container mt-4" id="offers">
-        <div v-if="loading" class="table-loading">
-          <div class="spinner"></div> 
-        </div>
-        <table v-else-if="offers.length > 0" class="table table-striped sortable">
-          <thead>
-            <tr>
-              <th @click="sortOffers('item_name')">Item Name</th>
-              <th @click="sortOffers('required_items')">Required Items</th>
-              <th @click="sortOffers('lp_cost')">Total LP</th>
-              <th @click="sortOffers('total_isk_cost')">Total ISK</th>
-              <th @click="sortOffers('market_price')">Price</th>
-              <th @click="sortOffers('lp_isk')">LP/ISK</th>
-              <th @click="sortOffers('price_timestamp')">Price Age (Hours)</th> <!-- Add new column for price age -->
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="offer in offers" :key="offer.offer_id">
-              <td>
-                <span v-if="user" @click="openMarketDetails(offer.item_id)" class="text-primary" style="cursor: pointer;">
-                  {{ offer.item_name }}
-                </span>
-                <span v-else>{{ offer.item_name }}</span>
-                (Quantity: {{ offer.quantity }})
-              </td>
-              <td>
-                <div v-if="offer.required_items.length > 0">
-                  <div v-for="item in offer.required_items" :key="item.type_id" class="item-container">
-                    {{ item.quantity }} x 
-                    <span v-if="user" @click="openMarketDetails(item.type_id)" class="text-primary" style="cursor: pointer;">
-                      {{ item.type_name }}
-                    </span>
-                    <span v-else>{{ item.type_name }}</span>
-                    <span v-if="buyResources !== 'none'">(Price: {{ typeof item.market_price === 'number' ? item.market_price.toFixed(2) : item.market_price }})</span>
-                  </div>
-                </div>
-                <div v-else>
-                  No required items
-                </div>
-              </td>
-              <td>{{ offer.lp_cost }}</td>
-              <td>{{ typeof offer.isk_cost === 'number' ? offer.isk_cost.toFixed(2) : offer.isk_cost }}</td>
-              <td>
-                <div v-if="offer.loading">Loading...</div>
-                <div v-else>{{ typeof offer.market_price === 'number' ? offer.market_price.toFixed(2) : offer.market_price }}</div>
-              </td>
-              <td :class="{
-                'red-cell': offer.lp_isk < 500,
-                'yellow-cell': offer.lp_isk >= 500 && offer.lp_isk <= 1600,
-                'green-cell': offer.lp_isk > 1600
-              }">
-                <div v-if="offer.loading">Loading...</div>
-                <div v-else>{{ offer.lp_isk !== 'N/A' ? offer.lp_isk : 'N/A' }}</div>
-              </td>
-              <td>
-                <div v-if="offer.loading">Loading...</div>
-                <div v-else>{{ offer.price_timestamp ? calculateTimeDifference(offer.price_timestamp) : 'N/A' }}</div> <!-- Display time difference -->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else>No available offers</p>
+    </div>
+    <div class="container mt-4" id="offers">
+      <div v-if="loading" class="table-loading">
+        <div class="spinner"></div> <!-- Display spinner with text -->
       </div>
-      <div class="esi-status">
-      <span v-if="esiStatus">
-        <span class="status-indicator" style="background-color: green;"></span> 
-        ESI Status: {{ esiStatus.players }} players online
-      </span>
-      <span v-else>
-        <span class="status-indicator" style="background-color: red;"></span> 
-        ESI Status: Unavailable
-      </span>
+      <table v-else-if="offers.length > 0" class="table table-striped sortable">
+        <thead>
+          <tr>
+            <th @click="sortOffers('item_name')">Item Name</th>
+            <th @click="sortOffers('required_items')">Required Items</th>
+            <th @click="sortOffers('lp_cost')">Total LP</th>
+            <th @click="sortOffers('total_isk_cost')">Total ISK</th>
+            <th @click="sortOffers('market_price')">Price</th>
+            <th @click="sortOffers('lp_isk')">LP/ISK</th>
+            <th @click="sortOffers('price_timestamp')">Price Age (Hours)</th> <!-- Add new column for price age -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="offer in offers" :key="offer.offer_id">
+            <td>
+              <span v-if="user" @click="openMarketDetails(offer.item_id)" class="text-primary" style="cursor: pointer;">
+                {{ offer.item_name }}
+              </span>
+              <span v-else>{{ offer.item_name }}</span>
+              (Quantity: {{ offer.quantity }})
+            </td>
+            <td>
+              <div v-if="offer.required_items.length > 0">
+                <div v-for="item in offer.required_items" :key="item.type_id" class="item-container">
+                  {{ item.quantity }} x 
+                  <span v-if="user" @click="openMarketDetails(item.type_id)" class="text-primary" style="cursor: pointer;">
+                    {{ item.type_name }}
+                  </span>
+                  <span v-else>{{ item.type_name }}</span>
+                  <span v-if="buyResources !== 'none'">(Price: {{ typeof item.market_price === 'number' ? item.market_price.toFixed(2) : item.market_price }})</span>
+                </div>
+              </div>
+              <div v-else>
+                No required items
+              </div>
+            </td>
+            <td>{{ offer.lp_cost }}</td>
+            <td>{{ typeof offer.isk_cost === 'number' ? offer.isk_cost.toFixed(2) : offer.isk_cost }}</td>
+            <td>
+              <div v-if="offer.loading" class="table-loading">
+                <div class="spinner"></div> <!-- Display spinner with text -->
+              </div>
+              <div v-else>{{ typeof offer.market_price === 'number' ? offer.market_price.toFixed(2) : offer.market_price }}</div>
+            </td>
+            <td :class="{
+              'red-cell': offer.lp_isk < 500,
+              'yellow-cell': offer.lp_isk >= 500 && offer.lp_isk <= 1600,
+              'green-cell': offer.lp_isk > 1600
+            }">
+              <div v-if="offer.loading" class="table-loading">
+                <div class="spinner"></div> <!-- Display spinner with text -->
+              </div>
+              <div v-else>{{ offer.lp_isk !== 'N/A' ? offer.lp_isk : 'N/A' }}</div>
+            </td>
+            <td>
+              <div v-if="offer.loading" class="table-loading">
+                <div class="spinner"></div> <!-- Display spinner with text -->
+              </div>
+              <div v-else>{{ offer.price_timestamp ? calculateTimeDifference(offer.price_timestamp) : 'N/A' }}</div> <!-- Display time difference -->
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else>No available offers</p>
     </div>
-    </div>
-  `
+    <div class="esi-status">
+    <span v-if="esiStatus">
+      <span class="status-indicator" style="background-color: green;"></span> 
+      ESI Status: {{ esiStatus.players }} players online
+    </span>
+    <span v-else>
+      <span class="status-indicator" style="background-color: red;"></span> 
+      ESI Status: Unavailable
+    </span>
+  </div>
+  </div>
+`
+
 };
 
 createApp(App).mount('#app');
