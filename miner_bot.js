@@ -580,15 +580,27 @@ async function handleMiningLedger(interaction, initialPercentage = null) {
         const janiceData = await getMiningLedger(percentage);
         const { janiceLink, totalBuyPrice, pilotsData } = janiceData;
 
-        // Формируем ответ в виде таблицы
+        // Формируем основное сообщение
         let responseMessage = `**Janice Link:** [Click here](<${janiceLink}>)\n**Total Buy Price:** ${totalBuyPrice.toLocaleString()} ISK\n\n`;
 
         responseMessage += '**Pilots Data:**\n';
         responseMessage += `| Pilot | Janice Link | Total Buy Price |\n`;
         responseMessage += `|-------|-------------|-----------------|\n`;
 
+        const maxMessageLength = 2000;
+        let pilotDetails = '';
+
         for (const [pilot, data] of Object.entries(pilotsData)) {
-            responseMessage += `| **${pilot}** | [Click here](<${data.janiceLink}>) | ${data.totalBuyPrice.toLocaleString()} ISK |\n`;
+            const pilotInfo = `| **${pilot}** | [Click here](<${data.janiceLink}>) | ${data.totalBuyPrice.toLocaleString()} ISK |\n`;
+            if ((responseMessage + pilotDetails + pilotInfo).length > maxMessageLength) {
+                await interaction.followUp(pilotDetails);
+                pilotDetails = '';
+            }
+            pilotDetails += pilotInfo;
+        }
+
+        if (pilotDetails.length > 0) {
+            await interaction.followUp(pilotDetails);
         }
 
         const buttons = new ActionRowBuilder()
@@ -625,7 +637,7 @@ async function handleMiningLedger(interaction, initialPercentage = null) {
                 } else {
                     await i.update({ content: 'Ошибка: не удалось получить данные из кэша.', components: [] });
                 }
-            }   else if (i.customId === 'reject') {
+            } else if (i.customId === 'reject') {
                 await i.deferUpdate();
                 await i.editReply({ content: 'Пожалуйста, вызовите команду /ledger снова с новым процентом.', components: [] });
                 clearMiningCache();
@@ -644,7 +656,6 @@ async function handleMiningLedger(interaction, initialPercentage = null) {
 }
 
 async function handlePayouts(interaction) {
-
     if (interaction.channel.id !== LOG_CHANNEL_ID) {
         await interaction.reply('Эту команду можно выполнять только в канале с логами.');
         return;
@@ -666,28 +677,44 @@ async function handlePayouts(interaction) {
                 .setStyle(ButtonStyle.Secondary),
         );
 
-    await interaction.reply({ content: 'Кому вы хотите подтвердить выплаты?', components: [row] });
+    const selectQuery = 'SELECT id, pilot_name, payout, date FROM mining_data WHERE status = "Pending" ORDER BY date DESC';
+    connection.query(selectQuery, async (error, rows) => {
+        if (error) {
+            console.error(error);
+            await interaction.reply({ content: 'Произошла ошибка при получении данных.', ephemeral: true });
+            return;
+        }
 
-    const filter = i => i.customId === 'specific' || i.customId === 'all' || i.customId === 'all_except';
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+        if (rows.length === 0) {
+            await interaction.reply({ content: 'Нет записей со статусом "Pending".', ephemeral: true });
+            return;
+        }
 
-    collector.on('collect', async i => {
-        if (i.customId === 'all') {
-            const query = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending"';
-            connection.query(query, (error, results) => {
-                if (error) {
-                    console.error(error);
-                    return i.update({ content: 'Произошла ошибка при подтверждении выплат.', components: [] });
-                }
-                i.update({ content: 'Все выплаты подтверждены.', components: [] });
-            });
-        } else if (i.customId === 'specific') {
-            const selectQuery = 'SELECT id, pilot_name, payout FROM mining_data WHERE status = "Pending"';
-            connection.query(selectQuery, (error, rows) => {
-                if (error) {
-                    console.error(error);
-                    return i.update({ content: 'Произошла ошибка при получении данных.', components: [] });
-                }
+        // Формируем сообщение со списком пилотов
+        let responseMessage = '**Pending Payouts:**\n';
+        responseMessage += '| **Pilot** | **Price** | **Date** |\n';
+        responseMessage += '|-----------|-----------|-----------|\n';
+
+        for (const row of rows) {
+            responseMessage += `| ${row.pilot_name} | ${row.payout.toLocaleString()} ISK | ${row.date} |\n`;
+        }
+
+        await interaction.reply({ content: responseMessage, components: [row] });
+
+        const filter = i => i.customId === 'specific' || i.customId === 'all' || i.customId === 'all_except';
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 600000 });
+
+        collector.on('collect', async i => {
+            if (i.customId === 'all') {
+                const query = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending"';
+                connection.query(query, (error, results) => {
+                    if (error) {
+                        console.error(error);
+                        return i.update({ content: 'Произошла ошибка при подтверждении выплат.', components: [] });
+                    }
+                    i.update({ content: 'Все выплаты подтверждены.', components: [] });
+                });
+            } else if (i.customId === 'specific') {
                 const options = rows.map(row => ({
                     label: `${row.pilot_name} - ${row.payout}`,
                     value: row.id.toString()
@@ -718,56 +745,55 @@ async function handlePayouts(interaction) {
                         selectInteraction.update({ content: 'Выплаты подтверждены.', components: [] });
                     });
                 });
-            });
-        } else if (i.customId === 'all_except') {
-            await i.update({ content: 'Введите имена пилотов, которым НЕ будет произведена выплата, через запятую:', components: [] });
+            } else if (i.customId === 'all_except') {
+                await i.update({ content: 'Введите имена пилотов, которым НЕ будет произведена выплата, через запятую:', components: [] });
 
-            const filter = response => response.author.id === interaction.user.id;
-            const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
+                const filter = response => response.author.id === interaction.user.id;
+                const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
 
-            collector.on('collect', async response => {
-                const names = response.content.split(',').map(name => name.trim());
+                collector.on('collect', async response => {
+                    const names = response.content.split(',').map(name => name.trim());
 
-                if (names.length === 0) {
-                    return response.reply('Не было введено ни одного имени.');
-                }
-
-                const dateQuery = 'SELECT MAX(date) AS lastDate FROM mining_data WHERE status = "Pending"';
-                connection.query(dateQuery, (error, results) => {
-                    if (error) {
-                        console.error(error);
-                        return response.reply('Произошла ошибка при получении даты.');
+                    if (names.length === 0) {
+                        return response.reply('Не было введено ни одного имени.');
                     }
 
-                    const lastDate = results[0].lastDate;
-
-                    const rejectQuery = 'UPDATE mining_data SET status = "Rejected" WHERE pilot_name IN (?) AND status = "Pending" AND date = ?';
-                    connection.query(rejectQuery, [names, lastDate], (error, results) => {
+                    const dateQuery = 'SELECT MAX(date) AS lastDate FROM mining_data WHERE status = "Pending"';
+                    connection.query(dateQuery, (error, results) => {
                         if (error) {
                             console.error(error);
-                            return response.reply('Произошла ошибка при отклонении выплат.');
+                            return response.reply('Произошла ошибка при получении даты.');
                         }
 
-                        const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending" AND pilot_name NOT IN (?) AND date = ?';
-                        connection.query(updateQuery, [names, lastDate], (error, results) => {
+                        const lastDate = results[0].lastDate;
+
+                        const rejectQuery = 'UPDATE mining_data SET status = "Rejected" WHERE pilot_name IN (?) AND status = "Pending" AND date = ?';
+                        connection.query(rejectQuery, [names, lastDate], (error, results) => {
                             if (error) {
                                 console.error(error);
-                                return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
+                                return response.reply('Произошла ошибка при отклонении выплат.');
                             }
 
-                            response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
+                            const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending" AND pilot_name NOT IN (?) AND date = ?';
+                            connection.query(updateQuery, [names, lastDate], (error, results) => {
+                                if (error) {
+                                    console.error(error);
+                                    return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
+                                }
+
+                                response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
+                            });
+                        });
+
+                        collector.on('end', collected => {
+                            if (collected.size === 0) {
+                                i.followUp({ content: 'Время для ввода причины истекло.', components: [] });
+                            }
                         });
                     });
-     
-
-                    collector.on('end', collected => {
-                        if (collected.size === 0) {
-                            selectInteraction.followUp({ content: 'Время для ввода причины истекло.', components: [] });
-                        }
-                    });
                 });
-            });
-        }
+            }
+        });
     });
 }
 

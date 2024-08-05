@@ -123,7 +123,7 @@ async function getPlayerInfo(accessToken, percentage) {
 
 async function getCorporationMiningObservers(corporation_id, accessToken, percentage) {
   try {
-    const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/?datasource=tranquility&page=1`;
+    const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/?datasource=tranquility`;
     console.log(`Requesting data from URL: ${url}`);
 
     const response = await axios.get(url, {
@@ -154,7 +154,7 @@ async function getCorporationMiningLedger(corporation_id, observer_id, structure
     previousDate.setDate(previousDate.getDate() - 1);
     validDates.push(previousDate.toISOString().split('T')[0]);
   }
-
+  console.log(observer_id);
   while (hasMoreData) {
     try {
       const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/${observer_id}/?datasource=tranquility&page=${page}`;
