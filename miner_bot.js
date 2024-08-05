@@ -693,7 +693,8 @@ async function handlePayouts(interaction) {
         // Формируем сообщение со списком пилотов
         let responseMessage = '**Pending Payouts:**\n';
         for (const row of rows) {
-            responseMessage += `**${row.pilot_name}** - ${row.payout.toLocaleString()} ISK - ${row.date}\n`;
+            const formattedDate = new Date(row.date).toISOString().split('T')[0]; // Приводим дату к формату гггг-мм-дд
+            responseMessage += `**${row.pilot_name}** - ${row.payout.toLocaleString()} ISK - ${formattedDate}\n`;
         }
 
         if (responseMessage.length > 2000) {
