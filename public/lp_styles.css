@@ -97,10 +97,20 @@ button:hover {
   margin-bottom: 20px;
 }
 
-.profile-dropdown {
-  position: relative;
-  display: inline-block;
+.header-left h1 {
+  margin-right: 20px;
 }
+
+.profile-dropdown {
+  display: flex;
+  align-items: center;
+}
+
+.profile-name {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
 
 .profile-dropdown-content {
   display: none;

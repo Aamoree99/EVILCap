@@ -40,16 +40,21 @@ const Profile = {
   template: `
     <div>
       <div class="header">
-        <h1 @click="goToLPCalc" style="cursor: pointer;">LP Store Calculator</h1>
-        <button @click="goHome" class="btn btn-primary">Home</button>
+        <div class="header-left">
+          <h1 @click="goToLPCalc" style="cursor: pointer;">LP Store Calculator</h1>
+          <button @click="goHome" class="btn btn-primary">Home</button>
+        </div>
         <div v-if="user">
           <div class="profile-dropdown">
-            <span>{{ user.characterName }}</span>
-            <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=256'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
+            <span class="profile-name">{{ user.characterName }}</span>
+            <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
             <div class="profile-dropdown-content">
               <a href="#" @click="logout">Logout</a>
             </div>
           </div>
+        </div>
+        <div v-else>
+          <button @click="login" class="btn btn-primary">Login</button>
         </div>
       </div>
       <div v-if="loading">Loading profile data...</div>
