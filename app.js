@@ -9,6 +9,7 @@ const querystring = require('querystring');
 const crypto = require('crypto');
 require('dotenv').config();
 const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
+const lpApp = require('./lp_app');
 
 const app = express();
 const port = 8080; // Порт, на котором будет запущен сервер
@@ -28,12 +29,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(session({
-    secret: process.env.SESSION_SECRET, // Замените на ваш секретный ключ
+    secret: process.env.SESSION_SECRET, 
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: false, // Используйте true для HTTPS
-        maxAge: 15 * 60 * 1000 // Установить время жизни сессии на 24 часа (в миллисекундах)
+        secure: false, 
+        maxAge: 15 * 60 * 1000 
     }
 
 }));
@@ -61,7 +62,7 @@ app.get('/callback', async (req, res) => {
         return res.status(400).send('Invalid state parameter.');
     }
 
-    stateStore.delete(state); // Удаляем состояние после использования
+    stateStore.delete(state); 
 
     try {
         const response = await axios.post('https://login.eveonline.com/v2/oauth/token', querystring.stringify({
@@ -790,6 +791,8 @@ function fetchDataFromDB() {
 app.get('/rules', (req, res) => {
     res.render('rules');
 });
+
+app.use('/lp', lpApp);
 
 fetchDataFromDB();
 recalculatePilotStats();
