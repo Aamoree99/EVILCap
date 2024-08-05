@@ -320,7 +320,9 @@ const App = {
         </div>
       </div>
       <div class="container mt-4" id="offers">
-        <div v-if="loading">Loading data...</div> <!-- Display loading message -->
+        <div v-if="loading" class="table-loading">
+          <div class="spinner"></div> 
+        </div>
         <table v-else-if="offers.length > 0" class="table table-striped sortable">
           <thead>
             <tr>
