@@ -92,7 +92,7 @@ const Profile = {
               <div v-else>
                 <p>Advantages of the Pro version:</p>
                 <ul>
-                  <li>More accurate LP calculations based on skills and standings (currently only for Jita 4-4)</li>
+                  <li>More accurate LP calculations based on skills and standings (currently for Jita 4-4, Amarr, Dodixie, and Hek)</li>
                 </ul>
                 <button @click="showModal = true" class="btn btn-primary">Become Pro</button>
               </div>
