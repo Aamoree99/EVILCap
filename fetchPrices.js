@@ -3,22 +3,36 @@ const connection = require('./db_connect.js');
 const { logMessage } = require('./bot.js');
 
 const MAIN_REGIONS = [10000002, 10000032, 10000042, 10000043];
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 200; // in milliseconds
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const getMarketPrice = async (typeId, regionId, orderType) => {
-  try {
-    const response = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=${orderType}&page=1&type_id=${typeId}`);
-    const orders = response.data;
-    if (orders.length === 0) return null;
+  let attempts = 0;
+  while (attempts < MAX_RETRIES) {
+    try {
+      const response = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=${orderType}&page=1&type_id=${typeId}`);
+      const orders = response.data;
+      if (orders.length === 0) return null;
 
-    if (orderType === 'sell') {
-      return Math.min(...orders.map(order => order.price));
-    } else {
-      return Math.max(...orders.map(order => order.price));
+      if (orderType === 'sell') {
+        return Math.min(...orders.map(order => order.price));
+      } else {
+        return Math.max(...orders.map(order => order.price));
+      }
+    } catch (error) {
+      if (error.code === 'ERRCONNECT' || error.response.status === 500 || error.response.status === 503) {
+        console.error(`Connection error fetching market price for type ${typeId} in region ${regionId}. Attempt ${attempts + 1} of ${MAX_RETRIES}`);
+        attempts++;
+        await delay(RETRY_DELAY);
+      } else {
+        console.error(`Error fetching market price for type ${typeId} in region ${regionId}:`, error);
+        throw error;
+      }
     }
-  } catch (error) {
-    console.error(`Error fetching market price for type ${typeId} in region ${regionId}:`, error);
-    throw error;
   }
+  throw new Error(`Failed to fetch market price for type ${typeId} in region ${regionId} after ${MAX_RETRIES} attempts`);
 };
 
 const saveMarketPrice = async (typeId, regionId, orderType, price) => {
@@ -41,7 +55,6 @@ const updatePricesForRegions = async (regionIds) => {
     const itemIdsSet = new Set([...itemsResult.map(row => row.id), ...offersResult.map(row => row.id)]);
     const itemIds = Array.from(itemIdsSet);
     const orderTypes = ['sell', 'buy'];
-
 
     for (const regionId of regionIds) {
       console.log(`Processing region ${regionId}`);
@@ -71,6 +84,7 @@ const updatePricesForMainRegions = async () => {
   } catch (error) {
     console.error('Error updating market prices for main regions:', error);
   } finally {
+    connection.end();
   }
 };
 
@@ -82,6 +96,7 @@ const updatePricesForOtherRegions = async () => {
   } catch (error) {
     console.error('Error updating market prices for other regions:', error);
   } finally {
+    connection.end();
   }
 };
 
