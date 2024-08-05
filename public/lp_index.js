@@ -191,6 +191,9 @@ const App = {
         return result * this.sortOrder;
       });
     },
+    goHome() {
+      window.location.href = '/';
+    },
     async setWaypoint(destinationID) {
       if (!this.user) {
         alert('You need to be logged in to set a waypoint.');
@@ -239,6 +242,7 @@ const App = {
     <div>
       <div class="header">
         <h1 @click="goToLPCalc" style="cursor: pointer;">LP Store Calculator</h1>
+        <button @click="goHome" class="btn btn-primary">Home</button>
         <div v-if="user">
           <div class="profile-dropdown">
             <span style="margin-right:20px">{{ user.characterName }}</span>

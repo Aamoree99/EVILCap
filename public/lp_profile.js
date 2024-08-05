@@ -32,12 +32,16 @@ const Profile = {
     },
     goToLPCalc() {
       window.location.href = '/lp/lp_calc';
+    },
+    goHome() {
+      window.location.href = '/';
     }
   },
   template: `
     <div>
       <div class="header">
         <h1 @click="goToLPCalc" style="cursor: pointer;">LP Store Calculator</h1>
+        <button @click="goHome" class="btn btn-primary">Home</button>
         <div v-if="user">
           <div class="profile-dropdown">
             <span>{{ user.characterName }}</span>
