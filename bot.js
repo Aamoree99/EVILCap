@@ -3419,6 +3419,18 @@ function queryDatabase(query, params) {
     });
 }
 
+const logMessage = async (message) => {
+    try {
+      const channel = await client.channels.fetch(LOG_CHANNEL_ID);
+      if (channel) {
+        await channel.send(message);
+      } else {
+        console.error('Log channel not found.');
+      }
+    } catch (error) {
+      console.error('Error logging message to Discord:', error);
+    }
+  };
 
 client.login(token); 
 

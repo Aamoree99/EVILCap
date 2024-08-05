@@ -1,5 +1,6 @@
 const axios = require('axios');
 const connection = require('./db_connect.js');
+const { logMessage } = require('./bot.js');
 
 const MAIN_REGIONS = [10000002, 10000032, 10000042, 10000043];
 
@@ -58,7 +59,7 @@ const updatePricesForRegions = async (regionIds) => {
       }
     }
 
-    console.log('Market prices updated successfully.');
+    await logMessage('Market prices updated successfully.');
   } catch (error) {
     console.error('Error updating market prices:', error);
   }
@@ -70,7 +71,6 @@ const updatePricesForMainRegions = async () => {
   } catch (error) {
     console.error('Error updating market prices for main regions:', error);
   } finally {
-    connection.end();
   }
 };
 
@@ -82,7 +82,6 @@ const updatePricesForOtherRegions = async () => {
   } catch (error) {
     console.error('Error updating market prices for other regions:', error);
   } finally {
-    connection.end();
   }
 };
 
