@@ -87,7 +87,8 @@ const Profile = {
             <div class="profile-subscription">
               <h3>Subscription</h3>
               <div v-if="user.subscription">
-                <p>Thank you for supporting our service!</p>
+                <p>We deeply appreciate your support!</p>
+                <p>Your subscription helps us continue to improve and offer the best experience possible. Thank you for being an integral part of our community!</p>
               </div>
               <div v-else>
                 <p>Advantages of the Pro version:</p>
