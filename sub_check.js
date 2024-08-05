@@ -5,7 +5,6 @@ const querystring = require('querystring');
 const connection = require('./db_connect.js');
 
 
-// Функция для получения токена из базы данных
 function getToken() {
   return new Promise((resolve, reject) => {
     connection.query('SELECT * FROM tokens WHERE name = "main_donate"', (error, results) => {
@@ -17,7 +16,6 @@ function getToken() {
   });
 }
 
-// Функция для обновления токена в базе данных
 function updateToken(accessToken, refreshToken, expiresAt) {
   return new Promise((resolve, reject) => {
     connection.query('UPDATE tokens SET access_token = ?, refresh_token = ?, expires_at = ? WHERE name = "main_donate"', 
@@ -31,7 +29,6 @@ function updateToken(accessToken, refreshToken, expiresAt) {
   });
 }
 
-// Функция для обновления токена через API
 async function refreshToken(token) {
   try {
     const response = await axios.post('https://login.eveonline.com/v2/oauth/token', querystring.stringify({
@@ -58,7 +55,6 @@ async function refreshToken(token) {
   }
 }
 
-// Функция для получения валидного токена
 async function getValidToken() {
   try {
     const token = await getToken();
@@ -77,7 +73,6 @@ async function getValidToken() {
   }
 }
 
-// Функция для проверки донатов
 async function checkDonations() {
   try {
     const accessToken = await getValidToken();

@@ -17,7 +17,7 @@ const {
     EmbedBuilder
 } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const connection = require('./db_connect');
+const connection = require('./db_connect.js');
 const mysql = require('mysql2');
 require('dotenv').config();
 const { format } = require('date-fns');

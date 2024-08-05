@@ -1,10 +1,11 @@
 const axios = require('axios');
 const connection = require('./db_connect.js');
+const mysql = require('mysql2');
 const { logMessage } = require('./bot.js');
 
 const MAIN_REGIONS = [10000002, 10000032, 10000042, 10000043];
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 200; // in milliseconds
+const RETRY_DELAY = 3000; // in milliseconds
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -22,7 +23,7 @@ const getMarketPrice = async (typeId, regionId, orderType) => {
         return Math.max(...orders.map(order => order.price));
       }
     } catch (error) {
-      if (error.code === 'ERRCONNECT' || error.response.status === 500 || error.response.status === 503) {
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERRCONNECT' || (error.response && (error.response.status === 500 || error.response.status === 503))) {
         console.error(`Connection error fetching market price for type ${typeId} in region ${regionId}. Attempt ${attempts + 1} of ${MAX_RETRIES}`);
         attempts++;
         await delay(RETRY_DELAY);
@@ -34,6 +35,7 @@ const getMarketPrice = async (typeId, regionId, orderType) => {
   }
   throw new Error(`Failed to fetch market price for type ${typeId} in region ${regionId} after ${MAX_RETRIES} attempts`);
 };
+
 
 const saveMarketPrice = async (typeId, regionId, orderType, price) => {
   try {

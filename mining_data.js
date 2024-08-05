@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const connection = require('./db_connect'); // Подключение к базе данных
+const connection = require('./db_connect.js'); // Подключение к базе данных
 const app = express();
 const port = 3000;
 

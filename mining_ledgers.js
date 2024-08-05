@@ -1,5 +1,5 @@
 const axios = require('axios');
-const connection = require('./db_connect');
+const connection = require('./db_connect.js');
 const moment = require('moment');
 require('dotenv').config();
 

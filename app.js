@@ -12,7 +12,7 @@ const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 const lpApp = require('./lp_app');
 
 const app = express();
-const port = 8080; // Порт, на котором будет запущен сервер
+const port = 8080; 
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const redirectUri = 'https://evil-capybara.space/callback';
