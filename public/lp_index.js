@@ -245,14 +245,15 @@ const App = {
     <div>
       <div class="header">
         <div class="header-left">
-          <h1 @click="goToLPCalc" style="cursor: pointer;">LP Store Calculator</h1>
-          <button @click="goHome" class="btn btn-primary">Home</button>
+          <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
+          <button @click="goHome" class="btn btn-primary" style="display: inline; margin-left: 10px;">Home</button>
         </div>
         <div v-if="user">
           <div class="profile-dropdown">
             <span class="profile-name">{{ user.characterName }}</span>
             <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
             <div class="profile-dropdown-content">
+              <a href="#" @click="viewProfile">Profile</a>
               <a href="#" @click="logout">Logout</a>
             </div>
           </div>

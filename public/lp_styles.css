@@ -97,6 +97,11 @@ button:hover {
   margin-bottom: 20px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
 .header-left h1 {
   margin-right: 20px;
 }
