@@ -751,48 +751,61 @@ async function handlePayouts(interaction) {
                 await i.update({ content: 'Введите имена пилотов, которым НЕ будет произведена выплата, через запятую:', components: [] });
 
                 const filter = response => response.author.id === interaction.user.id;
-                const collector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
+                const nameCollector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
 
-                collector.on('collect', async response => {
+                nameCollector.on('collect', async response => {
                     const names = response.content.split(',').map(name => name.trim());
 
                     if (names.length === 0) {
                         return response.reply('Не было введено ни одного имени.');
                     }
 
-                    const dateQuery = 'SELECT MAX(date) AS lastDate FROM mining_data WHERE status = "Pending"';
-                    connection.query(dateQuery, (error, results) => {
-                        if (error) {
-                            console.error(error);
-                            return response.reply('Произошла ошибка при получении даты.');
-                        }
+                    await response.reply('Введите причину отклонения выплат:');
+                    const reasonCollector = interaction.channel.createMessageCollector({ filter, time: 60000, max: 1 });
 
-                        const lastDate = results[0].lastDate;
+                    reasonCollector.on('collect', async reasonResponse => {
+                        const reason = reasonResponse.content;
 
-                        const rejectQuery = 'UPDATE mining_data SET status = "Rejected" WHERE pilot_name IN (?) AND status = "Pending" AND date = ?';
-                        connection.query(rejectQuery, [names, lastDate], (error, results) => {
+                        const dateQuery = 'SELECT MAX(date) AS lastDate FROM mining_data WHERE status = "Pending"';
+                        connection.query(dateQuery, (error, results) => {
                             if (error) {
                                 console.error(error);
-                                return response.reply('Произошла ошибка при отклонении выплат.');
+                                return reasonResponse.reply('Произошла ошибка при получении даты.');
                             }
 
-                            const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending" AND pilot_name NOT IN (?) AND date = ?';
-                            connection.query(updateQuery, [names, lastDate], (error, results) => {
+                            const lastDate = results[0].lastDate;
+
+                            const rejectQuery = 'UPDATE mining_data SET status = "Rejected", rejection_reason = ? WHERE pilot_name IN (?) AND status = "Pending" AND date = ?';
+                            connection.query(rejectQuery, [reason, names, lastDate], (error, results) => {
                                 if (error) {
                                     console.error(error);
-                                    return response.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
+                                    return reasonResponse.reply('Произошла ошибка при отклонении выплат.');
                                 }
 
-                                response.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
+                                const updateQuery = 'UPDATE mining_data SET status = "Paid" WHERE status = "Pending" AND pilot_name NOT IN (?) AND date = ?';
+                                connection.query(updateQuery, [names, lastDate], (error, results) => {
+                                    if (error) {
+                                        console.error(error);
+                                        return reasonResponse.reply('Произошла ошибка при подтверждении выплат для остальных пилотов.');
+                                    }
+
+                                    reasonResponse.reply('Выплаты отклонены для выбранных пилотов, выплачены остальным.');
+                                });
                             });
                         });
-
-                        collector.on('end', collected => {
-                            if (collected.size === 0) {
-                                i.followUp({ content: 'Время для ввода причины истекло.', components: [] });
-                            }
-                        });
                     });
+
+                    reasonCollector.on('end', collected => {
+                        if (collected.size === 0) {
+                            response.followUp({ content: 'Время для ввода причины истекло.', components: [] });
+                        }
+                    });
+                });
+
+                nameCollector.on('end', collected => {
+                    if (collected.size === 0) {
+                        i.followUp({ content: 'Время для ввода имен истекло.', components: [] });
+                    }
                 });
             }
         });
