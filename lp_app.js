@@ -14,7 +14,7 @@ const { checkDonations }= require('./sub_check.js');
 const lpApp = express();
 
 const clientId = process.env.LP_CLIENT_ID;
-const redirectUri = 'http://localhost:3000/lp_callback';
+const redirectUri = 'https://evil-capybara.space/lp/lp_callback';
 const scope = 'publicData esi-location.read_location.v1 esi-skills.read_skills.v1 esi-wallet.read_character_wallet.v1 esi-ui.open_window.v1 esi-ui.write_waypoint.v1 esi-characters.read_loyalty.v1 esi-characters.read_standings.v1';
 
 const stateStore = new Map();
