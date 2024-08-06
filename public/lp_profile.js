@@ -93,7 +93,7 @@ const Profile = {
               <div v-if="user.subscription">
                 <p>We deeply appreciate your support!</p>
                 <p>Your subscription helps us continue to improve and offer the best experience possible. Thank you for being an integral part of our community!</p>
-                <p>Your subscription expires on: {{ user.subscription.expires_at }}</p>
+                <p>Your subscription expires on: {{ user.subscription.subscription_end }}</p>
               </div>
               <div v-else>
                 <p>Advantages of the Pro version:</p>
