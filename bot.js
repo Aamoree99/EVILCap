@@ -18,6 +18,15 @@ const {
 } = require('discord.js');
 
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { 
+    joinVoiceChannel, 
+    createAudioPlayer, 
+    createAudioResource, 
+    AudioPlayerStatus, 
+    VoiceConnectionStatus, 
+    EndBehaviorType, 
+    getVoiceConnection 
+} = require('@discordjs/voice');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const axios = require('axios');
@@ -3431,6 +3440,99 @@ const logMessage = async (message) => {
       console.error('Error logging message to Discord:', error);
     }
   };
+
+
+  async function getSpeechFiles() {
+    try {
+        const files = await fs.readdir('./speeches/');
+        return files.filter(file => file.startsWith('speech') && file.endsWith('.mp3'));
+    } catch (error) {
+        console.error('Error reading directory:', error);
+        return [];
+    }
+}
+
+async function playSpeech(v_connection) {
+    const player = createAudioPlayer();
+    const files = await getSpeechFiles();
+    
+    if (files.length === 0) {
+        console.error('No audio files found!');
+        return;
+    }
+
+    let currentIndex = 0; // Индекс текущего файла
+
+    const playNext = async () => {
+        if (files.length === 0) return;
+
+        const filePath = path.join('./speeches/', files[currentIndex]);
+        console.log('Playing file:', filePath);
+
+        try {
+            const resource = createAudioResource(filePath, { inlineVolume: true });
+            player.play(resource);
+            v_connection.subscribe(player);
+
+            player.on(AudioPlayerStatus.Idle, () => {
+                currentIndex = (currentIndex + 1) % files.length; // Перейти к следующему файлу или вернуться к первому
+                setTimeout(playNext, 30000); // 1 минута паузы
+            });
+
+            player.on('error', error => {
+                console.error('Error playing file:', error);
+            });
+        } catch (error) {
+            console.error('Error creating audio resource:', error);
+        }
+    };
+
+    playNext();
+}
+
+client.on('messageCreate', async message => {
+    if (message.content.startsWith('!join')) {
+        const args = message.content.split(' ');
+        const channelId = args[1];
+
+        if (!channelId) {
+            message.reply('Please provide a channel ID!');
+            return;
+        }
+
+        const channel = await client.channels.fetch(channelId);
+        if (channel && channel.type === ChannelType.GuildVoice) {
+            const v_connection = joinVoiceChannel({
+                channelId: channel.id,
+                guildId: channel.guild.id,
+                adapterCreator: channel.guild.voiceAdapterCreator,
+            });
+
+            v_connection.on(VoiceConnectionStatus.Ready, () => {
+                console.log('The bot has connected to the channel!');
+                playSpeech(v_connection);
+            });
+
+            v_connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+                try {
+                    await Promise.race([
+                        entersState(v_connection, VoiceConnectionStatus.Signalling, 5_000),
+                        entersState(v_connection, VoiceConnectionStatus.Connecting, 5_000),
+                    ]);
+                } catch (error) {
+                    v_connection.destroy();
+                }
+            });
+        } else {
+            message.reply('The channel is not a voice channel or does not exist!');
+        }
+    } else if (message.content === '!leave') {
+        const v_connection = getVoiceConnection(message.guild.id);
+        if (v_connection) {
+            v_connection.destroy();
+        }
+    }
+});
 
 client.login(token); 
 
