@@ -32,6 +32,10 @@ lpApp.use(session({
   }
 }));
 
+cron.schedule('0 0 * * *', async () => {
+  await checkAndCleanSubscriptions();
+});
+
 cron.schedule('*/15 * * * *', () => {
   console.log('Checking for new donations every 15 minutes');
   checkDonations();

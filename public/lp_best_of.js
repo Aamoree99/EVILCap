@@ -17,7 +17,7 @@ const BestO = {
       this.user = userResponse.data || null;
       console.log("Данные пользователя:", this.user);
 
-      if (this.user && this.user.subscription && this.user.subscription.isPro) {
+      if (this.user && this.user.subscription) {
         this.hasPro = true;
         const bestOffersResponse = await axios.get('/lp/api/best-offers');
         this.bestOffers = bestOffersResponse.data;

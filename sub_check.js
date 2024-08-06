@@ -82,12 +82,19 @@ async function checkDonations() {
     });
 
     console.log(response.data[0]);
+    const now = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const donations = response.data.filter(entry => 
-      entry.ref_type === 'player_donation' && 
-      entry.reason === 'Pro Subscription' &&
-      entry.amount >= 50000000
-    );
+    const donations = response.data.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return (
+        entry.ref_type === 'player_donation' && 
+        entry.description.includes("deposited cash into Aamoree's account") &&
+        entry.amount >= 50000000 &&
+        entryDate >= oneMonthAgo
+      );
+    });
 
     for (const donation of donations) {
       const donorNameMatch = donation.description.match(/(.*?) deposited cash into Aamoree's account/);
@@ -99,7 +106,6 @@ async function checkDonations() {
       const donationAmount = Math.abs(donation.amount);
       const monthsToAdd = Math.floor(donationAmount / 50000000);
       const transactionId = donation.id;
-      console.log(donorName);
 
       const [existingSubscription] = await connection.promise().query('SELECT * FROM subscriptions WHERE name = ? AND transaction_id = ?', [donorName, transactionId]);
 
@@ -129,6 +135,25 @@ async function checkDonations() {
   }
 }
 
+async function checkAndCleanSubscriptions() {
+  try {
+    const [subscriptions] = await connection.query('SELECT * FROM subscriptions');
+
+    const now = new Date();
+
+    for (const sub of subscriptions) {
+      if (new Date(sub.subscription_end) <= now) {
+        await connection.query('DELETE FROM subscriptions WHERE id = ?', [sub.id]);
+      }
+    }
+    
+    console.log('Subscriptions checked and cleaned.');
+  } catch (error) {
+    console.error('Error checking and cleaning subscriptions:', error);
+  }
+}
+
 module.exports = {
-  checkDonations
+  checkDonations,
+  checkAndCleanSubscriptions
 };

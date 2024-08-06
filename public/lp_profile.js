@@ -46,7 +46,7 @@ const Profile = {
         <div class="header-left">
           <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
           <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
-          <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription && user.subscription.isPro">Today Best Offer</button>
+          <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription">Today Best Offer</button>
         </div>
         <div v-if="user">
           <div class="profile-dropdown">
