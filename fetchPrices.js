@@ -124,6 +124,7 @@ const calculateAndSaveBestOffers = async () => {
 
         if (!selectedOffers.has(offer.item_id)) {
           let totalISKCost = offer.isk_cost;
+          let totalLPCost = offer.lp_cost;
 
           if (offer.required_items) {
             let requiredItems = JSON.parse(offer.required_items);
@@ -135,10 +136,18 @@ const calculateAndSaveBestOffers = async () => {
               `, [item.type_id]);
               const itemPrice = itemResults.length > 0 ? itemResults[0].price : 0;
               totalISKCost += item.quantity * itemPrice;
+
+              const [lpResults] = await connection.promise().query(`
+                SELECT lp_cost FROM Offers
+                WHERE item_id = ?
+                LIMIT 1
+              `, [item.type_id]);
+              const itemLPCost = lpResults.length > 0 ? lpResults[0].lp_cost : 0;
+              totalLPCost += item.quantity * itemLPCost;
             }
           }
 
-          const lpToISK = (offer.market_price * offer.quantity - totalISKCost) / offer.lp_cost;
+          const lpToISK = (offer.market_price * offer.quantity - totalISKCost) / totalLPCost;
 
           bestOffers.push({
             corp_id: corp.id,
@@ -154,17 +163,16 @@ const calculateAndSaveBestOffers = async () => {
       }
     }
 
-    // Сохраняем результаты в таблицу в БД
-    await connection.promise().query('DELETE FROM BestOffers'); // Очистка таблицы перед записью новых данных
+    await connection.promise().query('DELETE FROM BestOffers'); 
     const insertPromises = bestOffers.map(offer => {
       return connection.promise().query('INSERT INTO BestOffers (corp_id, corporation, item, item_id, lpToISK) VALUES (?, ?, ?, ?, ?)', 
       [offer.corp_id, offer.corporation, offer.item, offer.item_id, offer.lpToISK]);
     });
     await Promise.all(insertPromises);
     
-    console.log('Best offers calculated and saved successfully.');
+    console.log('Лучшие предложения успешно рассчитаны и сохранены.');
   } catch (error) {
-    console.error('Error calculating and saving best offers:', error);
+    console.error('Ошибка при расчете и сохранении лучших предложений:', error);
   }
 };
 
