@@ -125,10 +125,10 @@ const BestO = {
             <p v-else>No available offers</p>
           </div>
         </div>
-        <div v-else>
-          <p>You need a Pro subscription to access this page. Please visit your profile to upgrade your subscription.</p>
-          <button @click="viewProfile" class="btn">Go to Profile</button>
-        </div>
+        <div v-if="!hasPro">
+            <p>You need a Pro subscription to access this page. Please visit your profile to upgrade your subscription.</p>
+            <button @click="viewProfile" class="btn">Go to Profile</button>
+        </div
       </div>
       <div v-if="showSubscriptionMessage && !user">
         <p>You need to log in and have a Pro subscription to access this page. Please log in or upgrade your subscription.</p>
