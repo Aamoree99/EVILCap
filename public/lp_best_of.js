@@ -98,6 +98,10 @@ const BestO = {
       </div>
       <div v-else>
         <div v-if="hasPro">
+        <div class="container mt-4">
+        <div class="alert alert-warning" role="alert">
+            <strong>Note:</strong> This is a beta feature and may contain errors or produce significantly large values.
+        </div>
           <div v-for="corp in sortedGroupedOffers" :key="corp.corporation" style="margin-bottom: 20px;">
             <h3>{{ corp.corporation }}</h3>
             <table v-if="corp.offers.length > 0" class="table table-striped">
