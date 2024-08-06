@@ -74,69 +74,6 @@ const BestO = {
       }
     }
   },
-  template: `
-  <div>
-    <div class="header">
-      <div class="header-left">
-        <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
-      </div>
-      <div v-if="user">
-        <div class="profile-dropdown">
-          <span class="profile-name">{{ user.characterName }}</span>
-          <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
-          <div class="profile-dropdown-content">
-            <a href="#" @click="viewProfile">Profile</a>
-            <a href="#" @click="logout">Logout</a>
-          </div>
-        </div>
-      </div>
-      <div v-else>
-        <button @click="login" class="btn">Login</button>
-      </div>
-    </div>
-    
-    <div class="container mt-4">
-      <div v-if="loading" class="table-loading">
-        <div class="spinner"></div> 
-      </div>
-      <div v-else>
-        <div v-if="hasPro">
-        <div class="container mt-4">
-            <div class="alert alert-warning" role="alert">
-                <strong>Note:</strong> This is a beta feature and may contain errors or produce significantly large values.
-            </div>
-          <div v-for="corp in sortedGroupedOffers" :key="corp.corporation" style="margin-bottom: 20px;">
-            <h3>{{ corp.corporation }}</h3>
-            <table v-if="corp.offers.length > 0" class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Offer</th>
-                  <th>LP/ISK</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="offer in corp.offers" :key="offer.item">
-                  <td><span @click="openMarketDetails(offer.item_id)" class="text-primary" style="cursor: pointer;">{{ offer.item }}</span></td>
-                  <td>{{ offer.lpToISK }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <p v-else>No available offers</p>
-          </div>
-        </div>
-        <div v-if="!hasPro">
-            <p>You need a Pro subscription to access this page. Please visit your profile to upgrade your subscription.</p>
-            <button @click="viewProfile" class="btn">Go to Profile</button>
-        </div
-      </div>
-      <div v-if="showSubscriptionMessage && !user">
-        <p>You need to log in and have a Pro subscription to access this page. Please log in or upgrade your subscription.</p>
-        <button @click="login" class="btn">Login</button>
-      </div>
-    </div>
-  </div>
-  `,
   computed: {
     groupedOffers() {
       const groups = {};
@@ -158,7 +95,69 @@ const BestO = {
         return maxB - maxA;
       });
     }
-  }
+  },
+  template: `
+  <div>
+    <div class="header">
+      <div class="header-left">
+        <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
+        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+      </div>
+      <div v-if="user" class="header-right">
+        <div class="profile-dropdown">
+          <span class="profile-name">{{ user.characterName }}</span>
+          <img :src="'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128'" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
+          <div class="profile-dropdown-content">
+            <a href="#" @click="viewProfile">Profile</a>
+            <a href="#" @click="logout">Logout</a>
+          </div>
+        </div>
+      </div>
+      <div v-else>
+        <button @click="login" class="btn">Login</button>
+      </div>
+    </div>
+    
+    <div class="container mt-4">
+      <div v-if="loading" class="table-loading">
+        <div class="spinner"></div> 
+      </div>
+      <div v-else>
+        <div v-if="hasPro">
+          <div class="alert alert-warning" role="alert">
+            <strong>Note:</strong> This is a beta feature and may contain errors or produce significantly large values.
+          </div>
+          <div v-for="corp in sortedGroupedOffers" :key="corp.corporation" style="margin-bottom: 20px;">
+            <h3>{{ corp.corporation }}</h3>
+            <table v-if="corp.offers.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Offer</th>
+                  <th>LP/ISK</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="offer in corp.offers" :key="offer.item">
+                  <td><span @click="openMarketDetails(offer.item_id)" class="text-primary" style="cursor: pointer;">{{ offer.item }}</span></td>
+                  <td>{{ offer.lpToISK }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-else>No available offers</p>
+          </div>
+        </div>
+        <div v-if="!hasPro && user">
+          <p>You need a Pro subscription to access this page. Please visit your profile to upgrade your subscription.</p>
+          <button @click="viewProfile" class="btn">Go to Profile</button>
+        </div>
+        <div v-if="showSubscriptionMessage && !user">
+          <p>You need to log in and have a Pro subscription to access this page. Please log in or upgrade your subscription.</p>
+          <button @click="login" class="btn">Login</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `
 };
 
 createApp(BestO).mount('#app');
