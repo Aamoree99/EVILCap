@@ -16,7 +16,6 @@ const BestO = {
     try {
       const userResponse = await axios.get('/lp/api/profile');
       this.user = userResponse.data || null;
-      console.log("Данные пользователя:", this.user);
 
       if (this.user && this.user.subscription) {
         this.hasPro = true;
@@ -101,7 +100,7 @@ const BestO = {
     <div class="header">
       <div class="header-left">
         <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Evil Capybara</button>
       </div>
       <div v-if="user" class="header-right">
         <div class="profile-dropdown">

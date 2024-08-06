@@ -99,19 +99,29 @@ button:hover,
 }
 
 .btn-home {
-  background-color: #007bff; 
-  color: #ffffff;
+  background-color: #28a745; /* Зеленый цвет для кнопки */
+  color: #ffffff; /* Белый цвет текста */
   border: none;
   padding: 10px 20px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+  border-radius: 50px; /* Закругленные углы для более современного вида */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Легкая тень для эффекта объема */
+  font-size: 16px; /* Увеличенный размер текста */
+  font-weight: bold; /* Жирный текст */
+  transition: all 0.3s ease;
 }
 
 .btn-home:hover {
-  background-color: #0056b3; 
+  background-color: #218838; /* Темно-зеленый цвет при наведении */
+  transform: translateY(-2px); /* Легкое поднятие кнопки при наведении */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Увеличенная тень при наведении */
 }
 
+.btn-home:active {
+  background-color: #1e7e34; /* Цвет при нажатии */
+  transform: translateY(0); /* Убираем поднятие при нажатии */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Уменьшенная тень при нажатии */
+}
 
 .sortable th {
   cursor: pointer;

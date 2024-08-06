@@ -43,7 +43,6 @@ const App = {
       this.regions = sortedRegionsWithMainFirst;
       this.selectedRegion = this.regions[0]?.id || null;
   
-      console.log("Corporations and regions fetched:", this.corporations, this.regions);
   
       await this.fetchRegionDetails(this.selectedRegion);
       await this.fetchEsiStatus();
@@ -51,7 +50,6 @@ const App = {
       try {
         const userResponse = await axios.get('/lp/api/profile');
         this.user = userResponse.data || null;
-        console.log("User data:", this.user);
       } catch (error) {
         if (error.response && error.response.status === 401) {
           this.user = null; 
@@ -258,7 +256,7 @@ const App = {
     <div class="header">
       <div class="header-left">
         <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Evil Capybara</button>
         <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription">Today Best Offer</button>
       </div>
       <div v-if="user">

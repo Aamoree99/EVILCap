@@ -14,7 +14,6 @@ const Profile = {
       const userResponse = await axios.get('/lp/api/profile');
       this.user = userResponse.data;
       this.loading = false;
-      console.log(this.user.factionStanding);
     } catch (error) {
       console.error("Error fetching profile data:", error);
       this.loading = false;
@@ -38,6 +37,13 @@ const Profile = {
     },
     goToBestO() {
       window.location.href = '/lp/todays-best';
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
     }
   },
   template: `
@@ -45,7 +51,7 @@ const Profile = {
       <div class="header">
         <div class="header-left">
           <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-          <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+          <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Evil Capybara</button>
           <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription">Today Best Offer</button>
         </div>
         <div v-if="user">
@@ -93,7 +99,7 @@ const Profile = {
               <div v-if="user.subscription">
                 <p>We deeply appreciate your support!</p>
                 <p>Your subscription helps us continue to improve and offer the best experience possible. Thank you for being an integral part of our community!</p>
-                <p>Your subscription expires on: {{ user.subscription.subscription_end }}</p>
+                <p>Your subscription expires on: {{ formatDate(user.subscription.subscription_end) }}</p>
               </div>
               <div v-else>
                 <p>Advantages of the Pro version:</p>
