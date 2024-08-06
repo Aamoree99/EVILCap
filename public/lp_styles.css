@@ -82,17 +82,36 @@ label {
   margin-right: 10px;
 }
 
-button {
-  background-color: #007bff;
+button,
+.btn {
+  background-color: #444444; 
   color: #ffffff;
   border: none;
   padding: 10px 20px;
   cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
-button:hover {
-  background-color: #0056b3;
+button:hover,
+.btn:hover {
+  background-color: #666666; 
 }
+
+.btn-home {
+  background-color: #007bff; 
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-home:hover {
+  background-color: #0056b3; 
+}
+
 
 .sortable th {
   cursor: pointer;
@@ -251,19 +270,6 @@ button:hover {
   margin-top: 0;
 }
 
-.btn {
-  background-color: #007bff;
-  color: #ffffff;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
 .esi-status {
   margin-top: 20px;
   font-size: 14px;
@@ -287,6 +293,7 @@ button:hover {
   border-top-color: #444444;
   animation: spin 1s ease-in-out infinite;
   margin: 0 auto;
+  position: relative;
 }
 
 @keyframes spin {
@@ -300,4 +307,21 @@ button:hover {
   justify-content: center;
   align-items: center;
   height: 50%;
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.alert-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+}
+
+.alert-warning strong {
+  font-weight: bold;
 }

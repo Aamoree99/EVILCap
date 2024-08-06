@@ -37,9 +37,10 @@ cron.schedule('*/15 * * * *', () => {
   checkDonations();
 });
 
-cron.schedule('0 */2 * * *', () => {
+cron.schedule('0 */2 * * *', async () => {
   console.log('Running updatePricesForMainRegions task every 2 hours');
-  updatePricesForMainRegions();
+  await updatePricesForMainRegions();
+  await calculateAndSaveBestOffers();
 });
 
 cron.schedule('0 */5 * * *', () => {
@@ -273,6 +274,23 @@ lpApp.get('/lp_profile', (req, res) => {
   } else {
     res.redirect('/lp/lp_login'); 
   }
+});
+
+lpApp.get('/api/best-offers', async (req, res) => {
+  try {
+    const [bestOffers] = await connection.promise().query('SELECT corporation, item, lpToISK FROM BestOffers ORDER BY lpToISK DESC');
+
+    res.json(bestOffers);
+  } catch (error) {
+    console.error('Ошибка при получении лучших предложений:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+lpApp.get('/todays-best', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'lp_best_of.html'));
 });
 
 lpApp.get('/lp_calc', (req, res) => {

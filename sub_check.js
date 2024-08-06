@@ -4,7 +4,6 @@ const axios = require('axios');
 const querystring = require('querystring');
 const connection = require('./db_connect.js');
 
-
 function getToken() {
   return new Promise((resolve, reject) => {
     connection.query('SELECT * FROM tokens WHERE name = "main_donate"', (error, results) => {
@@ -60,7 +59,6 @@ async function getValidToken() {
     const token = await getToken();
     const now = new Date();
 
-
     if (!token.expires_at || new Date(token.expires_at) <= now) {
       console.log('Token expired or not set, refreshing...');
       return await refreshToken(token);
@@ -100,22 +98,30 @@ async function checkDonations() {
       const donorName = donorNameMatch[1].trim();
       const donationAmount = Math.abs(donation.amount);
       const monthsToAdd = Math.floor(donationAmount / 50000000);
+      const transactionId = donation.id;
       console.log(donorName);
 
-      const [existingSubscription] = await connection.promise().query('SELECT * FROM subscriptions WHERE name = ?', [donorName]);
+      const [existingSubscription] = await connection.promise().query('SELECT * FROM subscriptions WHERE name = ? AND transaction_id = ?', [donorName, transactionId]);
 
       if (existingSubscription.length > 0) {
-        const currentEndDate = new Date(existingSubscription[0].subscription_end);
+        // Подписка с таким transaction_id уже существует, пропускаем
+        continue;
+      }
+
+      const [subscriptionByName] = await connection.promise().query('SELECT * FROM subscriptions WHERE name = ?', [donorName]);
+
+      if (subscriptionByName.length > 0) {
+        const currentEndDate = new Date(subscriptionByName[0].subscription_end);
         const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + monthsToAdd));
 
-        await connection.promise().query('UPDATE subscriptions SET subscription_end = ? WHERE name = ?', 
-          [newEndDate.toISOString().slice(0, 19).replace('T', ' '), donorName]);
+        await connection.promise().query('UPDATE subscriptions SET subscription_end = ?, transaction_id = ? WHERE name = ?', 
+          [newEndDate.toISOString().slice(0, 19).replace('T', ' '), transactionId, donorName]);
       } else {
         const newEndDate = new Date();
         newEndDate.setMonth(newEndDate.getMonth() + monthsToAdd);
 
-        await connection.promise().query('INSERT INTO subscriptions (name, subscription_end) VALUES (?, ?)', 
-          [donorName, newEndDate.toISOString().slice(0, 19).replace('T', ' ')]);
+        await connection.promise().query('INSERT INTO subscriptions (name, subscription_end, transaction_id) VALUES (?, ?, ?)', 
+          [donorName, newEndDate.toISOString().slice(0, 19).replace('T', ' '), transactionId]);
       }
     }
   } catch (error) {

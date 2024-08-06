@@ -35,6 +35,9 @@ const Profile = {
     },
     goHome() {
       window.location.href = '/';
+    },
+    goToBestO() {
+      window.location.href = '/lp/todays-best';
     }
   },
   template: `
@@ -42,7 +45,8 @@ const Profile = {
       <div class="header">
         <div class="header-left">
           <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-          <button @click="goHome" class="btn btn-primary" style="display: inline; margin-left: 10px;">Home</button>
+          <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+          <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription && user.subscription.isPro">Today Best Offer</button>
         </div>
         <div v-if="user">
           <div class="profile-dropdown">
@@ -54,7 +58,7 @@ const Profile = {
           </div>
         </div>
         <div v-else>
-          <button @click="login" class="btn btn-primary">Login</button>
+          <button @click="login" class="btn ">Login</button>
         </div>
       </div>
       <div v-if="loading">Loading profile data...</div>
@@ -94,8 +98,9 @@ const Profile = {
                 <p>Advantages of the Pro version:</p>
                 <ul>
                   <li>More accurate LP calculations based on skills and standings (currently for Jita 4-4, Amarr, Dodixie, and Hek)</li>
+                  <li>Access to the best LP offers, allowing you to maximize your ISK/LP conversion by viewing the top offers from various corporations and regions, updated daily</li> <!-- Более подробное описание -->
                 </ul>
-                <button @click="showModal = true" class="btn btn-primary">Become Pro</button>
+                <button @click="showModal = true" class="btn">Become Pro</button>
               </div>
             </div>
           </div>
@@ -116,7 +121,7 @@ const Profile = {
         <div class="modal">
           <h2>Become Pro</h2>
           <p>To become a Pro user for one month and enjoy all the benefits, please donate 50 million ISK to the user Aamoree. Please include "Pro Subscription" in the reason for your donation. Processing may take up to 1 hour.</p>
-          <button @click="showModal = false" class="btn btn-primary">OK</button>
+          <button @click="showModal = false" class="btn ">OK</button>
         </div>
       </div>
     </div>

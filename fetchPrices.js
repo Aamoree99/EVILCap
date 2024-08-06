@@ -102,4 +102,70 @@ const updatePricesForOtherRegions = async () => {
   }
 };
 
-module.exports = { updatePricesForMainRegions, updatePricesForOtherRegions };
+const calculateAndSaveBestOffers = async () => {
+  try {
+    const [corporations] = await connection.promise().query('SELECT id, name FROM NPC_Corps WHERE active = TRUE');
+    const bestOffers = [];
+
+    for (const corp of corporations) {
+      const [allOffers] = await connection.promise().query(`
+        SELECT o.*, p.price AS market_price, p.timestamp
+        FROM Offers o
+        JOIN Prices p ON o.item_id = p.item_id AND p.order_type = 'sell'
+        WHERE o.corp_id = ? AND p.region_id = 10000002
+        ORDER BY (p.price * o.quantity - o.isk_cost) / o.lp_cost DESC
+      `, [corp.id]);
+
+      const selectedOffers = new Set();
+      let count = 0;
+
+      for (const offer of allOffers) {
+        if (count >= 2) break;
+
+        if (!selectedOffers.has(offer.item_id)) {
+          let totalISKCost = offer.isk_cost;
+
+          if (offer.required_items) {
+            let requiredItems = JSON.parse(offer.required_items);
+            for (const item of requiredItems) {
+              const [itemResults] = await connection.promise().query(`
+                SELECT price FROM Prices
+                WHERE item_id = ? AND order_type = 'sell' AND region_id = 10000002
+                ORDER BY timestamp DESC LIMIT 1
+              `, [item.type_id]);
+              const itemPrice = itemResults.length > 0 ? itemResults[0].price : 0;
+              totalISKCost += item.quantity * itemPrice;
+            }
+          }
+
+          const lpToISK = (offer.market_price * offer.quantity - totalISKCost) / offer.lp_cost;
+
+          bestOffers.push({
+            corp_id: corp.id,
+            corporation: corp.name,
+            item: offer.item_name,
+            item_id: offer.item_id,
+            lpToISK: isFinite(lpToISK) ? lpToISK.toFixed(4) : 'N/A'
+          });
+
+          selectedOffers.add(offer.item_id);
+          count++;
+        }
+      }
+    }
+
+    // Сохраняем результаты в таблицу в БД
+    await connection.promise().query('DELETE FROM BestOffers'); // Очистка таблицы перед записью новых данных
+    const insertPromises = bestOffers.map(offer => {
+      return connection.promise().query('INSERT INTO BestOffers (corp_id, corporation, item, item_id, lpToISK) VALUES (?, ?, ?, ?, ?)', 
+      [offer.corp_id, offer.corporation, offer.item, offer.item_id, offer.lpToISK]);
+    });
+    await Promise.all(insertPromises);
+    
+    console.log('Best offers calculated and saved successfully.');
+  } catch (error) {
+    console.error('Error calculating and saving best offers:', error);
+  }
+};
+
+module.exports = { updatePricesForMainRegions, updatePricesForOtherRegions, calculateAndSaveBestOffers };

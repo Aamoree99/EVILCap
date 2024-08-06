@@ -116,7 +116,6 @@ const App = {
           }))
         }));
         this.loading = false;
-        console.log("Offers fetched:", this.offers);
 
         for (const offer of this.offers) {
           if (this.buyResources !== 'none') {
@@ -226,6 +225,9 @@ const App = {
     goToLPCalc() {
       window.location.href = '/lp/lp_calc';
     },
+    goToBestO() {
+      window.location.href = '/lp/todays-best';
+    },
     async openMarketDetails(typeID) {
       if (!this.user) {
         alert('You need to be logged in to open market details.');
@@ -256,7 +258,8 @@ const App = {
     <div class="header">
       <div class="header-left">
         <h1 @click="goToLPCalc" style="cursor: pointer; display: inline;">LP Store Calculator</h1>
-        <button @click="goHome" class="btn btn-primary" style="display: inline; margin-left: 10px;">Home</button>
+        <button @click="goHome" class="btn-home" style="display: inline; margin-left: 10px;">Home</button>
+        <button @click="goToBestO" class="btn" style="display: inline; margin-left: 10px;" v-if="user && user.subscription && user.subscription.isPro">Today Best Offer</button>
       </div>
       <div v-if="user">
         <div class="profile-dropdown">
@@ -269,7 +272,7 @@ const App = {
         </div>
       </div>
       <div v-else>
-        <button @click="login" class="btn btn-primary">Login</button>
+        <button @click="login" class="btn">Login</button>
       </div>
     </div>
 
@@ -317,7 +320,7 @@ const App = {
           </select>
         </div>
         <div class="control-item">
-          <button @click="fetchOffers" class="btn btn-primary">Search</button>
+          <button @click="fetchOffers" class="btn ">Search</button>
         </div>
       </div>
     </div>
