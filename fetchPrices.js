@@ -84,9 +84,7 @@ const updatePricesForMainRegions = async () => {
   try {
     await updatePricesForRegions(MAIN_REGIONS);
   } catch (error) {
-    console.error('Error updating market prices for main regions:', error);
-  } finally {
-    connection.end();
+    console.error('Ошибка при обновлении рыночных цен для основных регионов:', error);
   }
 };
 
@@ -96,9 +94,7 @@ const updatePricesForOtherRegions = async () => {
     const otherRegions = regionsResult.map(row => row.id);
     await updatePricesForRegions(otherRegions);
   } catch (error) {
-    console.error('Error updating market prices for other regions:', error);
-  } finally {
-    connection.end();
+    console.error('Ошибка при обновлении рыночных цен для других регионов:', error);
   }
 };
 
