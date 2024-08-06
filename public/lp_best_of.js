@@ -8,7 +8,8 @@ const BestO = {
       user: null,
       todayDate: new Date().toLocaleDateString('ru-RU'),
       loading: true,
-      hasPro: false
+      hasPro: false,
+      showSubscriptionMessage: false
     };
   },
   async mounted() {
@@ -21,11 +22,14 @@ const BestO = {
         this.hasPro = true;
         const bestOffersResponse = await axios.get('/lp/api/best-offers');
         this.bestOffers = bestOffersResponse.data;
+      } else {
+        this.showSubscriptionMessage = true;
       }
     } catch (error) {
       console.error("Ошибка при загрузке данных:", error);
+      this.showSubscriptionMessage = true;
     } finally {
-      this.loading = false; 
+      this.loading = false;
     }
   },
   methods: {
@@ -99,9 +103,9 @@ const BestO = {
       <div v-else>
         <div v-if="hasPro">
         <div class="container mt-4">
-        <div class="alert alert-warning" role="alert">
-            <strong>Note:</strong> This is a beta feature and may contain errors or produce significantly large values.
-        </div>
+            <div class="alert alert-warning" role="alert">
+                <strong>Note:</strong> This is a beta feature and may contain errors or produce significantly large values.
+            </div>
           <div v-for="corp in sortedGroupedOffers" :key="corp.corporation" style="margin-bottom: 20px;">
             <h3>{{ corp.corporation }}</h3>
             <table v-if="corp.offers.length > 0" class="table table-striped">
@@ -125,6 +129,10 @@ const BestO = {
           <p>You need a Pro subscription to access this page. Please visit your profile to upgrade your subscription.</p>
           <button @click="viewProfile" class="btn">Go to Profile</button>
         </div>
+      </div>
+      <div v-if="showSubscriptionMessage && !user">
+        <p>You need to log in and have a Pro subscription to access this page. Please log in or upgrade your subscription.</p>
+        <button @click="login" class="btn">Login</button>
       </div>
     </div>
   </div>
