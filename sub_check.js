@@ -92,6 +92,7 @@ async function checkDonations() {
         entry.ref_type === 'player_donation' && 
         entry.description.includes("deposited cash into Aamoree's account") &&
         entry.amount >= 50000000 &&
+        entry.reason === 'Pro Subscription' &&
         entryDate >= oneMonthAgo
       );
     });
