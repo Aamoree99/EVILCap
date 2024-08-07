@@ -296,6 +296,13 @@
                     summaryData.push(row.join('\t'));
                 });
 
+                $('#summaryTable, #logTable').DataTable({
+                    paging: false,
+                    searching: false,
+                    info: false,
+                    ordering: true // Добавлено для активации сортировки
+                });
+
                 // Collecting data from the Total table (highlight-all)
                 $('#specialEntryTable tbody tr').each(function() {
                     let row = $(this).find('td').map(function() {
