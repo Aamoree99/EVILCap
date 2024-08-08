@@ -190,7 +190,7 @@ async function handleMoonCommand(interaction) {
                     .setTitle("*Лунные ресурсы готовы к сбору.*")
                     .addFields(
                         { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Станция", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}`, inline: true }
+                        { name: "Станция", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}\n\n*Объемы указаны примерно.*`, inline: true }
                     )
                     .setColor("#A52A2A")
                     .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
@@ -199,7 +199,7 @@ async function handleMoonCommand(interaction) {
                     .setTitle("*The moon products are ready to be harvested.*")
                     .addFields(
                         { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Station", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}`, inline: true }
+                        { name: "Station", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}\n\n*Volumes are approximate.*`, inline: true }
                     )
                     .setColor("#A52A2A")
                     .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
