@@ -150,6 +150,24 @@ async function handleMoonCommand(interaction) {
         const currentChannelId = interaction.channel.id;
         const authorUsername = interaction.user.username;
 
+        const stationDescriptions = [
+            "Bitumens: 11,844,546 m3\nCoesite: 6,559,526 m3\nZeolites: 3,792,468 m3",
+            "Bitumens: 6,866,833 m3\nSylvite: 5,118,296 m3\nZeolites: 9,945,053 m3",
+            "Bitumens: 7,863,235 m3\nCoesite: 4,470,629 m3\nZeolites: 9,859,151 m3",
+            "Sylvite: 9,103,297 m3\nZeolites: 13,057,460 m3",
+            "Sylvite: 3,307,337 m3\nZeolites: 18,883,170 m3",
+            "Coesite: 13,209,507 m3\nZeolites: 8,985,359 m3",
+            "Bitumens: 7,893,191 m3\nCoesite: 5,540,651 m3\nSylvite: 2,746,129 m3\nZeolites: 6,016,859 m3",
+            "Coesite: 13,265,066 m3\nZeolites: 8,920,659 m3",
+            "Coesite: 13,406,662 m3\nZeolites: 8,786,853 m3",
+            "Coesite: 16,226,303 m3\nZeolites: 5,967,621 m3",
+            "Coesite: 16,275,401 m3\nZeolites: 5,918,307 m3",
+            "Bitumens: 7,280,157 m3\nCoesite: 9,317,891 m3\nZeolites: 5,581,099 m3",
+            "Coesite: 8,150,527 m3\nSylvite: 4,441,850 m3\nZeolites: 9,570,055 m3",
+            "Coesite: 10,150,159 m3\nSylvite: 5,502,105 m3\nZeolites: 6,541,102 m3",
+            "Coesite: 4,375,675 m3\nSylvite: 9,254,955 m3\nZeolites: 8,552,561 m3"
+        ];
+
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
@@ -165,13 +183,14 @@ async function handleMoonCommand(interaction) {
 
             if (channel && en_channel) {
                 const todayDate = new Date().getDate();
-                const stationName = `**Pashanai - Ore ${Math.floor(todayDate / 2)}**`;
+                const stationId = Math.floor(todayDate / 2);
+                const stationDescription = stationDescriptions[stationId];
 
                 const embedRU = new EmbedBuilder()
-                    .setTitle("*Лунные продукты готовы к сбору.*")
+                    .setTitle("*Лунные ресурсы готовы к сбору.*")
                     .addFields(
                         { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Станция", value: stationName, inline: true }
+                        { name: "Станция", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}`, inline: true }
                     )
                     .setColor("#A52A2A")
                     .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
@@ -180,7 +199,7 @@ async function handleMoonCommand(interaction) {
                     .setTitle("*The moon products are ready to be harvested.*")
                     .addFields(
                         { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Station", value: stationName, inline: true }
+                        { name: "Station", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}`, inline: true }
                     )
                     .setColor("#A52A2A")
                     .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
