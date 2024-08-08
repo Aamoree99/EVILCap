@@ -184,7 +184,7 @@ async function handleMoonCommand(interaction) {
             if (channel && en_channel) {
                 const todayDate = new Date().getDate();
                 const stationId = Math.floor(todayDate / 2);
-                const stationDescription = stationDescriptions[stationId];
+                const stationDescription = stationDescriptions[stationId - 1];
 
                 const embedRU = new EmbedBuilder()
                     .setTitle("*Лунные ресурсы готовы к сбору.*")
