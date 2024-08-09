@@ -1333,7 +1333,7 @@ async function checkBirthdays() {
                 ? `🎉 Поздравляем ${messages}! У него сегодня день рождения! 🎉`
                 : `🎉 Сегодня особый день для ${messages}! Поздравляем их с днем рождения! 🎉`;
         
-            //client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
+            client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
         }
     } catch (error) {
         console.error('Error checking birthdays:', error);
