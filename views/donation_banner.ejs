@@ -1,4 +1,4 @@
-<div id="donation-banner" class="donation-banner" style="display: none;">
+<div id="donation-banner" class="donation-banner">
     <h2>Save the galaxy</h2>
     <div>
         <p>Donate ISK to the player</p>
@@ -17,24 +17,46 @@
             console.error('Could not copy text: ', err);
         });
     }
-    function updateProgressBar(percentage) {
-        var progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = percentage / 100 + '%';
-        progressBar.textContent = percentage / 100 + '%';
+    
+    function getYesterdayDate() {
+    const today = new Date();
+    today.setDate(today.getDate() - 2); // Уменьшаем день на 1, чтобы получить вчерашнюю дату
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
     }
 
-    function checkDate() {
-        var today = new Date();
-        var day = today.getDate();
-        var month = today.getMonth() + 1; 
-
-        if (month > 8 || (month === 8 && day >= 9)) {
-            document.getElementById('donation-banner').style.display = 'block';
-            updateProgressBar(1378);
+    async function fetchDebtData() {
+    const date = getYesterdayDate();
+    try {
+        const response = await fetch(`https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?filter=record_date:eq:${date}`);
+        if (!response.ok) {
+            throw new Error('API недоступно');
         }
+        const data = await response.json();
+        if (!data.data || data.data.length === 0) {
+            throw new Error('Данные пусты');
+        }
+        const debtAmount = data.data[0].tot_pub_debt_out_amt;
+        updateProgressBar(debtAmount);
+    } catch (error) {
+        // Используем известное значение госдолга
+        const fallbackDebtAmount = "32,897,000,000,000"; // Пример значения в долларах
+        updateProgressBar(fallbackDebtAmount);
+    }
     }
 
-    checkDate();
+    function updateProgressBar(amount) {
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = '100%'; // Ширина полосы заполнения
+        progressBar.textContent = `${parseFloat(amount).toLocaleString('en-US')} ISK`;
+        progressBar.style.display = 'flex';
+        progressBar.style.justifyContent = 'center';
+        progressBar.style.alignItems = 'center';
+    }
+
+    fetchDebtData();
 </script>
 
 <style>
@@ -85,11 +107,16 @@
         margin-top: 20px;
     }
     .progress-bar {
-        width: 0;
+        width: 100%; /* Полоса заполнения на всю ширину */
         height: 30px;
         background-color: #76c7c0;
         border-radius: 5px;
         border: solid 1px #4e4e4e;
-        transition: width 0.5s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white; /* Цвет текста внутри полосы */
+        font-weight: bold;
+        text-align: center;
     }
 </style>

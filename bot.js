@@ -1286,9 +1286,23 @@ async function generateProfileImage(userId, guild) {
     }
 }
 
+function normalizeDate(dateStr) {
+    const parts = dateStr.split('.');
+    if (parts.length === 2) {
+        return parts.map(part => part.padStart(2, '0')).join('.');
+    } else if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        return `${day}.${month}.${year}`;
+    }
+    return dateStr;
+}
+
 async function checkBirthdays() {
     try {
         const data = await readData();
+
         if (!data.birthdays) return;
 
         const today = new Date();
@@ -1296,33 +1310,36 @@ async function checkBirthdays() {
         const todayStrWithYear = today.toISOString().slice(0, 10).split('-').reverse().join('.');
 
         const birthdayUsers = Object.keys(data.birthdays).filter(userId => {
-            const birthday = data.birthdays[userId];
+            const birthday = normalizeDate(data.birthdays[userId]);
             return birthday.slice(0, 5) === todayStr || birthday === todayStrWithYear;
         });
 
         if (birthdayUsers.length > 0) {
             const messages = birthdayUsers.map(userId => {
-                const birthday = data.birthdays[userId];
+                const birthday = normalizeDate(data.birthdays[userId]);
                 let ageMessage = '';
+        
                 if (birthday.length === 10) {
                     const birthYear = parseInt(birthday.slice(6, 10));
                     const currentYear = today.getFullYear();
                     const age = currentYear - birthYear;
-                    ageMessage = `, ему исполнилось ${age} лет`;
+                    ageMessage = age > 0 ? `, ему исполнилось ${age} лет` : '';
                 }
+        
                 return `<@${userId}>${ageMessage}`;
-            }).join(', ');
-
+            }).filter(Boolean).join(', ');
+        
             const message = birthdayUsers.length === 1 
                 ? `🎉 Поздравляем ${messages}! У него сегодня день рождения! 🎉`
                 : `🎉 Сегодня особый день для ${messages}! Поздравляем их с днем рождения! 🎉`;
-
-            client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
+        
+            //client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
         }
     } catch (error) {
         console.error('Error checking birthdays:', error);
     }
 }
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     try {
