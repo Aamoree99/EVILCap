@@ -1302,16 +1302,23 @@ function normalizeDate(dateStr) {
 
 async function checkBirthdays() {
     try {
+        console.log("Reading data...");
         const data = await readData();
 
-        if (!data.birthdays) return;
+        if (!data || !data.birthdays) {
+            console.log("No birthday data available.");
+            return;
+        }
 
         const today = new Date();
         const todayStr = today.toISOString().slice(5, 10).replace('-', '.');
         const todayStrWithYear = today.toISOString().slice(0, 10).split('-').reverse().join('.');
 
+        console.log(`Today's date: ${todayStr} (without year) or ${todayStrWithYear} (with year)`);
+
         const birthdayUsers = Object.keys(data.birthdays).filter(userId => {
             const birthday = normalizeDate(data.birthdays[userId]);
+            console.log(`Checking user ${userId} with birthday ${birthday}`);
             return birthday.slice(0, 5) === todayStr || birthday === todayStrWithYear;
         });
 
@@ -1319,27 +1326,36 @@ async function checkBirthdays() {
             const messages = birthdayUsers.map(userId => {
                 const birthday = normalizeDate(data.birthdays[userId]);
                 let ageMessage = '';
-        
+
                 if (birthday.length === 10) {
                     const birthYear = parseInt(birthday.slice(6, 10));
                     const currentYear = today.getFullYear();
                     const age = currentYear - birthYear;
-                    ageMessage = age > 0 ? `, ему исполнилось ${age} лет` : '';
+                    ageMessage = age > 0 ? `, they turned ${age} years old` : '';
                 }
-        
+
                 return `<@${userId}>${ageMessage}`;
             }).filter(Boolean).join(', ');
-        
+
             const message = birthdayUsers.length === 1 
-                ? `🎉 Поздравляем ${messages}! У него сегодня день рождения! 🎉`
-                : `🎉 Сегодня особый день для ${messages}! Поздравляем их с днем рождения! 🎉`;
-        
-            client.channels.cache.get(MAIN_CHANNEL_ID).send(message);
+                ? `🎉 Happy Birthday to ${messages}! 🎉`
+                : `🎉 Today is a special day for ${messages}! Happy Birthday to them! 🎉`;
+
+            const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
+            if (channel) {
+                console.log(`Sending message: ${message}`);
+                channel.send(message);
+            } else {
+                console.log("Channel not found. Please check MAIN_CHANNEL_ID.");
+            }
+        } else {
+            console.log("No birthdays found for today.");
         }
     } catch (error) {
         console.error('Error checking birthdays:', error);
     }
 }
+
 
 
 client.on('messageReactionAdd', async (reaction, user) => {
