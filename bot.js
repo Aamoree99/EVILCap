@@ -1311,8 +1311,8 @@ async function checkBirthdays() {
         }
 
         const today = new Date();
-        const todayStr = today.toISOString().slice(5, 10).replace('-', '.');
-        const todayStrWithYear = today.toISOString().slice(0, 10).split('-').reverse().join('.');
+        const todayStr = today.toISOString().slice(8, 10) + '.' + today.toISOString().slice(5, 7); // Format as DD.MM
+        const todayStrWithYear = today.toISOString().slice(8, 10) + '.' + today.toISOString().slice(5, 7) + '.' + today.toISOString().slice(0, 4); // Format as DD.MM.YYYY
 
         console.log(`Today's date: ${todayStr} (without year) or ${todayStrWithYear} (with year)`);
 
@@ -1327,19 +1327,22 @@ async function checkBirthdays() {
                 const birthday = normalizeDate(data.birthdays[userId]);
                 let ageMessage = '';
 
-                if (birthday.length === 10) {
+                if (birthday.length === 10) { // If date is in DD.MM.YYYY format
                     const birthYear = parseInt(birthday.slice(6, 10));
                     const currentYear = today.getFullYear();
                     const age = currentYear - birthYear;
-                    ageMessage = age > 0 ? `, they turned ${age} years old` : '';
+                    ageMessage = age > 0 ? `, ему исполнилось ${age} лет` : '';
+                } else {
+                    // No ageMessage if only DD.MM format
+                    ageMessage = '';
                 }
 
                 return `<@${userId}>${ageMessage}`;
             }).filter(Boolean).join(', ');
 
             const message = birthdayUsers.length === 1 
-                ? `🎉 Happy Birthday to ${messages}! 🎉`
-                : `🎉 Today is a special day for ${messages}! Happy Birthday to them! 🎉`;
+                ? `🎉 Поздравляем ${messages}! У него сегодня день рождения! 🎉`
+                : `🎉 Сегодня особый день для ${messages}! Поздравляем их с днем рождения! 🎉`;
 
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
             if (channel) {
@@ -1355,6 +1358,7 @@ async function checkBirthdays() {
         console.error('Error checking birthdays:', error);
     }
 }
+
 
 
 
