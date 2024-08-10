@@ -100,6 +100,7 @@ client.once('ready', async () => {
     //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     createRoleMessage();
     //scheduleTransactionCheck();
+    await checkBirthdays();
     cron.schedule('0 11 * * *', () => {
         updateMoonMessage();
         checkBirthdays();
