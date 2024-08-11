@@ -111,6 +111,9 @@ client.once('ready', async () => {
     cron.schedule('0 0 * * 1', async () => {
         await findTopMessage();
     });
+    cron.schedule('0 11 * * 2', () => {
+        sendSPMessage();
+    });
     await updateMoonMessage();
     //scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
@@ -1272,7 +1275,7 @@ async function generateProfileImage(userId, guild) {
 
         const username = member.displayName || member.user.username;
 
-        ctx.font = 'bold 100px Times New Roman';
+        ctx.font = 'bold 50px Times New Roman';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.lineWidth = 6;
@@ -1284,6 +1287,25 @@ async function generateProfileImage(userId, guild) {
     } catch (error) {
         console.error('Ошибка создания изображения:', error);
         throw new Error('Произошла ошибка при создании изображения.');
+    }
+}
+
+async function sendSPMessage() {
+    const attachment = {
+        files: ['./SP.jpg']
+    };
+
+    const mainMessageText = '🔥 Привет, чемпионы! Не забудьте забрать свои **бесплатные 15 000 SP**! 💰 Доступно прямо сейчас! 🚀';
+    const enMessageText = '🔥 Hey, champions! Don\'t forget to claim your **free 15,000 SP**! 💰 Available now! 🚀';
+
+    const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+    if (mainChannel) {
+        await mainChannel.send({ content: mainMessageText, ...attachment });
+    }
+
+    const enMainChannel = await client.channels.fetch(EN_MAIN_CHANNEL_ID);
+    if (enMainChannel) {
+        await enMainChannel.send({ content: enMessageText, ...attachment });
     }
 }
 
