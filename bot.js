@@ -1016,13 +1016,39 @@ client.on('interactionCreate', async interaction => {
     const sum = interaction.options.getNumber('sum');
 
     if (time && sum) {
-        const [minutes, seconds] = time.split(':').map(Number);
-        const totalSeconds = minutes * 60 + seconds;
+        // Проверяем, содержит ли время только секунды или уже в формате 'mm:ss'
+        let formattedTime;
+
+        if (time.includes(':')) {
+            // Время в формате 'mm:ss' или 'hh:mm:ss'
+            const timeParts = time.split(':').map(Number);
+
+            if (timeParts.length === 2) {
+                // Формат 'mm:ss', преобразуем в '00:mm:ss'
+                formattedTime = `00:${timeParts[0].toString().padStart(2, '0')}:${timeParts[1].toString().padStart(2, '0')}`;
+            } else if (timeParts.length === 3) {
+                // Формат 'hh:mm:ss'
+                formattedTime = `${timeParts[0].toString().padStart(2, '0')}:${timeParts[1].toString().padStart(2, '0')}:${timeParts[2].toString().padStart(2, '0')}`;
+            } else {
+                await interaction.reply('Invalid time format. Please use mm:ss or hh:mm:ss.');
+                return;
+            }
+        } else {
+            // Если время указано только в секундах, преобразуем в '00:mm:ss'
+            const totalSeconds = Number(time);
+            if (isNaN(totalSeconds)) {
+                await interaction.reply('Invalid time format. Please provide time as mm:ss or seconds.');
+                return;
+            }
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            formattedTime = `00:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
 
         try {
             await connection.promise().query(
-                'INSERT INTO dungeon_runs (time, sum) VALUES (?, ?)',
-                [totalSeconds, sum]
+                'INSERT INTO time_record (time, value) VALUES (?, ?)',
+                [formattedTime, sum]
             );
             await interaction.reply('Run recorded successfully! 🗒️');
         } catch (err) {
@@ -1032,7 +1058,7 @@ client.on('interactionCreate', async interaction => {
     } else {
         try {
             const [rows] = await connection.promise().query(
-                'SELECT time, sum FROM dungeon_runs ORDER BY id DESC LIMIT 10'
+                'SELECT time, value FROM time_record ORDER BY time DESC LIMIT 10'
             );
 
             if (rows.length === 0) {
@@ -1040,27 +1066,29 @@ client.on('interactionCreate', async interaction => {
                 return;
             }
 
-            let totalTimes = 0;
+            let totalSeconds = 0;
             let totalSums = 0;
 
             rows.forEach(run => {
-                totalTimes += run.time;
-                totalSums += run.sum;
+                const [hours, minutes, seconds] = run.time.split(':').map(Number);
+                const timeInSeconds = hours * 3600 + minutes * 60 + seconds;
+                totalSeconds += timeInSeconds;
+                totalSums += run.value;
             });
 
-            const averageTime = totalTimes / rows.length;
-            const averageMinutes = Math.floor(averageTime / 60);
-            const averageSeconds = Math.floor(averageTime % 60);
+            const averageSeconds = totalSeconds / rows.length;
+            const averageHours = Math.floor(averageSeconds / 3600);
+            const averageMinutes = Math.floor((averageSeconds % 3600) / 60);
+            const averageFinalSeconds = Math.floor(averageSeconds % 60);
             const averageSum = totalSums / rows.length;
 
-            let replyMessage = 'Last 10 dungeon runs:\n';
+            let replyMessage = 'Last 10 CRAB runs:\n';
             rows.forEach((run, index) => {
-                const minutes = Math.floor(run.time / 60);
-                const seconds = run.time % 60;
-                replyMessage += `Run ${index + 1}: ${minutes}:${seconds} - Sum: ${run.sum}\n`;
+                const [hours, minutes, seconds] = run.time.split(':').map(Number);
+                replyMessage += `Run ${index + 1}: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} - Sum: ${run.value}kk ISK\n`;
             });
 
-            replyMessage += `\nAverage Time: ${averageMinutes}:${averageSeconds}\nAverage Sum: ${averageSum.toFixed(2)}`;
+            replyMessage += `\nAverage Time: ${averageHours.toString().padStart(2, '0')}:${averageMinutes.toString().padStart(2, '0')}:${averageFinalSeconds.toString().padStart(2, '0')}\nAverage Sum: ${averageSum.toFixed(2)}`;
 
             await interaction.reply(replyMessage);
         } catch (err) {
@@ -1069,6 +1097,8 @@ client.on('interactionCreate', async interaction => {
         }
     }
 }
+
+
 
   
   
