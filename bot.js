@@ -245,7 +245,16 @@ const commands = [
                 .setRequired(false)),
     new SlashCommandBuilder()
         .setName('alts')
-        .setDescription('Запись альтов')
+        .setDescription('Запись альтов'),
+    new SlashCommandBuilder()
+        .setName('crabs')
+        .setDescription('Record or display dungeon run statistics.')
+        .addStringOption(option =>
+            option.setName('time')
+                .setDescription('Time in mm:ss format (optional).'))
+        .addNumberOption(option =>
+            option.setName('sum')
+                .setDescription('Sum of the run (optional).'))
 
 ]
     .map(command => command.toJSON());
@@ -463,91 +472,6 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: message, ephemeral: true });
         },
 
-        async moon() {
-            try {
-                const data = await readData();
-                const ignoreList = data.ignoreList || [];
-                const allowedChannels = ['1172972375688626276', '1212507080934686740'];
-                const currentChannelId = interaction.channel.id;
-                const authorUsername = interaction.user.username;
-        
-                if (!allowedChannels.includes(currentChannelId)) {
-                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-                    return;
-                }
-        
-                let responseMessage = '';
-        
-                if (ignoreList.includes(authorUsername)) {
-                    const baseMessage = "<@&1163380015191302214>";
-                    const en_baseMessage = "<@&1163380015191302214>";
-                    const channel = client.channels.cache.get('1172972375688626276');
-                    const en_channel = client.channels.cache.get('1212507080934686740');
-        
-                    if (channel && en_channel) {
-                        const todayDate = new Date().getDate();
-                        const stationName = `**Pashanai - Ore ${Math.floor(todayDate / 2)}**`;
-        
-                        const embedRU = new EmbedBuilder()
-                        .setTitle("*Лунные продукты готовы к сбору.*")
-                        .addFields(
-                            { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                            { name: "Станция", value: stationName, inline: true }
-                        )
-                        .setColor("#A52A2A")
-                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
-    
-                    const embedEN = new EmbedBuilder()
-                        .setTitle("*The moon products are ready to be harvested.*")
-                        .addFields(
-                            { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                            { name: "Station", value: stationName, inline: true }
-                        )
-                        .setColor("#A52A2A")
-                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
-    
-        
-                        await channel.send({ content: baseMessage, embeds: [embedRU] });
-                        await en_channel.send({ content: en_baseMessage, embeds: [embedEN] });
-        
-                        responseMessage = "Сообщение отправлено.";
-                    } else {
-                        responseMessage = "Канал не найден.";
-                    }
-                } else {
-                    const now = new Date();
-                    const currentHourUTC = now.getUTCHours();
-                    const currentMinuteUTC = now.getUTCMinutes();
-                    let nextEvenDay = new Date(now);
-                    nextEvenDay.setUTCHours(11, 15, 0, 0);
-        
-                    const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
-        
-                    if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
-                        const timeUntilNextEvenDay = nextEvenDay - now;
-                        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-                        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-        
-                        responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
-                    } else {
-                        if (nextEvenDay <= now || !isEvenDay) {
-                            nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
-                        }
-                        const timeUntilNextEvenDay = nextEvenDay - now;
-                        const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-                        const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-        
-                        responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay} часов и ${minutesUntilNextEvenDay} минут.`;
-                    }
-                }
-        
-                await interaction.reply({ content: responseMessage, ephemeral: true });
-            } catch (error) {
-                console.error("Error in moon function:", error);
-                await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
-            }
-        },
-
         async winners() {
             const channelId = interaction.channel.id;
         
@@ -705,110 +629,6 @@ client.on('interactionCreate', async interaction => {
                     // Если ошибка произошла после первого ответа
                     await interaction.followUp({ content: 'Произошла ошибка при создании категории.', ephemeral: true });
                 }
-            }
-        },
-
-        async ice() {
-            try {
-                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-                const currentChannelId = interaction.channel.id;
-                const name = interaction.options.getString('name');
-                
-                if (!allowedChannels.includes(currentChannelId)) {
-                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-                    return;
-                }
-
-                const userMention = `<@${interaction.user.id}>`;
-                const phrases = [
-                    "Давайте наберем побольше льда!",
-                    "Не упустим возможность пополнить запасы!",
-                    "Пора пополнить наши склады льдом!",
-                    "Время действовать и собирать лед!"
-                ];
-                const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                const baseMessage = `<@&1163379553348096070> Орка выставлена и флот открыт в системе ${name}! ${randomPhrase} Флот создан господином ${userMention}`; 
-                const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-
-                const en_phrases = [
-                    "Let's gather as much ice as we can!",
-                    "Don't miss the chance to stock up!",
-                    "Time to fill our warehouses with ice!",
-                    "Time to act and collect ice!"
-                ];
-                const en_randomPhrase = en_phrases[Math.floor(Math.random() * en_phrases.length)];
-                const en_baseMessage = `<@&1163379553348096070> The Orca for ice is deployed and the fleet is open in the ${name} system! ${en_randomPhrase} Fleet created by the master ${userMention}`; 
-                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
-
-                if (channel && en_channel) {
-                    await channel.send(baseMessage);
-                    await en_channel.send(en_baseMessage);
-                    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-                } else {
-                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-                }
-            } catch (error) {
-                console.error(error);
-                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
-            }
-        },
-
-        async grav() {
-            try {
-                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-                const currentChannelId = interaction.channel.id;
-                const name = interaction.options.getString('name');
-                if (!allowedChannels.includes(currentChannelId)) {
-                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-                    return;
-                }
-                
-                const userMention = `<@${interaction.user.id}>`;
-                const baseMessage = `<@&1163380100520214591> в системе ${name}. Флот создан и открыт господином ${userMention}. Орка с прессом выставлена.`; 
-                const channel = client.channels.cache.get(MAIN_CHANNEL_ID); 
-                const en_baseMessage = `<@&1163380100520214591> in the ${name} system. The fleet for Grav is created and open by the master ${userMention}. The Orca with a press is deployed.`; 
-                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID); 
-
-                if (channel && en_channel) {
-                    await channel.send(baseMessage);
-                    await en_channel.send(en_baseMessage);
-                    await interaction.reply({ content: "Сообщение отправлено.", ephemeral: true });
-                } else {
-                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-                }
-            } catch (error) {
-                console.error(error);
-                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
-            }
-        },
-
-        async evgen() {
-            try {
-                const currentChannelId = interaction.channel.id;
-                const name = interaction.options.getString('name');
-                const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-                if (!allowedChannels.includes(currentChannelId)) {
-                    await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-                    return;
-                }
-
-                const userMention = `<@${interaction.user.id}>`;
-                const baseMessage = `Флот отправляется на белт в системе ${name} господином ${userMention}! Во имя <@350931081194897409>`;
-                const en_baseMessage = `Fleet is heading to the belt in the ${name} system by the master ${userMention}! In the name of <@350931081194897409>`;
-
-                const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
-                const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
-            
-                if (channel && en_channel) {
-                    await channel.send(baseMessage);
-                    await en_channel.send(en_baseMessage);
-                    await interaction.reply({ content: "Сообщения отправлены.", ephemeral: true });
-                } else {
-                    await interaction.reply({ content: "Один или оба канала не найдены.", ephemeral: true });
-                }
-            } catch (error) {
-                console.error(error);
-                await interaction.reply({ content: "Произошла ошибка при отправке сообщения.", ephemeral: true });
             }
         },
 
@@ -1109,7 +929,10 @@ client.on('interactionCreate', async interaction => {
               console.error('Database query failed:', error);
               await interaction.reply({ content: 'Failed to retrieve your alts.', ephemeral: true });
             }
-          }
+          },
+        async crabs() {
+            await handleDungeonCommand(interaction); 
+        }
           
           
     };
@@ -1187,6 +1010,66 @@ client.on('interactionCreate', async interaction => {
       await interaction.reply({ content: 'Failed to update your alts.', ephemeral: true });
     }
   });
+
+  async function handleDungeonCommand(interaction) {
+    const time = interaction.options.getString('time');
+    const sum = interaction.options.getNumber('sum');
+
+    if (time && sum) {
+        const [minutes, seconds] = time.split(':').map(Number);
+        const totalSeconds = minutes * 60 + seconds;
+
+        try {
+            await connection.promise().query(
+                'INSERT INTO dungeon_runs (time, sum) VALUES (?, ?)',
+                [totalSeconds, sum]
+            );
+            await interaction.reply('Run recorded successfully! 🗒️');
+        } catch (err) {
+            console.error(err);
+            await interaction.reply('There was an error recording your run.');
+        }
+    } else {
+        try {
+            const [rows] = await connection.promise().query(
+                'SELECT time, sum FROM dungeon_runs ORDER BY id DESC LIMIT 10'
+            );
+
+            if (rows.length === 0) {
+                await interaction.reply('No records found.');
+                return;
+            }
+
+            let totalTimes = 0;
+            let totalSums = 0;
+
+            rows.forEach(run => {
+                totalTimes += run.time;
+                totalSums += run.sum;
+            });
+
+            const averageTime = totalTimes / rows.length;
+            const averageMinutes = Math.floor(averageTime / 60);
+            const averageSeconds = Math.floor(averageTime % 60);
+            const averageSum = totalSums / rows.length;
+
+            let replyMessage = 'Last 10 dungeon runs:\n';
+            rows.forEach((run, index) => {
+                const minutes = Math.floor(run.time / 60);
+                const seconds = run.time % 60;
+                replyMessage += `Run ${index + 1}: ${minutes}:${seconds} - Sum: ${run.sum}\n`;
+            });
+
+            replyMessage += `\nAverage Time: ${averageMinutes}:${averageSeconds}\nAverage Sum: ${averageSum.toFixed(2)}`;
+
+            await interaction.reply(replyMessage);
+        } catch (err) {
+            console.error(err);
+            await interaction.reply('There was an error retrieving the statistics.');
+        }
+    }
+}
+
   
   
 async function getChannelMembers(guild, channelId) {
