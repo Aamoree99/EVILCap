@@ -793,7 +793,7 @@ app.get('/rules', (req, res) => {
 });
 
 app.get('/crabs', (req, res) => {
-    const query = 'SELECT * FROM time_record ORDER BY time DESC';
+    const query = 'SELECT * FROM time_record ORDER BY id DESC';
     connection.query(query, (err, results) => {
         if (err) throw err;
 
@@ -807,24 +807,16 @@ app.get('/crabs', (req, res) => {
             });
         }
 
-        // Находим самую прибыльную запись
         const mostProfitable = results.reduce((max, record) => max.value > record.value ? max : record);
-
-        // Находим самую быструю запись
         const fastestRun = results.reduce((min, record) => {
             const minTimeInSeconds = timeStringToSeconds(min.time);
             const recordTimeInSeconds = timeStringToSeconds(record.time);
             return minTimeInSeconds < recordTimeInSeconds ? min : record;
         });
 
-        // Вычисляем среднее значение для прибыли
         const avgValue = results.reduce((sum, record) => sum + record.value, 0) / results.length;
-
-        // Вычисляем среднее значение для времени
         const totalSeconds = results.reduce((sum, record) => sum + timeStringToSeconds(record.time), 0);
         const avgTimeInSeconds = totalSeconds / results.length;
-
-        // Преобразуем среднее время обратно в формат HH:MM:SS
         const avgTimeFormatted = secondsToTimeString(avgTimeInSeconds);
 
         res.render('crabs', { 
@@ -837,19 +829,18 @@ app.get('/crabs', (req, res) => {
     });
 });
 
-// Функция для преобразования времени в формате HH:MM:SS в секунды
 function timeStringToSeconds(time) {
     const [hours, minutes, seconds] = time.split(':').map(Number);
     return hours * 3600 + minutes * 60 + seconds;
 }
 
-// Функция для преобразования секунд обратно в формат HH:MM:SS
 function secondsToTimeString(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
 }
+
 
 
 
@@ -867,12 +858,12 @@ app.post('/api/save', (req, res) => {
 app.get('/api/filter', (req, res) => {
     const { name } = req.query;
     const nameConditions = name.split(',').map(n => `name LIKE '%${n.trim()}%'`).join(' OR ');
-    
+
     const query = `
         SELECT * FROM time_record 
         WHERE (${nameConditions}) 
-        ORDER BY time DESC`;
-    
+        ORDER BY id DESC`;
+
     connection.query(query, (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Ошибка получения данных' });
@@ -883,7 +874,6 @@ app.get('/api/filter', (req, res) => {
         });
     });
 });
-
 
 
 

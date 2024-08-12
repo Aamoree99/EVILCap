@@ -58,7 +58,7 @@
         <thead>
             <tr>
                 <th>Time</th>
-                <th>Value</th>
+                <th>Loot</th>
                 <th>Name</th>
                 <th>Notes</th>
             </tr>
@@ -67,7 +67,7 @@
             <% records.forEach(record => { %>
                 <tr>
                     <td><%= record.time %></td>
-                    <td><%= record.value %></td>
+                    <td><%= record.value %> kk ISK</td>
                     <td><%= record.name ? record.name : 'No Name Provided' %></td>
                     <td><%= record.notes ? record.notes : 'No Notes' %></td>
                 </tr>
