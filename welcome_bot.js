@@ -739,6 +739,7 @@ async function handleCorporationSelection(interaction) {
             content: `Приветствуем, ${corpRolesMention}! Новый рекрут хочет присоединиться к вашей корпорации. \n**Игровое имя:** ${gameName}\n**Реальное имя:** ${realName}\n**Источник информации о нас:** ${referral}\n`,
             embeds: [embed]
         });
+        await recruitChannel.send(`${corpRolesMention}, не забудьте закрыть канал после завершения собеседования командой **/close**!`);
 
         await interaction.guild.members.cache.get(userId).setNickname(`${gameName} (${realName})`);
 
