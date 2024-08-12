@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="logo.ico">
+    <title>Crabs Tracker</title>
+    <link rel="stylesheet" href="/cr_styles.css">
+</head>
+<body>
+    <h1>Crabs Tracker</h1>
+
+    <!-- Блок с информацией о забегах -->
+    <div class="info-container">
+        <div class="info-block">
+            <h3>Most Profitable Run:</h3>
+            <% if (mostProfitable) { %>
+                <p>Value: <%= mostProfitable.value %></p>
+                <p>Time: <%= mostProfitable.time %></p>
+                <% if (mostProfitable.name) { %>
+                    <p>Participants: <%= mostProfitable.name %></p>
+                <% } %>
+            <% } else { %>
+                <p>No data</p>
+            <% } %>
+        </div>
+
+        <div class="info-block">
+            <h3>Average Data:</h3>
+            <p>Average Value: <%= avgValue %></p>
+            <p>Average Time: <%= avgTime %></p>
+        </div>
+
+        <div class="info-block">
+            <h3>Fastest Run:</h3>
+            <% if (fastestRun) { %>
+                <p>Value: <%= fastestRun.value %></p>
+                <p>Time: <%= fastestRun.time %></p>
+                <% if (fastestRun.name) { %>
+                    <p>Participants: <%= fastestRun.name %></p>
+                <% } %>
+            <% } else { %>
+                <p>No data</p>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="timer">
+        <h2>Timer</h2>
+        <div id="timerDisplay">00:00:00</div>
+        <button id="startPauseButton">Start</button>
+        <button id="clearButton">Clear</button>
+        <button id="saveButton">Save</button>
+    </div>
+
+    <h2>Records</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Value</th>
+                <th>Name</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% records.forEach(record => { %>
+                <tr>
+                    <td><%= record.time %></td>
+                    <td><%= record.value %></td>
+                    <td><%= record.name ? record.name : 'No Name Provided' %></td>
+                    <td><%= record.notes ? record.notes : 'No Notes' %></td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div class="filter">
+        <div class="name-filter">
+            <h3>Select Names:</h3>
+            <div id="nameCheckboxes">
+                <% 
+                const uniqueNames = new Set();
+                records.forEach(record => { 
+                    if (record.name) {
+                        const names = record.name.split(',').map(name => name.trim());
+                        names.forEach(name => uniqueNames.add(name));
+                    }
+                }); 
+                uniqueNames.forEach(name => { %>
+                    <div>
+                        <input type="checkbox" id="name_<%= name %>" value="<%= name %>">
+                        <label for="name_<%= name %>"><%= name %></label>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+        
+        <button id="filterButton">Filter</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="saveForm">
+                <!-- Поле для отображения времени с таймера -->
+                <input type="hidden" name="time" id="modalTime">
+    
+                <label for="nameInput">Participants:</label>
+                <input type="text" id="nameInput" name="name" required>
+    
+                <label for="lootValue">Loot Value:</label>
+                <input type="number" id="lootValue" name="lootValue" required>
+    
+                <label for="notes">Notes:</label>
+                <textarea id="notes" name="notes" class="fixed-size"></textarea>
+                
+                <button type="submit">Save</button>
+            </form>
+        </div>
+    </div>
+    
+
+    <script src="/cr_script.js"></script>
+</body>
+</html>

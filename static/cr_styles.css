@@ -1,0 +1,230 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    padding: 20px;
+}
+
+h1, h2, h3 {
+    color: #ff7f50; /* Оранжевый цвет заголовков */
+}
+
+.info-container {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.info-block {
+    background-color: #3e3e3e;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ff7f50;
+    width: 30%;
+}
+
+.info-block h3 {
+    margin-bottom: 10px;
+}
+
+.table, .filter {
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #2e2e2e;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ff7f50; /* Оранжевый бордер в таблице */
+}
+
+th {
+    background-color: #3e3e3e;
+}
+
+tr:hover {
+    background-color: #575757;
+}
+
+.timer {
+    background-color: #2e2e2e;
+    border: 2px solid #ff7f50; /* Оранжевый скругленный бордер */
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#timerDisplay {
+    font-size: 48px; /* Увеличенный размер шрифта таймера */
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: #ff7f50;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #ff5a23;
+}
+
+input[type="text"], textarea, select {
+    background-color: #3e3e3e;
+    border: 1px solid #ff7f50;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+input[type="text"]::placeholder {
+    color: #aaaaaa;
+}
+
+.name-filter {
+    margin-top: 20px;
+}
+
+.name-filter h3 {
+    margin-bottom: 10px;
+}
+
+#nameCheckboxes {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ff7f50;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #2e2e2e;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #2e2e2e;
+    margin: 15% auto;
+    padding: 20px;
+    border: 2px solid #ff7f50;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close {
+    color: #ffffff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #ff7f50;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 10px;
+    color: #ff7f50;
+}
+
+input[type="text"], textarea {
+    background-color: #3e3e3e;
+    border: 1px solid #ff7f50;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+textarea.fixed-size {
+    height: 100px; /* Фиксированная высота для блока заметок */
+    resize: none;  /* Запрещаем изменение размера */
+}
+
+button[type="submit"] {
+    background-color: #ff7f50;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button[type="submit"]:hover {
+    background-color: #ff5a23;
+}
+
+
+/* Стиль для лейбла "Loot Value" */
+label[for="lootValue"] {
+    margin-top: 15px;
+    color: #ff7f50; /* Оранжевый цвет для соответствия общему стилю */
+    font-weight: bold;
+}
+
+/* Стиль для поля ввода суммы лута */
+input[type="number"]#lootValue {
+    background-color: #3e3e3e;
+    border: 1px solid #ff7f50;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 5px;
+
+    /* Убираем стрелки для браузеров на основе WebKit (Chrome, Safari, Edge) */
+    -webkit-appearance: none;
+    -moz-appearance: textfield; /* Firefox */
+    appearance: none;
+}
+
+/* Убираем стрелки для Firefox */
+input[type="number"]#lootValue::-webkit-outer-spin-button,
+input[type="number"]#lootValue::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Стиль для текста внутри поля при placeholder */
+input[type="number"]#lootValue::placeholder {
+    color: #aaaaaa;
+}
+
+/* Стиль для поля при фокусе */
+input[type="number"]#lootValue:focus {
+    outline: none;
+    border-color: #ff5a23;
+    box-shadow: 0 0 5px #ff7f50;
+}

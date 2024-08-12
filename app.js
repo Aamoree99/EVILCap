@@ -792,6 +792,102 @@ app.get('/rules', (req, res) => {
     res.render('rules');
 });
 
+app.get('/crabs', (req, res) => {
+    const query = 'SELECT * FROM time_record ORDER BY time DESC';
+    connection.query(query, (err, results) => {
+        if (err) throw err;
+
+        if (results.length === 0) {
+            return res.render('crabs', { 
+                records: [],
+                mostProfitable: null,
+                fastestRun: null,
+                avgValue: null,
+                avgTime: null
+            });
+        }
+
+        // Находим самую прибыльную запись
+        const mostProfitable = results.reduce((max, record) => max.value > record.value ? max : record);
+
+        // Находим самую быструю запись
+        const fastestRun = results.reduce((min, record) => {
+            const minTimeInSeconds = timeStringToSeconds(min.time);
+            const recordTimeInSeconds = timeStringToSeconds(record.time);
+            return minTimeInSeconds < recordTimeInSeconds ? min : record;
+        });
+
+        // Вычисляем среднее значение для прибыли
+        const avgValue = results.reduce((sum, record) => sum + record.value, 0) / results.length;
+
+        // Вычисляем среднее значение для времени
+        const totalSeconds = results.reduce((sum, record) => sum + timeStringToSeconds(record.time), 0);
+        const avgTimeInSeconds = totalSeconds / results.length;
+
+        // Преобразуем среднее время обратно в формат HH:MM:SS
+        const avgTimeFormatted = secondsToTimeString(avgTimeInSeconds);
+
+        res.render('crabs', { 
+            records: results,
+            mostProfitable: mostProfitable,
+            fastestRun: fastestRun,
+            avgValue: avgValue.toFixed(2),
+            avgTime: avgTimeFormatted
+        });
+    });
+});
+
+// Функция для преобразования времени в формате HH:MM:SS в секунды
+function timeStringToSeconds(time) {
+    const [hours, minutes, seconds] = time.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
+// Функция для преобразования секунд обратно в формат HH:MM:SS
+function secondsToTimeString(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
+
+
+app.post('/api/save', (req, res) => {
+    const { time, value, name, notes } = req.body;
+    const query = 'INSERT INTO time_record (time, value, name, notes) VALUES (?, ?, ?, ?)';
+    connection.query(query, [time, value, name, notes], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: 'Ошибка сохранения данных' });
+        }
+        res.json({ success: true, message: 'Данные успешно сохранены' });
+    });
+});
+
+app.get('/api/filter', (req, res) => {
+    const { name } = req.query;
+    const nameConditions = name.split(',').map(n => `name LIKE '%${n.trim()}%'`).join(' OR ');
+    
+    const query = `
+        SELECT * FROM time_record 
+        WHERE (${nameConditions}) 
+        ORDER BY time DESC`;
+    
+    connection.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Ошибка получения данных' });
+        }
+
+        res.json({ 
+            records: results
+        });
+    });
+});
+
+
+
+
+
 app.use('/lp', lpApp);
 
 fetchDataFromDB();
