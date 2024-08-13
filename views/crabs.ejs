@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/cr_styles.css">
 </head>
 <body>
-    <h1>Crabs Tracker</h1>
+    <h1>CRAB Tracker</h1>
 
     <!-- Блок с информацией о забегах -->
     <div class="info-container">
@@ -53,6 +53,34 @@
         <button id="saveButton">Save</button>
     </div>
 
+    <div class="filter-container">
+        <div class="dropdown">
+            <button class="dropbtn">Filter by Names</button>
+            <div class="dropdown-content" id="nameCheckboxes">
+                <% uniqueNames.forEach(name => { %>
+                    <div>
+                        <input type="checkbox" id="name_<%= name %>" value="<%= name %>">
+                        <label for="name_<%= name %>"><%= name %></label>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    
+        <div class="dropdown">
+            <button class="dropbtn">Filter by Ships</button>
+            <div class="dropdown-content" id="shipCheckboxes">
+                <% uniqueShips.forEach(ship => { %>
+                    <div>
+                        <input type="checkbox" id="ship_<%= ship %>" value="<%= ship %>">
+                        <label for="ship_<%= ship %>"><%= ship %></label>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    
+        <button id="filterButton">Filter</button>
+    </div>
+
     <h2>Records</h2>
     <table>
         <thead>
@@ -60,7 +88,7 @@
                 <th>Time</th>
                 <th>Loot</th>
                 <th>Name</th>
-                <th>Notes</th>
+                <th>Ships</th>
             </tr>
         </thead>
         <tbody>
@@ -74,30 +102,7 @@
             <% }); %>
         </tbody>
     </table>
-
-    <div class="filter">
-        <div class="name-filter">
-            <h3>Select Names:</h3>
-            <div id="nameCheckboxes">
-                <% 
-                const uniqueNames = new Set();
-                records.forEach(record => { 
-                    if (record.name) {
-                        const names = record.name.split(',').map(name => name.trim());
-                        names.forEach(name => uniqueNames.add(name));
-                    }
-                }); 
-                uniqueNames.forEach(name => { %>
-                    <div>
-                        <input type="checkbox" id="name_<%= name %>" value="<%= name %>">
-                        <label for="name_<%= name %>"><%= name %></label>
-                    </div>
-                <% }); %>
-            </div>
-        </div>
-        
-        <button id="filterButton">Filter</button>
-    </div>
+ 
 
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -107,14 +112,67 @@
                 <input type="hidden" name="time" id="modalTime">
     
                 <label for="nameInput">Participants:</label>
-                <input type="text" id="nameInput" name="name" required>
+                    <div id="selectedNames" style="margin-bottom: 10px;"></div>
+                    <input type="text" id="nameInput" name="nameInput" list="nameSuggestions">
+                    <datalist id="nameSuggestions">
+                        <% uniqueNames.forEach(name => { %>
+                            <option value="<%= name %>"></option>
+                        <% }); %>
+                    </datalist>
+                    <input type="hidden" id="nameInputHidden" name="name" required>
+
     
+                <!-- Поле для ввода стоимости лута -->
                 <label for="lootValue">Loot Value:</label>
                 <input type="number" id="lootValue" name="lootValue" required>
     
-                <label for="notes">Notes:</label>
-                <textarea id="notes" name="notes" class="fixed-size"></textarea>
-                
+                <!-- Поле для выбора кораблей -->
+                <label for="shipSelection">Select Ships:</label>
+                <div id="shipSelection">
+                    <h4>Dreadnoughts</h4>
+                    <div class="ship-option" data-value="Revelation">Revelation</div>
+                    <div class="ship-option" data-value="Phoenix">Phoenix</div>
+                    <div class="ship-option" data-value="Moros">Moros</div>
+                    <div class="ship-option" data-value="Naglfar">Naglfar</div>
+                    <div class="ship-option" data-value="Vehement">Vehement</div>
+                    <div class="ship-option" data-value="Chemosh">Chemosh</div>
+                    <div class="ship-option" data-value="Caiman">Caiman</div>
+                    <div class="ship-option" data-value="Zirnitra">Zirnitra</div>
+                    <div class="ship-option" data-value="Revelation Navy Issue">Revelation Navy Issue</div>
+                    <div class="ship-option" data-value="Phoenix Navy Issue">Phoenix Navy Issue</div>
+                    <div class="ship-option" data-value="Moros Navy Issue">Moros Navy Issue</div>
+                    <div class="ship-option" data-value="Naglfar Fleet Issue">Naglfar Fleet Issue</div>
+                    <div class="ship-option" data-value="Bane">Bane</div>
+                    <div class="ship-option" data-value="Karura">Karura</div>
+                    <div class="ship-option" data-value="Hubris">Hubris</div>
+                    <div class="ship-option" data-value="Valravn">Valravn</div>
+    
+                    <h4>Carriers</h4>
+                    <div class="ship-option" data-value="Archon">Archon</div>
+                    <div class="ship-option" data-value="Chimera">Chimera</div>
+                    <div class="ship-option" data-value="Thanatos">Thanatos</div>
+                    <div class="ship-option" data-value="Nidhoggur">Nidhoggur</div>
+    
+                    <h4>Force Auxiliaries</h4>
+                    <div class="ship-option" data-value="Apostle">Apostle</div>
+                    <div class="ship-option" data-value="Minokawa">Minokawa</div>
+                    <div class="ship-option" data-value="Ninazu">Ninazu</div>
+                    <div class="ship-option" data-value="Lif">Lif</div>
+                    <div class="ship-option" data-value="Dagon">Dagon</div>
+                    <div class="ship-option" data-value="Loggerhead">Loggerhead</div>
+    
+                    <h4>Supercarriers</h4>
+                    <div class="ship-option" data-value="Aeon">Aeon</div>
+                    <div class="ship-option" data-value="Wyvern">Wyvern</div>
+                    <div class="ship-option" data-value="Nyx">Nyx</div>
+                    <div class="ship-option" data-value="Hel">Hel</div>
+                    <div class="ship-option" data-value="Revenant">Revenant</div>
+                    <div class="ship-option" data-value="Vendetta">Vendetta</div>
+                </div>
+                <!-- Поле для хранения выбранных кораблей -->
+                <input type="hidden" id="shipInput" name="ships" required>
+    
+                <!-- Кнопка для сохранения -->
                 <button type="submit">Save</button>
             </form>
         </div>

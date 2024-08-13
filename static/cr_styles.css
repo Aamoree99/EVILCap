@@ -228,3 +228,89 @@ input[type="number"]#lootValue:focus {
     border-color: #ff5a23;
     box-shadow: 0 0 5px #ff7f50;
 }
+
+.filter-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    background-color: #ff7f50;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #3e3e3e;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.dropdown-content div {
+    padding: 5px 10px;
+}
+
+.dropdown-content input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown:hover .dropbtn {
+    background-color: #ff5a23;
+}
+
+
+.ship-option {
+    display: inline-block;
+    padding: 10px;
+    margin: 5px;
+    background-color: #3e3e3e;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid #ff7f50;
+    transition: background-color 0.3s ease;
+}
+
+.ship-option.selected {
+    background-color: #ff7f50;
+    color: white;
+}
+
+
+.name-block {
+    border: 1px solid #ff7f50; /* Оранжевый бордер, чтобы соответствовать общему стилю */
+    display: inline-block;
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: #3e3e3e; /* Фон, соответствующий остальным элементам */
+    color: #ffffff; /* Белый цвет текста, чтобы соответствовать остальному тексту */
+    transition: background-color 0.3s ease, border-color 0.3s ease; /* Плавные переходы */
+}
+
+.name-block:hover {
+    background-color: #ff7f50; /* Фон оранжевый при наведении */
+    color: #1e1e1e; /* Цвет текста становится темным при наведении */
+    border-color: #ff5a23; /* Бордер немного темнее при наведении */
+}

@@ -67,15 +67,118 @@ function openModal() {
     modal.style.display = 'block';
 }
 
+function filterRecords() {
+    const selectedNames = Array.from(document.querySelectorAll('#nameCheckboxes input[type="checkbox"]:checked'))
+                                .map(checkbox => checkbox.value);
+
+    const selectedShips = Array.from(document.querySelectorAll('#shipCheckboxes input[type="checkbox"]:checked'))
+                                .map(checkbox => checkbox.value);
+
+    fetch(`/api/filter?name=${selectedNames.join(',')}&ship=${selectedShips.join(',')}`)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = '';
+            data.records.forEach(record => {
+                const row = `<tr>
+                    <td>${record.time}</td>
+                    <td>${record.value} kk ISK</td>
+                    <td>${record.name}</td>
+                    <td>${record.notes}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Ошибка:', error));
+}
+
+
+
+const closeButton = document.querySelector('.close');
+closeButton.addEventListener('click', () => {
+    modal.style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target == modal) {
+        modal.style.display = 'none';
+    }
+});
+
+const nameInput = document.getElementById('nameInput');
+const nameInputHidden = document.getElementById('nameInputHidden');
+const selectedNames = document.getElementById('selectedNames');
+
+// Функция для добавления имени в список выбранных
+function addName(name) {
+    if (name.trim() === '') return;
+
+    const nameBlock = document.createElement('div');
+    nameBlock.className = 'name-block';
+    nameBlock.textContent = name.trim();
+    nameBlock.style.border = '1px solid #ccc';
+    nameBlock.style.display = 'inline-block';
+    nameBlock.style.padding = '5px';
+    nameBlock.style.marginRight = '5px';
+    nameBlock.style.cursor = 'pointer';
+
+    // Удаление имени при нажатии
+    nameBlock.addEventListener('click', function () {
+        selectedNames.removeChild(nameBlock);
+        updateHiddenInput();
+    });
+
+    selectedNames.appendChild(nameBlock);
+    updateHiddenInput();
+}
+
+// Обновление скрытого поля с именами
+function updateHiddenInput() {
+    const names = Array.from(selectedNames.children).map(block => block.textContent);
+    nameInputHidden.value = names.join(', ');
+}
+
+// Обработка выбора из списка или нажатия Enter
+nameInput.addEventListener('change', function () {
+    addName(nameInput.value);
+    nameInput.value = ''; // Очищаем поле ввода после добавления имени
+});
+
+nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addName(nameInput.value);
+        nameInput.value = ''; // Очищаем поле ввода после добавления имени
+    }
+});
+
+// Изначальное добавление уже введенных имен при загрузке страницы
+document.addEventListener('DOMContentLoaded', function () {
+    const initialNames = nameInputHidden.value.split(',').map(name => name.trim());
+    initialNames.forEach(name => {
+        if (name) {
+            addName(name);
+        }
+    });
+});
+
+// Обработчик отправки формы
 saveForm.addEventListener('submit', function(event) {
     event.preventDefault();
 
+    // Получение значений полей формы
+    const lootValue = document.getElementById('lootValue').value.trim(); 
+    const shipList = shipInput.value.trim(); // shipInput.value уже содержит список выбранных кораблей через запятую
+
+    // Проверка значений и установка по умолчанию, если они пустые
     const formData = {
-        time: modalTime.value, // Время с таймера в формате HH:MM:SS
-        value: lootValue.value, // Сумма лута, введенная в модальном окне
-        name: saveForm.name.value,
-        notes: saveForm.notes.value
+        time: modalTime.value,
+        name: nameInputHidden.value, // Имена собраны в скрытом поле
+        value: lootValue ? parseFloat(lootValue) : 0, // Если lootValue пустое, устанавливаем значение 0
+        notes: shipList ? shipList : '' // Если shipList пустой, устанавливаем пустую строку
     };
+
+    console.log('Сохранение данных:', formData);
 
     fetch('/api/save', {
         method: 'POST',
@@ -97,36 +200,22 @@ saveForm.addEventListener('submit', function(event) {
 });
 
 
-function filterRecords() {
-    const selectedNames = Array.from(nameCheckboxes.querySelectorAll('input[type="checkbox"]:checked'))
-                                .map(checkbox => checkbox.value);
+const shipSelection = document.getElementById('shipSelection');
+const shipInput = document.getElementById('shipInput');
+const selectedShips = new Set();
 
-    fetch(`/api/filter?name=${selectedNames.join(',')}`)
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.querySelector('tbody');
-            tbody.innerHTML = '';
-            data.records.forEach(record => {
-                const row = `<tr>
-                    <td>${record.time}</td>
-                    <td>${record.value}</td>
-                    <td>${record.name}</td>
-                    <td>${record.notes}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
-        })
-        .catch(error => console.error('Ошибка:', error));
-}
+shipSelection.addEventListener('click', function(e) {
+    if (e.target.classList.contains('ship-option')) {
+        const ship = e.target.getAttribute('data-value');
 
+        if (selectedShips.has(ship)) {
+            selectedShips.delete(ship);
+            e.target.classList.remove('selected');
+        } else {
+            selectedShips.add(ship);
+            e.target.classList.add('selected');
+        }
 
-const closeButton = document.querySelector('.close');
-closeButton.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target == modal) {
-        modal.style.display = 'none';
+        shipInput.value = Array.from(selectedShips).join(', ');
     }
 });

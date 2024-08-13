@@ -803,7 +803,9 @@ app.get('/crabs', (req, res) => {
                 mostProfitable: null,
                 fastestRun: null,
                 avgValue: null,
-                avgTime: null
+                avgTime: null,
+                uniqueNames: [],
+                uniqueShips: []
             });
         }
 
@@ -819,15 +821,33 @@ app.get('/crabs', (req, res) => {
         const avgTimeInSeconds = totalSeconds / results.length;
         const avgTimeFormatted = secondsToTimeString(avgTimeInSeconds);
 
+        const uniqueNames = new Set();
+        const uniqueShips = new Set();
+
+        results.forEach(record => {
+            if (record.name) {
+                const names = record.name.split(',').map(name => name.trim());
+                names.forEach(name => uniqueNames.add(name));
+            }
+            if (record.notes) {
+                const ships = record.notes.split(',').map(ship => ship.trim());
+                ships.forEach(ship => uniqueShips.add(ship));
+            }
+        });
+
+        // Делаем из множества массивы для передачи на фронтенд
         res.render('crabs', { 
             records: results,
             mostProfitable: mostProfitable,
             fastestRun: fastestRun,
             avgValue: avgValue.toFixed(2),
-            avgTime: avgTimeFormatted
+            avgTime: avgTimeFormatted,
+            uniqueNames: Array.from(uniqueNames),
+            uniqueShips: Array.from(uniqueShips)
         });
     });
 });
+
 
 function timeStringToSeconds(time) {
     const [hours, minutes, seconds] = time.split(':').map(Number);
@@ -843,32 +863,55 @@ function secondsToTimeString(seconds) {
 
 
 
-
 app.post('/api/save', (req, res) => {
-    const { time, value, name, notes } = req.body;
-    const query = 'INSERT INTO time_record (time, value, name, notes) VALUES (?, ?, ?, ?)';
-    connection.query(query, [time, value, name, notes], (err, result) => {
+    const { time, name, value, notes } = req.body;
+
+    const names = name.split(',').map(n => n.trim()).join(', ');
+    const shipList = Array.isArray(notes) ? notes.join(', ') : notes;
+
+    console.log('Сохранение данных:', { time, names, value, notes });
+
+    const query = `INSERT INTO time_record (time, name, value, notes) VALUES (?, ?, ?, ?)`;
+    connection.query(query, [time, names, value, shipList], (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Ошибка сохранения данных' });
+            console.error('Ошибка при сохранении данных:', err);
+            return res.status(500).json({ error: 'Ошибка при сохранении данных' });
         }
-        res.json({ success: true, message: 'Данные успешно сохранены' });
+
+        res.json({ success: true });
     });
 });
 
+
 app.get('/api/filter', (req, res) => {
-    const { name } = req.query;
-    const nameConditions = name.split(',').map(n => `name LIKE '%${n.trim()}%'`).join(' OR ');
+    const { name, ship } = req.query;
+    let conditions = [];
+
+    if (name) {
+        const nameConditions = name.split(',')
+                                   .map(n => `name LIKE '%${n.trim()}%'`)
+                                   .join(' OR ');
+        conditions.push(`(${nameConditions})`);
+    }
+
+    if (ship) {
+        const shipConditions = ship.split(',')
+                                   .map(s => `notes LIKE '%${s.trim()}%'`)
+                                   .join(' AND '); // Используем AND, чтобы отфильтровать записи, содержащие все выбранные корабли
+        conditions.push(`(${shipConditions})`);
+    }
+
+    const queryConditions = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const query = `
         SELECT * FROM time_record 
-        WHERE (${nameConditions}) 
+        ${queryConditions}
         ORDER BY id DESC`;
 
     connection.query(query, (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Ошибка получения данных' });
         }
-
         res.json({ 
             records: results
         });
