@@ -809,6 +809,12 @@ app.get('/crabs', (req, res) => {
             });
         }
 
+        results.forEach(record => {
+            if (record.record_date) {
+                record.record_date = record.record_date.toISOString().split('T')[0];
+            }
+        });
+
         const mostProfitable = results.reduce((max, record) => max.value > record.value ? max : record);
         const fastestRun = results.reduce((min, record) => {
             const minTimeInSeconds = timeStringToSeconds(min.time);
@@ -919,6 +925,11 @@ app.get('/api/filter', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Ошибка получения данных' });
         }
+        results.forEach(record => {
+            if (record.record_date) {
+                record.record_date = record.record_date.toISOString().split('T')[0];
+            }
+        });
         
         // Рассчитываем необходимые данные только на основе отфильтрованных записей
         const mostProfitable = results.reduce((max, record) => record.value > max.value ? record : max, { value: 0 });

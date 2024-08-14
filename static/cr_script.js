@@ -231,3 +231,10 @@ shipSelection.addEventListener('click', function(e) {
         shipInput.value = Array.from(selectedShips).join(', ');
     }
 });
+
+
+document.getElementById('exactFilterContainer').addEventListener('click', function() {
+    const checkbox = document.getElementById('exactFilter');
+    checkbox.checked = !checkbox.checked;  // Переключаем состояние чекбокса
+    this.classList.toggle('selected', checkbox.checked);  // Обновляем стиль контейнера
+});

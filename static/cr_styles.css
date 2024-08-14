@@ -319,28 +319,23 @@ input[type="number"]#lootValue:focus {
 
 
 .filter-checkbox {
-    border: 1px solid #ff7f50; /* Оранжевый бордер для соответствия общему стилю */
+    border: 1px solid #ff7f50;
     display: inline-block;
     padding: 10px;
     border-radius: 5px;
-    background-color: #3e3e3e; /* Фон, соответствующий остальным элементам */
-    color: #ffffff; /* Белый цвет текста */
+    background-color: #3e3e3e;
+    color: #ffffff;
     cursor: pointer;
-    transition: background-color 0.3s ease, border-color 0.3s ease; /* Плавные переходы */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    text-align: center;
 }
 
-.filter-checkbox input[type="checkbox"] {
-    margin-right: 10px;
+.filter-checkbox.selected {
+    background-color: #ff7f50;
+    color: #1e1e1e;
 }
 
 .filter-checkbox label {
     cursor: pointer;
-}
-
-.filter-checkbox input[type="checkbox"]:checked + label {
-    background-color: #ff7f50; /* Оранжевый фон при выбранном чекбоксе */
-    color: #1e1e1e; /* Темный цвет текста при выбранном чекбоксе */
-    padding: 8px 12px;
-    border-radius: 5px;
-    border-color: #ff5a23; /* Темный оранжевый бордер при выбранном чекбоксе */
+    margin: 0;
 }
