@@ -869,10 +869,12 @@ app.post('/api/save', (req, res) => {
     const names = name.split(',').map(n => n.trim()).join(', ');
     const shipList = Array.isArray(notes) ? notes.join(', ') : notes;
 
-    console.log('Сохранение данных:', { time, names, value, notes });
+    const currentDate = new Date().toISOString().split('T')[0];
 
-    const query = `INSERT INTO time_record (time, name, value, notes) VALUES (?, ?, ?, ?)`;
-    connection.query(query, [time, names, value, shipList], (err, results) => {
+    console.log('Сохранение данных:', { time, names, value, notes, record_date: currentDate });
+
+    const query = `INSERT INTO time_record (time, name, value, notes, record_date) VALUES (?, ?, ?, ?, ?)`;
+    connection.query(query, [time, names, value, shipList, currentDate], (err, results) => {
         if (err) {
             console.error('Ошибка при сохранении данных:', err);
             return res.status(500).json({ error: 'Ошибка при сохранении данных' });
@@ -881,6 +883,7 @@ app.post('/api/save', (req, res) => {
         res.json({ success: true });
     });
 });
+
 
 
 app.get('/api/filter', (req, res) => {

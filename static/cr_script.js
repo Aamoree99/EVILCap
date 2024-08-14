@@ -83,6 +83,7 @@ function filterRecords() {
             tbody.innerHTML = '';
             data.records.forEach(record => {
                 const row = `<tr>
+                    <td>${record.record_date || ''}</td>
                     <td>${record.time}</td>
                     <td>${record.value} kk ISK</td>
                     <td>${record.name}</td>
