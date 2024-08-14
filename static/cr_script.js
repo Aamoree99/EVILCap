@@ -74,7 +74,9 @@ function filterRecords() {
     const selectedShips = Array.from(document.querySelectorAll('#shipCheckboxes input[type="checkbox"]:checked'))
                                 .map(checkbox => checkbox.value);
 
-    fetch(`/api/filter?name=${selectedNames.join(',')}&ship=${selectedShips.join(',')}`)
+    const exact = document.getElementById('exactFilter').checked;
+
+    fetch(`/api/filter?name=${selectedNames.join(',')}&ship=${selectedShips.join(',')}&exact=${exact}`)
         .then(response => response.json())
         .then(data => {
             const tbody = document.querySelector('tbody');
@@ -88,9 +90,18 @@ function filterRecords() {
                 </tr>`;
                 tbody.innerHTML += row;
             });
+
+            // Обновляем информацию о заходах на основе отфильтрованных данных
+            document.querySelector('.info-container .most-profitable-value').textContent = `Value: ${data.stats.mostProfitable.value} kk ISK`;
+            document.querySelector('.info-container .most-profitable-time').textContent = `Time: ${data.stats.mostProfitable.time}`;
+            document.querySelector('.info-container .fastest-run-value').textContent = `Value: ${data.stats.fastestRun.value} kk ISK`;
+            document.querySelector('.info-container .fastest-run-time').textContent = `Time: ${data.stats.fastestRun.time}`;
+            document.querySelector('.info-container .avg-value').textContent = `Average Value: ${data.stats.avgValue} kk ISK`;
+            document.querySelector('.info-container .avg-time').textContent = `Average Time: ${data.stats.avgTime}`;
         })
         .catch(error => console.error('Ошибка:', error));
 }
+
 
 
 

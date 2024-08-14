@@ -884,20 +884,24 @@ app.post('/api/save', (req, res) => {
 
 
 app.get('/api/filter', (req, res) => {
-    const { name, ship } = req.query;
+    const { name, ship, exact } = req.query;
     let conditions = [];
 
     if (name) {
         const nameConditions = name.split(',')
-                                   .map(n => `name LIKE '%${n.trim()}%'`)
+                                   .map(n => exact === 'true' 
+                                        ? `name = '${n.trim()}'`
+                                        : `name LIKE '%${n.trim()}%'`)
                                    .join(' OR ');
         conditions.push(`(${nameConditions})`);
     }
 
     if (ship) {
         const shipConditions = ship.split(',')
-                                   .map(s => `notes LIKE '%${s.trim()}%'`)
-                                   .join(' AND '); // Используем AND, чтобы отфильтровать записи, содержащие все выбранные корабли
+                                   .map(s => exact === 'true' 
+                                        ? `notes = '${s.trim()}'`
+                                        : `notes LIKE '%${s.trim()}%'`)
+                                   .join(exact === 'true' ? ' AND ' : ' OR ');
         conditions.push(`(${shipConditions})`);
     }
 
@@ -912,13 +916,24 @@ app.get('/api/filter', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Ошибка получения данных' });
         }
+        
+        // Рассчитываем необходимые данные только на основе отфильтрованных записей
+        const mostProfitable = results.reduce((max, record) => record.value > max.value ? record : max, { value: 0 });
+        const fastestRun = results.reduce((min, record) => record.time < min.time ? record : min, { time: Infinity });
+        const avgValue = (results.reduce((sum, record) => sum + record.value, 0) / results.length).toFixed(2);
+        const avgTime = (results.reduce((sum, record) => sum + record.time, 0) / results.length).toFixed(2);
+
         res.json({ 
-            records: results
+            records: results,
+            stats: {
+                mostProfitable,
+                fastestRun,
+                avgValue,
+                avgTime
+            }
         });
     });
 });
-
-
 
 
 app.use('/lp', lpApp);

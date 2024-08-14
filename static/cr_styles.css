@@ -231,9 +231,11 @@ input[type="number"]#lootValue:focus {
 
 .filter-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 20px;
     margin-bottom: 20px;
 }
+
 
 .dropdown {
     position: relative;
