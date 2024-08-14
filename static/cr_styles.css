@@ -320,19 +320,21 @@ input[type="number"]#lootValue:focus {
 
 .filter-checkbox {
     border: 1px solid #ff7f50;
-    display: inline-block;
+    display: inline-flex; /* Используем inline-flex для вертикального центрирования текста */
+    align-items: center; /* Вертикальное выравнивание текста */
+    justify-content: center; /* Горизонтальное выравнивание текста */
     padding: 10px;
     border-radius: 5px;
     background-color: #3e3e3e;
     color: #ffffff;
     cursor: pointer;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; /* Добавляем плавный переход для цвета текста */
     text-align: center;
 }
 
 .filter-checkbox.selected {
     background-color: #ff7f50;
-    color: #1e1e1e;
+    color: #ffffff; /* Белый цвет текста при выбранном состоянии */
 }
 
 .filter-checkbox label {

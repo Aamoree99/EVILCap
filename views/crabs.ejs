@@ -15,8 +15,8 @@
         <div class="info-block">
             <h3>Most Profitable Run:</h3>
             <% if (mostProfitable) { %>
-                <p>Value: <%= mostProfitable.value %></p>
-                <p>Time: <%= mostProfitable.time %></p>
+                <p class="most-profitable-value">Value: <%= mostProfitable.value %> kk ISK</p>
+                <p class="most-profitable-time">Time: <%= mostProfitable.time %></p>
                 <% if (mostProfitable.name) { %>
                     <p>Participants: <%= mostProfitable.name %></p>
                 <% } %>
@@ -24,18 +24,18 @@
                 <p>No data</p>
             <% } %>
         </div>
-
+    
         <div class="info-block">
             <h3>Average Data:</h3>
-            <p>Average Value: <%= avgValue %></p>
-            <p>Average Time: <%= avgTime %></p>
+            <p class="avg-value">Average Value: <%= avgValue %> kk ISK</p>
+            <p class="avg-time">Average Time: <%= avgTime %></p>
         </div>
-
+    
         <div class="info-block">
             <h3>Fastest Run:</h3>
             <% if (fastestRun) { %>
-                <p>Value: <%= fastestRun.value %></p>
-                <p>Time: <%= fastestRun.time %></p>
+                <p class="fastest-run-value">Value: <%= fastestRun.value %> kk ISK</p>
+                <p class="fastest-run-time">Time: <%= fastestRun.time %></p>
                 <% if (fastestRun.name) { %>
                     <p>Participants: <%= fastestRun.name %></p>
                 <% } %>
@@ -44,6 +44,7 @@
             <% } %>
         </div>
     </div>
+    
 
     <div class="timer">
         <h2>Timer</h2>

@@ -92,7 +92,6 @@ function filterRecords() {
                 tbody.innerHTML += row;
             });
 
-            // Обновляем информацию о заходах на основе отфильтрованных данных
             document.querySelector('.info-container .most-profitable-value').textContent = `Value: ${data.stats.mostProfitable.value} kk ISK`;
             document.querySelector('.info-container .most-profitable-time').textContent = `Time: ${data.stats.mostProfitable.time}`;
             document.querySelector('.info-container .fastest-run-value').textContent = `Value: ${data.stats.fastestRun.value} kk ISK`;
