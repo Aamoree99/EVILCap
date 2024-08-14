@@ -21,11 +21,31 @@ h1, h2, h3 {
     border-radius: 10px;
     border: 1px solid #ff7f50;
     width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Центрирование содержимого по вертикали */
 }
 
 .info-block h3 {
     margin-bottom: 10px;
+    text-align: center; /* Заголовок по центру */
 }
+
+.info-block.most-profitable {
+    align-items: flex-start; /* Текст по левой стороне */
+    text-align: left;
+}
+
+.info-block.average {
+    align-items: center; /* Текст по центру */
+    text-align: center;
+}
+
+.info-block.fastest {
+    align-items: flex-end; /* Текст по правой стороне */
+    text-align: right;
+}
+
 
 .table, .filter {
     margin-top: 20px;
