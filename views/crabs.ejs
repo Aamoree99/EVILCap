@@ -10,9 +10,8 @@
 <body>
     <h1>CRAB Tracker</h1>
 
-    <!-- Блок с информацией о забегах -->
     <div class="info-container">
-        <div class="info-block">
+        <div class="info-block most-profitable">
             <h3>Most Profitable Run:</h3>
             <% if (mostProfitable) { %>
                 <p class="most-profitable-value">Value: <%= mostProfitable.value %> kk ISK</p>
@@ -25,13 +24,13 @@
             <% } %>
         </div>
     
-        <div class="info-block">
+        <div class="info-block average">
             <h3>Average Data:</h3>
             <p class="avg-value">Average Value: <%= avgValue %> kk ISK</p>
             <p class="avg-time">Average Time: <%= avgTime %></p>
         </div>
     
-        <div class="info-block">
+        <div class="info-block fastest">
             <h3>Fastest Run:</h3>
             <% if (fastestRun) { %>
                 <p class="fastest-run-value">Value: <%= fastestRun.value %> kk ISK</p>

@@ -925,17 +925,37 @@ app.get('/api/filter', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Ошибка получения данных' });
         }
+
         results.forEach(record => {
             if (record.record_date) {
                 record.record_date = record.record_date.toISOString().split('T')[0];
             }
         });
-        
-        // Рассчитываем необходимые данные только на основе отфильтрованных записей
-        const mostProfitable = results.reduce((max, record) => record.value > max.value ? record : max, { value: 0 });
-        const fastestRun = results.reduce((min, record) => record.time < min.time ? record : min, { time: Infinity });
-        const avgValue = (results.reduce((sum, record) => sum + record.value, 0) / results.length).toFixed(2);
-        const avgTime = (results.reduce((sum, record) => sum + record.time, 0) / results.length).toFixed(2);
+
+        // Проверяем, что результаты не пустые и вычисляем показатели
+        const mostProfitable = results.length > 0 
+            ? results.reduce((max, record) => max.value > record.value ? max : record)
+            : { value: 0, time: '00:00:00' };
+
+        const fastestRun = results.length > 0 
+            ? results.reduce((min, record) => {
+                const minTimeInSeconds = timeStringToSeconds(min.time);
+                const recordTimeInSeconds = timeStringToSeconds(record.time);
+                return minTimeInSeconds < recordTimeInSeconds ? min : record;
+            })
+            : { value: 0, time: '00:00:00' };
+
+        const avgValue = results.length > 0 
+            ? (results.reduce((sum, record) => sum + record.value, 0) / results.length).toFixed(2)
+            : '0.00';
+
+        const totalSeconds = results.length > 0 
+            ? results.reduce((sum, record) => sum + timeStringToSeconds(record.time), 0)
+            : 0;
+
+        const avgTime = results.length > 0 
+            ? secondsToTimeString(totalSeconds / results.length)
+            : '00:00:00';
 
         res.json({ 
             records: results,
