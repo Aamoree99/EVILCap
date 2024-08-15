@@ -342,9 +342,13 @@ const App = {
           <tr v-for="offer in offers" :key="offer.offer_id">
             <td>
               <span v-if="user" @click="openMarketDetails(offer.item_id)" class="text-primary" style="cursor: pointer;">
+                <img :src="'https://images.evetech.net/types/' + offer.item_id + '/icon?size=32'" alt="Item Image" style="width: 32px; height: 32px; margin-right: 5px;">
                 {{ offer.item_name }}
               </span>
-              <span v-else>{{ offer.item_name }}</span>
+              <span v-else>
+                <img :src="'https://images.evetech.net/types/' + offer.item_id + '/icon?size=32'" alt="Item Image" style="width: 32px; height: 32px; margin-right: 5px;">
+                {{ offer.item_name }}
+              </span>
               (Quantity: {{ offer.quantity }})
             </td>
             <td>
