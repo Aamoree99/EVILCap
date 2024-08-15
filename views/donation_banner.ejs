@@ -50,7 +50,7 @@
     function updateProgressBar(amount) {
         const progressBar = document.getElementById('progress-bar');
         progressBar.style.width = '100%'; // Ширина полосы заполнения
-        progressBar.textContent = `${parseFloat(amount).toLocaleString('en-US')} ISK`;
+        progressBar.textContent = `Debt: ${parseFloat(amount).toLocaleString('en-US')} ISK`;
         progressBar.style.display = 'flex';
         progressBar.style.justifyContent = 'center';
         progressBar.style.alignItems = 'center';
@@ -109,7 +109,7 @@
     .progress-bar {
         width: 100%; /* Полоса заполнения на всю ширину */
         height: 30px;
-        background-color: #76c7c0;
+        background-color: #808080;
         border-radius: 5px;
         border: solid 1px #4e4e4e;
         display: flex;
