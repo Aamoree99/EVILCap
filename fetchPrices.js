@@ -28,7 +28,7 @@ const getMarketPrice = async (typeId, regionId, orderType) => {
         attempts++;
         await delay(RETRY_DELAY);
       } else {
-        console.error(`Error fetching market price for type ${typeId} in region ${regionId}:`, error);
+        console.error(`Error`);
         throw error;
       }
     }
@@ -68,7 +68,7 @@ const updatePricesForRegions = async (regionIds) => {
               await saveMarketPrice(typeId, regionId, orderType, price);
             }
           } catch (error) {
-            console.error(`Error processing item ${typeId} in region ${regionId} for ${orderType} orders:`, error);
+            console.error(`Error`);
           }
         }
       }
@@ -76,7 +76,7 @@ const updatePricesForRegions = async (regionIds) => {
 
     await logMessage('Market prices updated successfully.');
   } catch (error) {
-    console.error('Error updating market prices:', error);
+    console.error(`Error`);
   }
 };
 
@@ -84,7 +84,7 @@ const updatePricesForMainRegions = async () => {
   try {
     await updatePricesForRegions(MAIN_REGIONS);
   } catch (error) {
-    console.error('Ошибка при обновлении рыночных цен для основных регионов:', error);
+    console.error(`Error`);
   }
 };
 
@@ -94,7 +94,7 @@ const updatePricesForOtherRegions = async () => {
     const otherRegions = regionsResult.map(row => row.id);
     await updatePricesForRegions(otherRegions);
   } catch (error) {
-    console.error('Ошибка при обновлении рыночных цен для других регионов:', error);
+    console.error(`Error`);
   }
 };
 
@@ -168,7 +168,7 @@ const calculateAndSaveBestOffers = async () => {
     
     console.log('Лучшие предложения успешно рассчитаны и сохранены.');
   } catch (error) {
-    console.error('Ошибка при расчете и сохранении лучших предложений:', error);
+    console.error(`Error`);
   }
 };
 
