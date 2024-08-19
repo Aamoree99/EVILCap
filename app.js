@@ -890,49 +890,38 @@ app.post('/api/save', (req, res) => {
     });
 });
 
-
 app.get('/api/filter', (req, res) => {
     const { name, ship, exact } = req.query;
     let conditions = [];
+    const isExact = exact === 'true';
 
     if (name) {
-        const names = name.split(',').map(n => n.trim());
-        if (exact === 'true') {
-            const nameConditions = `
-                id IN (
-                    SELECT id
-                    FROM time_record
-                    WHERE name IN (${names.map(n => `'${n}'`).join(', ')})
-                    GROUP BY id
-                    HAVING COUNT(DISTINCT name) = ${names.length}
-                )`;
-            conditions.push(nameConditions);
-        } else {
-            const nameConditions = names.map(n => `name LIKE '%${n}%'`).join(' OR ');
-            conditions.push(`(${nameConditions})`);
+        const names = name.split(',').map(n => n.trim()).filter(n => n.length > 0);
+        if (names.length > 0) {
+            if (isExact) {
+                const nameCondition = names.join(', ');
+                conditions.push(`name = '${nameCondition}'`);
+            } else {
+                const nameConditions = names.map(n => `name LIKE '%${n}%'`).join(' AND ');
+                conditions.push(`(${nameConditions})`);
+            }
         }
     }
 
     if (ship) {
-        const ships = ship.split(',').map(s => s.trim());
-        if (exact === 'true') {
-            const shipConditions = `
-                id IN (
-                    SELECT id
-                    FROM time_record
-                    WHERE notes IN (${ships.map(s => `'${s}'`).join(', ')})
-                    GROUP BY id
-                    HAVING COUNT(DISTINCT notes) = ${ships.length}
-                )`;
-            conditions.push(shipConditions);
-        } else {
-            const shipConditions = ships.map(s => `notes LIKE '%${s}%'`).join(' OR ');
-            conditions.push(`(${shipConditions})`);
+        const ships = ship.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        if (ships.length > 0) {
+            if (isExact) {
+                const shipCondition = ships.join(', ');
+                conditions.push(`notes = '${shipCondition}'`);
+            } else {
+                const shipConditions = ships.map(s => `notes LIKE '%${s}%'`).join(' AND ');
+                conditions.push(`(${shipConditions})`);
+            }
         }
     }
 
     const queryConditions = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-
     const query = `
         SELECT * FROM time_record 
         ${queryConditions}
@@ -949,7 +938,6 @@ app.get('/api/filter', (req, res) => {
             }
         });
 
-        // Проверяем, что результаты не пустые и вычисляем показатели
         const mostProfitable = results.length > 0 
             ? results.reduce((max, record) => max.value > record.value ? max : record)
             : { value: 0, time: '00:00:00' };
@@ -985,8 +973,6 @@ app.get('/api/filter', (req, res) => {
         });
     });
 });
-
-
 
 app.use('/lp', lpApp);
 
