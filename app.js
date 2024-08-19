@@ -897,21 +897,35 @@ app.get('/api/filter', (req, res) => {
     let conditions = [];
 
     if (name) {
-        const nameConditions = name.split(',')
-                                   .map(n => exact === 'true' 
-                                        ? `name = '${n.trim()}'`
-                                        : `name LIKE '%${n.trim()}%'`)
-                                   .join(' OR ');
-        conditions.push(`(${nameConditions})`);
+        const names = name.split(',').map(n => n.trim());
+        if (exact === 'true') {
+            // Проверяем, чтобы в записи были все указанные имена и только они
+            const nameConditions = names.map(n => `name = '${n}'`).join(' OR ');
+            conditions.push(`(name IN (${names.map(n => `'${n}'`).join(', ')}) 
+                              AND (SELECT COUNT(DISTINCT name) 
+                                   FROM time_record 
+                                   WHERE name IN (${names.map(n => `'${n}'`).join(', ')})) = ${names.length})`);
+        } else {
+            // Если exact не выбран, используем LIKE
+            const nameConditions = names.map(n => `name LIKE '%${n}%'`).join(' OR ');
+            conditions.push(`(${nameConditions})`);
+        }
     }
 
     if (ship) {
-        const shipConditions = ship.split(',')
-                                   .map(s => exact === 'true' 
-                                        ? `notes = '${s.trim()}'`
-                                        : `notes LIKE '%${s.trim()}%'`)
-                                   .join(exact === 'true' ? ' AND ' : ' OR ');
-        conditions.push(`(${shipConditions})`);
+        const ships = ship.split(',').map(s => s.trim());
+        if (exact === 'true') {
+            // Проверяем, чтобы в записи были все указанные корабли и только они
+            const shipConditions = ships.map(s => `notes = '${s}'`).join(' OR ');
+            conditions.push(`(notes IN (${ships.map(s => `'${s}'`).join(', ')}) 
+                              AND (SELECT COUNT(DISTINCT notes) 
+                                   FROM time_record 
+                                   WHERE notes IN (${ships.map(s => `'${s}'`).join(', ')})) = ${ships.length})`);
+        } else {
+            // Если exact не выбран, используем LIKE
+            const shipConditions = ships.map(s => `notes LIKE '%${s}%'`).join(' OR ');
+            conditions.push(`(${shipConditions})`);
+        }
     }
 
     const queryConditions = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -968,6 +982,7 @@ app.get('/api/filter', (req, res) => {
         });
     });
 });
+
 
 
 app.use('/lp', lpApp);
