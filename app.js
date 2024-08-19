@@ -891,7 +891,6 @@ app.post('/api/save', (req, res) => {
 });
 
 
-
 app.get('/api/filter', (req, res) => {
     const { name, ship, exact } = req.query;
     let conditions = [];
@@ -899,14 +898,16 @@ app.get('/api/filter', (req, res) => {
     if (name) {
         const names = name.split(',').map(n => n.trim());
         if (exact === 'true') {
-            // Проверяем, чтобы в записи были все указанные имена и только они
-            const nameConditions = names.map(n => `name = '${n}'`).join(' OR ');
-            conditions.push(`(name IN (${names.map(n => `'${n}'`).join(', ')}) 
-                              AND (SELECT COUNT(DISTINCT name) 
-                                   FROM time_record 
-                                   WHERE name IN (${names.map(n => `'${n}'`).join(', ')})) = ${names.length})`);
+            const nameConditions = `
+                id IN (
+                    SELECT id
+                    FROM time_record
+                    WHERE name IN (${names.map(n => `'${n}'`).join(', ')})
+                    GROUP BY id
+                    HAVING COUNT(DISTINCT name) = ${names.length}
+                )`;
+            conditions.push(nameConditions);
         } else {
-            // Если exact не выбран, используем LIKE
             const nameConditions = names.map(n => `name LIKE '%${n}%'`).join(' OR ');
             conditions.push(`(${nameConditions})`);
         }
@@ -915,14 +916,16 @@ app.get('/api/filter', (req, res) => {
     if (ship) {
         const ships = ship.split(',').map(s => s.trim());
         if (exact === 'true') {
-            // Проверяем, чтобы в записи были все указанные корабли и только они
-            const shipConditions = ships.map(s => `notes = '${s}'`).join(' OR ');
-            conditions.push(`(notes IN (${ships.map(s => `'${s}'`).join(', ')}) 
-                              AND (SELECT COUNT(DISTINCT notes) 
-                                   FROM time_record 
-                                   WHERE notes IN (${ships.map(s => `'${s}'`).join(', ')})) = ${ships.length})`);
+            const shipConditions = `
+                id IN (
+                    SELECT id
+                    FROM time_record
+                    WHERE notes IN (${ships.map(s => `'${s}'`).join(', ')})
+                    GROUP BY id
+                    HAVING COUNT(DISTINCT notes) = ${ships.length}
+                )`;
+            conditions.push(shipConditions);
         } else {
-            // Если exact не выбран, используем LIKE
             const shipConditions = ships.map(s => `notes LIKE '%${s}%'`).join(' OR ');
             conditions.push(`(${shipConditions})`);
         }
