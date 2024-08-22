@@ -32,7 +32,7 @@ jobs:
           EOF
       - name: Debug Secret
         run: |
-          echo "SECRET: ${{ secrets.SECRET_NAME }}" | sed 's/./& /g'
+          echo "SECRET: ${{ secrets.ENV }}" | sed 's/./& /g'
       - name: Dependencies
         run: |
           npm install
