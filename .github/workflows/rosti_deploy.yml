@@ -30,9 +30,6 @@ jobs:
           cat << EOF > .env
           ${{ secrets.ENV }}
           EOF
-      - name: Debug Secret
-        run: |
-          echo "SECRET: ${{ secrets.ENV }}" | sed 's/./& /g'
       - name: Dependencies
         run: |
           npm install

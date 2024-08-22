@@ -2313,7 +2313,8 @@ async function createMoonMessage(currentDate) {
 }
 
 async function checkFuelExpirations(data) {
-    const channel = client.channels.cache.get('1213973137176133772');
+    const defaultChannel = client.channels.cache.get(LOG_CHANNEL_ID); // Канал по умолчанию
+    const alertChannel = client.channels.cache.get('1213973137176133772'); // Канал для срочных уведомлений (если топливо заканчивается скоро)
     const today = new Date();
     const tenDaysLater = new Date();
     tenDaysLater.setDate(today.getDate() + 10);
@@ -2329,20 +2330,32 @@ async function checkFuelExpirations(data) {
     // Сортировка данных по дате истечения
     const sortedData = data.sort((a, b) => new Date(a.fuel_expires_date) - new Date(b.fuel_expires_date));
 
-    // Формирование сообщения для всех станций
-    const message = sortedData.map(item => {
+    // Формирование сообщений
+    const allStationsMessage = sortedData.map(item => {
         const expiresDate = new Date(item.fuel_expires_date);
         const formattedExpiresDate = formatDate(expiresDate);
-        const isExpiringSoon = expiresDate < tenDaysLater;
-
-        return isExpiringSoon 
-            ? `⚠️ Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}** ⚠️`
-            : `Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}**`;
+        return `Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}**`;
     }).join('\n');
 
-    // Отправка сообщения в лог-канал
+    const expiringSoonMessage = sortedData.filter(item => {
+        const expiresDate = new Date(item.fuel_expires_date);
+        return expiresDate < tenDaysLater;
+    }).map(item => {
+        const expiresDate = new Date(item.fuel_expires_date);
+        const formattedExpiresDate = formatDate(expiresDate);
+        return `⚠️ Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}** ⚠️`;
+    }).join('\n');
+
+    // Отправка сообщения в каналы
     try {
-        await channel.send(message);
+        // Отправляем сообщение в канал по умолчанию
+        await defaultChannel.send(allStationsMessage);
+
+        // Если есть сообщения о топливе, которое заканчивается скоро, отправляем их в другой канал
+        if (expiringSoonMessage) {
+            await alertChannel.send(expiringSoonMessage);
+        }
+
         console.log('Уведомления для всех станций отправлены.');
     } catch (error) {
         console.error('Ошибка при отправке уведомлений:', error);

@@ -179,15 +179,16 @@ async function handleMoonCommand(interaction) {
         }
 
         const now = new Date();
+        const todayDay = now.getUTCDate();
 
         if (ignoreList.includes(authorUsername)) {
-            const todayDate = now.getUTCDate();
 
             const currentChunk = chunks.find(chunk => {
-                const chunkArrivalDate = new Date(chunk.chunk_arrival_date).getUTCDate();
-                const fuelExpiresDate = new Date(chunk.fuel_expires_date).getUTCDate();
-                return chunkArrivalDate <= todayDate && todayDate <= fuelExpiresDate;
+                const chunkArrivalDate = new Date(chunk.chunk_arrival_date);
+                return chunkArrivalDate.getUTCDate() === todayDay;
             });
+
+            console.log(currentChunk, todayDay);
 
 
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
@@ -195,12 +196,15 @@ async function handleMoonCommand(interaction) {
 
             if (channel && en_channel) {
                 if (currentChunk) {
-                    const isEvenDay = now.getUTCDate() % 2 === 0;
-                    const stationIndex = chunks.findIndex(chunk => chunk.name === currentChunk.name);
-
-                    // Проверяем, существует ли индекс для массива объемов
-                    const stationDescription = isEvenDay && stationIndex >= 0 ? stationDescriptions[stationIndex] : '';
-
+                    const todayDay = now.getUTCDate();
+                    const isEvenDay = todayDay % 2 === 0;
+                    const descriptionIndex = Math.floor(todayDay / 2) - 1;
+            
+                    // Проверяем, существует ли индекс для массива объемов и корректен ли индекс
+                    const stationDescription = isEvenDay && descriptionIndex >= 0 && descriptionIndex < stationDescriptions.length
+                        ? stationDescriptions[descriptionIndex]
+                        : '';
+            
                     const embedRU = new EmbedBuilder()
                         .setTitle("*Лунные ресурсы готовы к сбору.*")
                         .addFields(
@@ -209,7 +213,7 @@ async function handleMoonCommand(interaction) {
                         )
                         .setColor("#A52A2A")
                         .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
-
+            
                     const embedEN = new EmbedBuilder()
                         .setTitle("*The moon products are ready to be harvested.*")
                         .addFields(
@@ -218,12 +222,12 @@ async function handleMoonCommand(interaction) {
                         )
                         .setColor("#A52A2A")
                         .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
-
+            
                     await channel.send({ content: "<@&1163380015191302214>", embeds: [embedRU] });
                     await en_channel.send({ content: "<@&1163380015191302214>", embeds: [embedEN] });
-
+            
                     responseMessage = "Сообщение отправлено.";
-                } else {
+                }else {
                     responseMessage = "Сегодня нет данных о луне.";
                 }
             } else {
