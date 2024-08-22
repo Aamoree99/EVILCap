@@ -2277,7 +2277,7 @@ async function createMoonMessage(currentDate) {
     const nextMonthData = sortedData.filter(item => item.chunk_arrival_date.getMonth() === nextMonth);
 
     // Создание содержания сообщения
-    let content = `**🌕 Лунный календарь по чётным дням 🌕**\n\n`;
+    let content = `**🌕 Лунный календарь 🌕**\n\n`;
     content += `**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n\n`;
     content += `**Расписание добычи**\n\n`;
 
@@ -2313,7 +2313,7 @@ async function createMoonMessage(currentDate) {
 }
 
 async function checkFuelExpirations(data) {
-    const channel = client.channels.cache.get(LOG_CHANNEL_ID);
+    const channel = client.channels.cache.get('1213973137176133772');
     const today = new Date();
     const sevenDaysLater = new Date();
     sevenDaysLater.setDate(today.getDate() + 10);
