@@ -245,7 +245,7 @@ async function handleMoonCommand(interaction) {
             } else {
                 responseMessage = `${interaction.user}, нет информации о следующих лунах.`;
             }
-
+        }
         await interaction.reply({ content: responseMessage, ephemeral: true });
     } catch (error) {
         console.error("Ошибка в функции handleMoonCommand:", error);
