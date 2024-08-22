@@ -155,7 +155,7 @@ async function combineAndFormatData() {
       if (structure) {
         return {
           name: structure.name,
-          chunk_arrival_date: observer.extraction_start_time,
+          chunk_arrival_date: observer.chunk_arrival_time,
           fuel_expires_date: structure.fuel_expires
         };
       }
