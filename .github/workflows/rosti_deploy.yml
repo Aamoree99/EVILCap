@@ -30,6 +30,14 @@ jobs:
           cat << EOF > .env
           ${{ secrets.ENV }}
           EOF
+       - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV }}" > .env
+
+      - name: Upload .env file to remote server
+        run: |
+          scp -o UserKnownHostsFile=./known_hosts -P $PORT .env $USER@$HOST:/srv/app/env_secret.txt
+
       - name: Dependencies
         run: |
           npm install
