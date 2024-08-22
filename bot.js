@@ -2315,9 +2315,9 @@ async function createMoonMessage(currentDate) {
 async function checkFuelExpirations(data) {
     const channel = client.channels.cache.get('1213973137176133772');
     const today = new Date();
-    const sevenDaysLater = new Date();
-    sevenDaysLater.setDate(today.getDate() + 10);
-    
+    const tenDaysLater = new Date();
+    tenDaysLater.setDate(today.getDate() + 10);
+
     // Функция для форматирования даты в дд мм гггг
     const formatDate = (date) => {
         const day = String(date.getDate()).padStart(2, '0');
@@ -2326,11 +2326,14 @@ async function checkFuelExpirations(data) {
         return `${day} ${month} ${year}`;
     };
 
+    // Сортировка данных по дате истечения
+    const sortedData = data.sort((a, b) => new Date(a.fuel_expires_date) - new Date(b.fuel_expires_date));
+
     // Формирование сообщения для всех станций
-    const message = data.map(item => {
+    const message = sortedData.map(item => {
         const expiresDate = new Date(item.fuel_expires_date);
         const formattedExpiresDate = formatDate(expiresDate);
-        const isExpiringSoon = expiresDate < sevenDaysLater;
+        const isExpiringSoon = expiresDate < tenDaysLater;
 
         return isExpiringSoon 
             ? `⚠️ Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}** ⚠️`
