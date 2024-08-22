@@ -132,6 +132,7 @@ async function getCorporationMiningObservers(corporation_id, accessToken, percen
         'Accept': 'application/json'
       }
     });
+    console.log(response);
 
     const latestObserver = response.data.reduce((latest, current) => {
       return new Date(latest.last_updated) > new Date(current.last_updated) ? latest : current;

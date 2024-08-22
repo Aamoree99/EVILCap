@@ -19,6 +19,7 @@ const { Client,
     TextInputStyle,
     InteractionType } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { combineAndFormatData } = require('./get_observers.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const GUILD_ID = '1159107187407335434';
@@ -144,12 +145,15 @@ client.on('interactionCreate', async (interaction) => {
 
 async function handleMoonCommand(interaction) {
     try {
+        // Чтение данных
         const data = await readFromJSON(DATA_FILE);
         const ignoreList = data.ignoreList || [];
         const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
         const currentChannelId = interaction.channel.id;
         const authorUsername = interaction.user.username;
 
+        // Получение данных чанков и массивов объемов
+        const chunks = await combineAndFormatData();
         const stationDescriptions = [
             "Bitumens: 11,844,546 m3\nCoesite: 6,559,526 m3\nZeolites: 3,792,468 m3",
             "Bitumens: 6,866,833 m3\nSylvite: 5,118,296 m3\nZeolites: 9,945,053 m3",
@@ -168,82 +172,85 @@ async function handleMoonCommand(interaction) {
             "Coesite: 4,375,675 m3\nSylvite: 9,254,955 m3\nZeolites: 8,552,561 m3"
         ];
 
+        // Проверка разрешенных каналов
         if (!allowedChannels.includes(currentChannelId)) {
             await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
             return;
         }
 
-        let responseMessage = '';
+        const now = new Date();
+        const todayDateStr = now.toISOString().split('T')[0]; // Получаем только дату без времени
 
         if (ignoreList.includes(authorUsername)) {
-            const baseMessage = "<@&1163380015191302214>";
-            const en_baseMessage = "<@&1163380015191302214>";
+            // Находим текущий чанк
+            const currentChunk = chunks.find(chunk => {
+                const chunkArrivalDate = new Date(chunk.chunk_arrival_date).toISOString().split('T')[0];
+                const fuelExpiresDate = new Date(chunk.fuel_expires_date).toISOString().split('T')[0];
+                return chunkArrivalDate <= todayDateStr && todayDateStr <= fuelExpiresDate;
+            });
+
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
             const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
 
             if (channel && en_channel) {
-                const todayDate = new Date().getDate();
-                const stationId = Math.floor(todayDate / 2);
-                const stationDescription = stationDescriptions[stationId - 1];
+                if (currentChunk) {
+                    const isEvenDay = now.getUTCDate() % 2 === 0;
+                    const stationIndex = chunks.findIndex(chunk => chunk.name === currentChunk.name);
 
-                const embedRU = new EmbedBuilder()
-                    .setTitle("*Лунные ресурсы готовы к сбору.*")
-                    .addFields(
-                        { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Станция", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}\n\n*Объемы указаны примерно.*`, inline: true }
-                    )
-                    .setColor("#A52A2A")
-                    .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+                    // Проверяем, существует ли индекс для массива объемов
+                    const stationDescription = isEvenDay && stationIndex >= 0 ? stationDescriptions[stationIndex] : '';
 
-                const embedEN = new EmbedBuilder()
-                    .setTitle("*The moon products are ready to be harvested.*")
-                    .addFields(
-                        { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
-                        { name: "Station", value: `**Pashanai - Ore ${stationId}**\n${stationDescription}\n\n*Volumes are approximate.*`, inline: true }
-                    )
-                    .setColor("#A52A2A")
-                    .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+                    const embedRU = new EmbedBuilder()
+                        .setTitle("*Лунные ресурсы готовы к сбору.*")
+                        .addFields(
+                            { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "Станция", value: `**${currentChunk.name}**\n${stationDescription}\n\n*Объемы указаны примерно.*`, inline: true }
+                        )
+                        .setColor("#A52A2A")
+                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
 
-                await channel.send({ content: baseMessage, embeds: [embedRU] });
-                await en_channel.send({ content: en_baseMessage, embeds: [embedEN] });
+                    const embedEN = new EmbedBuilder()
+                        .setTitle("*The moon products are ready to be harvested.*")
+                        .addFields(
+                            { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "Station", value: `**${currentChunk.name}**\n${stationDescription}\n\n*Volumes are approximate.*`, inline: true }
+                        )
+                        .setColor("#A52A2A")
+                        .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
 
-                responseMessage = "Сообщение отправлено.";
+                    await channel.send({ content: "<@&1163380015191302214>", embeds: [embedRU] });
+                    await en_channel.send({ content: "<@&1163380015191302214>", embeds: [embedEN] });
+
+                    responseMessage = "Сообщение отправлено.";
+                } else {
+                    responseMessage = "Сегодня нет данных о луне.";
+                }
             } else {
                 responseMessage = "Канал не найден.";
             }
         } else {
-            const now = new Date();
-            const currentHourUTC = now.getUTCHours();
-            const currentMinuteUTC = now.getUTCMinutes();
-            let nextEvenDay = new Date(now);
-            nextEvenDay.setUTCHours(11, 15, 0, 0);
+            // Находим следующий чанк
+            const nextChunk = chunks.find(chunk => new Date(chunk.chunk_arrival_date) > now);
 
-            const isEvenDay = nextEvenDay.getUTCDate() % 2 === 0;
+            if (nextChunk) {
+                const timeUntilNextChunk = new Date(nextChunk.chunk_arrival_date) - now;
+                const hoursUntilNextChunk = Math.floor(timeUntilNextChunk / (1000 * 60 * 60));
+                const minutesUntilNextChunk = Math.floor((timeUntilNextChunk % (1000 * 60 * 60)) / (1000 * 60));
+                const secondsUntilNextChunk = Math.floor((timeUntilNextChunk % (1000 * 60)) / 1000);
 
-            if (isEvenDay && (currentHourUTC < 11 || (currentHourUTC === 11 && currentMinuteUTC < 15))) {
-                const timeUntilNextEvenDay = nextEvenDay - now;
-                const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-                const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-
-                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay}:${minutesUntilNextEvenDay}.`;
+                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextChunk} ч ${minutesUntilNextChunk} мин ${secondsUntilNextChunk} сек.`;
             } else {
-                if (nextEvenDay <= now || !isEvenDay) {
-                    nextEvenDay.setUTCDate(nextEvenDay.getUTCDate() + (nextEvenDay.getUTCDate() % 2 === 0 ? 2 : 1));
-                }
-                const timeUntilNextEvenDay = nextEvenDay - now;
-                const hoursUntilNextEvenDay = Math.floor(timeUntilNextEvenDay / (1000 * 60 * 60));
-                const minutesUntilNextEvenDay = Math.floor((timeUntilNextEvenDay % (1000 * 60 * 60)) / (1000 * 60));
-
-                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextEvenDay}:${minutesUntilNextEvenDay}.`;
+                responseMessage = `${interaction.user}, нет информации о следующих лунах.`;
             }
         }
 
         await interaction.reply({ content: responseMessage, ephemeral: true });
     } catch (error) {
-        console.error("Error in moon function:", error);
+        console.error("Ошибка в функции handleMoonCommand:", error);
         await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
     }
 }
+
 
 async function handleIceCommand(interaction) {
     try {

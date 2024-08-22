@@ -35,10 +35,12 @@ const fetch = require('node-fetch');
 const dotenv = require('dotenv');
 dotenv.config();
 const qs = require('querystring');
+const { combineAndFormatData } = require('./get_observers.js');
 const fs = require('fs').promises;
 const Canvas = require('canvas');
 const Jimp = require('jimp');
 const webp = require('webp-converter');
+const { parseStringPromise } = require('xml2js');
 const path = require('path');
 const { scheduleJob } = require('node-schedule');
 const { randomInt } = require('crypto');
@@ -73,7 +75,7 @@ const TARGET_CHANNEL_ID = '1242246489787334747';
 const HOMEFRONTS_ID='1243701044157091860';
 const allowedUserId = '235822777678954496';
 const guildId = GUILD_ID;
-
+const RSS_URL = 'https://status.eveonline.com/history.rss';
 
 let tokenCache = {
     accessToken: null,
@@ -97,11 +99,12 @@ client.once('ready', async () => {
     await notifyDatabaseConnection();
     logAndSend(`<@235822777678954496>, я восстал из пепла!`);
     logAndSend(`Logged in as ${client.user.tag}!`);
+    sendLatestNewsIfNew();
     //cron.schedule('0 0 * * *', checkDiscordMembersAgainstGameList); 
     createRoleMessage();
     //scheduleTransactionCheck();
     await checkBirthdays();
-    cron.schedule('0 11 * * *', () => {
+    cron.schedule('0 10 * * *', () => {
         updateMoonMessage();
         checkBirthdays();
     }, {
@@ -124,6 +127,7 @@ client.once('ready', async () => {
     checkMembersStatus();
     cron.schedule('*/15 * * * *', () => {
         checkMembersStatus();
+        sendLatestNewsIfNew()
     });
 });
 
@@ -2173,6 +2177,48 @@ async function loadActiveGames() {
     }
 }
 
+async function sendLatestNewsIfNew() {
+    try {
+
+        const data = await readData();
+        const lastSavedLink = data.rssfeed;
+
+
+        const response = await fetch(RSS_URL);
+        const xml = await response.text();
+        const parsedData = await parseStringPromise(xml);
+        const entries = parsedData.rss.channel[0].item;
+
+        if (entries.length === 0) return;
+
+
+        const latestEntry = entries[0];
+        const latestLink = latestEntry.link[0];
+        const latestTitle = latestEntry.title[0];
+
+        const formattedMessage = `**${latestTitle}**\n${latestLink}`;
+
+
+        const mainChannel = client.channels.cache.get(MAIN_CHANNEL_ID);
+        const enChannel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+        if (!lastSavedLink) {
+            if (mainChannel) await mainChannel.send({ content: formattedMessage });
+            if (enChannel) await enChannel.send({ content: formattedMessage });
+
+            await writeData({ rssfeed: latestLink });
+        } else if (latestLink !== lastSavedLink) {
+            if (mainChannel) await mainChannel.send({ content: formattedMessage });
+            if (enChannel) await enChannel.send({ content: formattedMessage });
+
+            await writeData({ rssfeed: latestLink });
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке новостей:', error);
+    }
+}
+
+
 async function updateMoonMessage() {
     const channel = client.channels.cache.get(MOON_CHANNEL_ID);
     const data = await readData(); 
@@ -2189,54 +2235,117 @@ async function updateMoonMessage() {
     }
 
     if (!message) {
-        message = await channel.send(createMoonMessage(new Date()));
+        message = await channel.send(await createMoonMessage(new Date()));
         data.moonMessage = [message.id]; 
         await writeData(data); 
         console.log(`New message created with ID: ${message.id}`);
     } else {
-        const newContent = createMoonMessage(new Date());
+        const newContent = await createMoonMessage(new Date());
         await message.edit(newContent);
         console.log('Message updated successfully.');
     }
 }
 
-function createMoonMessage(date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const today = date.getDate();
-    const lastDay = new Date(year, month + 1, 0).getDate();
+async function createMoonMessage(currentDate) {
     const months = [
         'января/january', 'февраля/february', 'марта/march', 'апреля/april', 'мая/may', 'июня/june',
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
     ];
 
     const moonEmojis = ['🌖', '🌗', '🌘', '🌑'];
-    
+
+    // Получение данных
+    const data = await combineAndFormatData();
+
+    if (!Array.isArray(data)) {
+        throw new TypeError('Expected data to be an array');
+    }
+
+    // Парсинг и сортировка данных
+    const sortedData = data.map(item => ({
+        ...item,
+        chunk_arrival_date: new Date(item.chunk_arrival_date),
+        fuel_expires_date: new Date(item.fuel_expires_date)
+    })).sort((a, b) => a.chunk_arrival_date - b.chunk_arrival_date);
+
+    // Определяем текущий и следующий месяц
+    const currentMonth = currentDate.getMonth();
+    const nextMonth = (currentMonth + 1) % 12;
+
+    // Разделяем данные на текущий и следующий месяцы
+    const currentMonthData = sortedData.filter(item => item.chunk_arrival_date.getMonth() === currentMonth);
+    const nextMonthData = sortedData.filter(item => item.chunk_arrival_date.getMonth() === nextMonth);
+
+    // Создание содержания сообщения
     let content = `**🌕 Лунный календарь по чётным дням 🌕**\n\n`;
     content += `**Цикл луны — 1 месяц (примерно 30 млн. кубов руды)**\n\n`;
     content += `**Расписание добычи**\n\n`;
-    
-    let emojiIndex = 0;
-    for (let day = today; day <= lastDay; day++) {
-        if (day % 2 === 0) {
-            let emoji;
-            if (day === today) {
-                emoji = ' 🟡'; // Today
-            } else {
-                emoji = moonEmojis[emojiIndex] || '🌑';
-                emojiIndex = Math.min(emojiIndex + 1, moonEmojis.length - 1);
-            }
-            content += `> **${emoji} ${day} ${months[month]} - Ore ${8 + (day - 16) / 2}**\n`;
-        }
+
+    function formatEntry(date, name, emoji) {
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        return `> **${emoji} ${day} ${month} - ${name}**\n`;
     }
-    
+
+    // Обработка текущего месяца
+    currentMonthData.forEach(({ chunk_arrival_date, name }, index) => {
+        const emoji = index < 3 ? moonEmojis[index] : moonEmojis[3];
+        content += formatEntry(chunk_arrival_date, name, emoji);
+    });
+
+    // Добавляем разделитель для следующего месяца
+    content += `\n**Следующий месяц**\n\n`;
+
+    // Обработка следующего месяца
+    nextMonthData.forEach(({ chunk_arrival_date, name }) => {
+        content += formatEntry(chunk_arrival_date, name, moonEmojis[3]);
+    });
+
+    // Добавляем общую информацию
     content += `\n🚀 **Клонилка расположена на Ore 1**\n`;
     content += `⚙️ **Радиус сжималки у орки: 116 км, радиус бафов: 118 км**\n`;
     content += `💰 **Налог на лунную руду: 10% от скомпрессированной руды**\n`;
     content += `📜 **[Журнал добычи](<https://evil-capybara.space/moon>)**\n`;
-    
+
+    checkFuelExpirations(sortedData);
+
     return content;
 }
+
+async function checkFuelExpirations(data) {
+    const channel = client.channels.cache.get(LOG_CHANNEL_ID);
+    const today = new Date();
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(today.getDate() + 10);
+    
+    // Функция для форматирования даты в дд мм гггг
+    const formatDate = (date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    // Формирование сообщения для всех станций
+    const message = data.map(item => {
+        const expiresDate = new Date(item.fuel_expires_date);
+        const formattedExpiresDate = formatDate(expiresDate);
+        const isExpiringSoon = expiresDate < sevenDaysLater;
+
+        return isExpiringSoon 
+            ? `⚠️ Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}** ⚠️`
+            : `Станция **${item.name}** - топливо заканчивается **${formattedExpiresDate}**`;
+    }).join('\n');
+
+    // Отправка сообщения в лог-канал
+    try {
+        await channel.send(message);
+        console.log('Уведомления для всех станций отправлены.');
+    } catch (error) {
+        console.error('Ошибка при отправке уведомлений:', error);
+    }
+}
+
 
 
 /* const MIN_MESSAGES = 70;

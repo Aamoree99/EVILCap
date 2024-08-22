@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }            
         },
         header: {
-            en: { officers: "Officers", zkillboard: "ZKillBoard", hf_waitlist: "Homefronts" },
-            ru: { officers: "Офицеры", zkillboard: "Киллборда", hf_waitlist: "Тыловые районы" }
+            en: { officers: "Officers", zkillboard: "ZKillBoard", hf_waitlist: "Homefronts", lp_store: "LP Store", crabs: "CRAB Tracker" },
+            ru: { officers: "Офицеры", zkillboard: "Киллборда", hf_waitlist: "Тыловые районы", lp_store: "LP Store", crabs: "CRAB Tracker" }
         }            
     };
 
@@ -83,6 +83,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.innerHTML = headerTranslations.zkillboard;
             } else if (href.includes('/hf_waitlist')) {
                 link.innerHTML = headerTranslations.hf_waitlist;
+            } else if (href.includes('/lp/lp_calc')) {
+                link.innerHTML = headerTranslations.lp_store;
+            } else if (href.includes('/crabs')) {
+                link.innerHTML = headerTranslations.crabs;
             }
         });
 
