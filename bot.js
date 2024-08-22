@@ -2307,7 +2307,7 @@ async function createMoonMessage(currentDate) {
     content += `💰 **Налог на лунную руду: 10% от скомпрессированной руды**\n`;
     content += `📜 **[Журнал добычи](<https://evil-capybara.space/moon>)**\n`;
 
-    checkFuelExpirations(sortedData);
+    await checkFuelExpirations(sortedData);
 
     return content;
 }
