@@ -179,15 +179,16 @@ async function handleMoonCommand(interaction) {
         }
 
         const now = new Date();
-        const todayDateStr = now.toISOString().split('T')[0]; // Получаем только дату без времени
 
         if (ignoreList.includes(authorUsername)) {
-            // Находим текущий чанк
+            const todayDate = now.getUTCDate();
+
             const currentChunk = chunks.find(chunk => {
-                const chunkArrivalDate = new Date(chunk.chunk_arrival_date).toISOString().split('T')[0];
-                const fuelExpiresDate = new Date(chunk.fuel_expires_date).toISOString().split('T')[0];
-                return chunkArrivalDate <= todayDateStr && todayDateStr <= fuelExpiresDate;
+                const chunkArrivalDate = new Date(chunk.chunk_arrival_date).getUTCDate();
+                const fuelExpiresDate = new Date(chunk.fuel_expires_date).getUTCDate();
+                return chunkArrivalDate <= todayDate && todayDate <= fuelExpiresDate;
             });
+
 
             const channel = client.channels.cache.get(MAIN_CHANNEL_ID);
             const en_channel = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
@@ -230,19 +231,20 @@ async function handleMoonCommand(interaction) {
             }
         } else {
             // Находим следующий чанк
-            const nextChunk = chunks.find(chunk => new Date(chunk.chunk_arrival_date) > now);
+            chunks.sort((a, b) => new Date(a.chunk_arrival_date) - new Date(b.chunk_arrival_date));
 
+            const nextChunk = chunks.find(chunk => new Date(chunk.chunk_arrival_date) > now);
+            
             if (nextChunk) {
                 const timeUntilNextChunk = new Date(nextChunk.chunk_arrival_date) - now;
                 const hoursUntilNextChunk = Math.floor(timeUntilNextChunk / (1000 * 60 * 60));
                 const minutesUntilNextChunk = Math.floor((timeUntilNextChunk % (1000 * 60 * 60)) / (1000 * 60));
                 const secondsUntilNextChunk = Math.floor((timeUntilNextChunk % (1000 * 60)) / 1000);
-
-                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextChunk} ч ${minutesUntilNextChunk} мин ${secondsUntilNextChunk} сек.`;
+            
+                responseMessage = `${interaction.user}, следующая луна будет через ${hoursUntilNextChunk} ч ${minutesUntilNextChunk} мин ${secondsUntilNextChunk} сек. Станция: ${nextChunk.name}.`;
             } else {
                 responseMessage = `${interaction.user}, нет информации о следующих лунах.`;
             }
-        }
 
         await interaction.reply({ content: responseMessage, ephemeral: true });
     } catch (error) {
