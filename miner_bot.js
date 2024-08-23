@@ -148,8 +148,6 @@ async function handleMoonCommand(interaction) {
         // Чтение данных
         const data = await readFromJSON(DATA_FILE);
         const ignoreList = data.ignoreList || [];
-        const allowedChannels = [MAIN_CHANNEL_ID, EN_MAIN_CHANNEL_ID];
-        const currentChannelId = interaction.channel.id;
         const authorUsername = interaction.user.username;
 
         // Получение данных чанков и массивов объемов
@@ -172,11 +170,6 @@ async function handleMoonCommand(interaction) {
             "Coesite: 4,375,675 m3\nSylvite: 9,254,955 m3\nZeolites: 8,552,561 m3"
         ];
 
-        // Проверка разрешенных каналов
-        if (!allowedChannels.includes(currentChannelId)) {
-            await interaction.reply({ content: "Эту команду можно использовать только в определенных каналах.", ephemeral: true });
-            return;
-        }
 
         const now = new Date();
         const todayDay = now.getUTCDate();
