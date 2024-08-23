@@ -9,10 +9,6 @@ const translations = {
             ru: { name: "DonaldKrak", img: "/slides/of1.png", text: "Лидерство", extra: "Визионер Стратег" }
         },
         {
-            en: { name: "Neuron Flax", img: "/slides/of8.png", text: "Head of Extraction Department", extra: "Efficiency Master" },
-            ru: { name: "Neuron Flax", img: "/slides/of8.png", text: "Начальник отдела экстракции", extra: "Мастер эффективности" }
-        },
-        {
             en: { name: "Aamoree", img: "/slides/of6.png", text: "CEO of Cosmic Capybara Crew (Professional Training Academy)", extra: "Training Guru" },
             ru: { name: "Aamoree", img: "/slides/of6.png", text: "Генеральный директор Cosmic Capybara Crew (Академия профессиональной подготовки)", extra: "Гуру тренинга" }
         },
