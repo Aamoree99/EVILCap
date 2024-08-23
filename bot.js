@@ -66,12 +66,11 @@ const client = new Client({
 
 const GUILD_ID = '1159107187407335434';
 const LOG_CHANNEL_ID = '1239085828395892796'; 
-const REPORT_CHANNEL_ID= '1230611265794080848';
+const OPENAI= process.env.OPENAI_API_KEY;
 const MAIN_CHANNEL_ID= '1172972375688626276';
 const CASINO_CHANNEL_ID= '1239752190986420274';
 const MOON_CHANNEL_ID= '1159193601289490534';
 const EN_MAIN_CHANNEL_ID= '1212507080934686740';
-const TARGET_CHANNEL_ID = '1242246489787334747';
 const HOMEFRONTS_ID='1243701044157091860';
 const allowedUserId = '235822777678954496';
 const guildId = GUILD_ID;
@@ -304,6 +303,68 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             } else {
                 console.error(`Text channel with ID ${MAIN_CHANNEL_ID} not found.`);
             }
+        }
+    }
+});
+
+const bannedWords = [
+    "оскорбление", "политика", "ненависть", "расизм", 
+    "дурак", "идиот", "тупой", "безмозглый", "придурок", 
+    "урод", "сволочь", "расист", "нацист", "фашист", 
+    "ксенофоб", "дискриминация", "угроза", "насилие", 
+    "убийство", "расправа", "война", "терроризм", 
+    "мерзость", "уродство", "отстой", "глупость", 
+    "убожество", "ничтожество", "ублюдок", "никто", 
+    "гнида", "тварь", "мразь", "сука", "блядь", 
+    "хуй", "пизда", "ебать", "мудак", "гандон", 
+    "шлюха", "долбоёб", "мразота", "сраный", "еблан", 
+    "выблядок", "хуесос", "сучара", "пидор", "пидорас", 
+    "гомик", "засранец", "дебил", "козёл", "ебанат", 
+    "ссыкло", "мразь", "тупица", "свинья"
+];
+
+client.on('messageCreate', async (message) => {
+    if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
+
+    const hasBannedWord = bannedWords.some(word => message.content.toLowerCase().includes(word));
+    if (hasBannedWord) {
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/chat/completions',
+                {
+                    model: "gpt-3.5-turbo", 
+                    messages: [
+                        {
+                            role: "system",
+                            content: 'You are an AI that helps moderate content. Analyze the following message and determine if it contains political content, incites hatred, or uses offensive language. If it does, provide a specific reason and write "YPOH".'
+                        },
+                        {
+                            role: "user",
+                            content: message.content
+                        }
+                    ]
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            const result = response.data.choices[0].message.content.toLowerCase();
+            console.log(result);
+            if (result.includes("YPOH") || result.includes("ypoh")) {
+                await message.reply("Ваше сообщение нарушает правила чата!");
+
+                const logChannel = client.channels.cache.get('1213973137176133772');
+                if (logChannel) {
+                    await logChannel.send(`Пользователь ${message.author} потенциально нарушает правила. \n\n Сообщение: "${message.content}". [Ссылка на сообщение](${message.url}) Причина: ${result}`);
+                }
+            }
+
+        } catch (error) {
+            console.error('Ошибка при запросе к OpenAI:', error);
         }
     }
 });
