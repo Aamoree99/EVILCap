@@ -332,17 +332,18 @@ client.on('messageCreate', async (message) => {
             const response = await axios.post(
                 'https://api.openai.com/v1/chat/completions',
                 {
-                    model: "gpt-3.5-turbo", 
-                    messages: [
-                        {
-                            role: "system",
-                            content: 'You are an AI that helps moderate content. Analyze the following message and determine if it contains direct personal insults or offensive language targeting someone, or if it contains political content. Ignore general profanity or vulgar language. If the message contains a direct personal insult or political content, provide a detailed specific reason and write "YPOH". If no wirte "Nothing".'
-                        },
-                        {
-                            role: "user",
-                            content: message.content
-                        }
-                    ]
+                        "model": "gpt-3.5-turbo",
+                        "messages": [
+                          {
+                            "role": "system",
+                            "content": "You are an AI that helps moderate content. Analyze the following message and determine if it contains direct personal insults, offensive language targeting someone, or if it contains political content. Ignore general profanity or vulgar language. If the message contains a direct personal insult or political content, provide a detailed specific reason and respond with 'YPOH'. If the message does not contain these elements, respond with 'Nothing'."
+                          },
+                          {
+                            "role": "user",
+                            "content": message.content
+                          }
+                        ]
+                      
                 },
                 {
                     headers: {
