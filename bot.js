@@ -336,7 +336,7 @@ client.on('messageCreate', async (message) => {
                         "messages": [
                           {
                             "role": "system",
-                            "content": "You are an AI that helps moderate content. Analyze the following message and determine if it contains direct personal insults, offensive language targeting someone, or if it contains political content. Ignore general profanity or vulgar language. If the message contains a direct personal insult or political content, provide a detailed specific reason and respond with reason and 'YPOH'. If the message does not contain these elements, respond with 'Nothing'."
+                            "content": "Вы — ИИ, помогающий модерировать контент. Проанализируйте следующее сообщение и определите, содержит ли оно прямые личные оскорбления, оскорбительный язык, направленный на кого-то, или политическое содержание. Игнорируйте общую неприличную или вульгарную лексику. Если сообщение содержит прямое личное оскорбление или политическое содержание, предоставьте подробное объяснение и ответьте 'YPOH'. Если сообщение не содержит этих элементов, ответьте 'Ничего'."
                           },
                           {
                             "role": "user",
