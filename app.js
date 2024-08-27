@@ -631,6 +631,20 @@ app.get('/moon', async (req, res) => {
             LIMIT 1
         `, [currentYearMonth]);
 
+        const items = [
+            { name: 'Compressed Bitumens', type_id: 62454 },
+            { name: 'Compressed Glistening Bitumens', type_id: 62456 },
+            { name: 'Compressed Glistening Zeolites', type_id: 62467 },
+            { name: 'Compressed Glistening Sylvite', type_id: 62466 },
+            { name: 'Compressed Glistening Coesite', type_id: 62459 },
+            { name: 'Compressed Brimful Bitumens', type_id: 62455 },
+            { name: 'Compressed Brimful Zeolites', type_id: 62464 },
+            { name: 'Compressed Zeolites', type_id: 62463 },
+            { name: 'Compressed Brimful Sylvite', type_id: 62461 },
+            { name: 'Compressed Brimful Coesite', type_id: 62458 }
+        ];
+        
+
         const formattedDate = moment(latestDate).format('YYYY-MM-DD');
 
         const formatNumber = (num) => {
@@ -644,13 +658,53 @@ app.get('/moon', async (req, res) => {
             latestData: latestData,
             latestDate: formattedDate,
             formatNumber: formatNumber,
-            dailyData: dailyData
+            dailyData: dailyData,
+            items: items
           });          
     } catch (err) {
         console.error('Error fetching data:', err);
         res.status(500).send('Server error');
     }
 });
+
+app.get('/get-price', async (req, res) => {
+    const typeId = req.query.type_id;
+
+    try {
+        // 1. Получаем самую низкую цену по заданному типу товара и локации
+        const ordersResponse = await axios.get(`https://esi.evetech.net/latest/markets/10000002/orders/`, {
+            params: {
+                datasource: 'tranquility',
+                order_type: 'sell',
+                page: 1,
+                type_id: typeId
+            }
+        });
+
+        const orders = ordersResponse.data;
+        const filteredOrders = orders.filter(order => order.system_id === 30000142);
+        const lowestPrice = filteredOrders.reduce((min, p) => p.price < min ? p.price : min, filteredOrders[0].price);
+
+        // 2. Получаем среднюю цену за последний доступный день
+        const historyResponse = await axios.get(`https://esi.evetech.net/latest/markets/10000002/history/`, {
+            params: {
+                datasource: 'tranquility',
+                type_id: typeId
+            }
+        });
+
+        const history = historyResponse.data;
+        const latestEntry = history[history.length - 1]; // Берем последний доступный день
+        const averagePrice = latestEntry.average;
+
+        // 3. Возвращаем обе цены в формате JSON
+        res.json({ lowestPrice: lowestPrice, averagePrice: averagePrice });
+    } catch (error) {
+        console.error('Error fetching prices:', error);
+        res.status(500).json({ error: 'Could not fetch prices' });
+    }
+});
+
 
 app.get('/stats', async (req, res) => {
     try {
