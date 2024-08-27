@@ -113,8 +113,9 @@ client.once('ready', async () => {
     cron.schedule('0 0 * * 1', async () => {
         await findTopMessage();
     });
-    cron.schedule('15 13 * * 2', () => {
+    cron.schedule('0 13 * * 2', () => {
         sendSPMessage();
+        checkServerStatus();
     });
     await updateMoonMessage();
     //scheduleDailyMessage();
@@ -257,7 +258,10 @@ const commands = [
                 .setDescription('Time in mm:ss format (optional).'))
         .addNumberOption(option =>
             option.setName('sum')
-                .setDescription('Sum of the run (optional).'))
+                .setDescription('Sum of the run (optional).')),
+    new SlashCommandBuilder()
+        .setName('evestatus')
+        .setDescription('Server status'),
 
 ]
     .map(command => command.toJSON());
@@ -622,6 +626,10 @@ client.on('interactionCreate', async interaction => {
 
         async startcasino() {
             await startCasinoGame(interaction);
+        },
+
+        async evestatus(){
+            await checkServerStatus();
         },
 
         async show_sessions() {
@@ -1076,6 +1084,26 @@ client.on('interactionCreate', async interaction => {
       await interaction.reply({ content: 'Failed to update your alts.', ephemeral: true });
     }
   });
+
+  async function checkServerStatus() {
+    try {
+        const response = await axios.get('https://esi.evetech.net/latest/status/?datasource=tranquility');
+        const { players } = response.data;
+
+        if (players > 0) {
+            const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
+            const enMainChannel = await client.channels.fetch(EN_MAIN_CHANNEL_ID);
+
+            await mainChannel.send(`Сервер работает успешно, игроков: ${players}`);
+            await enMainChannel.send(`The server is running successfully, players: ${players}`);
+        } else {
+            setTimeout(checkServerStatus, 30000); // Повторить через 30 секунд
+        }
+    } catch (error) {
+        console.error('Ошибка при запросе:', error);
+        setTimeout(checkServerStatus, 30000); // Повторить через 30 секунд
+    }
+}
 
   async function handleDungeonCommand(interaction) {
     const time = interaction.options.getString('time');
