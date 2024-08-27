@@ -2367,7 +2367,7 @@ async function createMoonMessage(currentDate) {
 
     // Обработка следующего месяца
     nextMonthData.forEach(({ chunk_arrival_date, name }) => {
-        content += formatEntry(chunk_arrival_date, name, moonEmojis[3]);
+        content += formatEntry(chunk_arrival_date, name, moonEmojis[4]);
     });
 
     // Добавляем общую информацию
