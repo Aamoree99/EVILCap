@@ -113,7 +113,7 @@ client.once('ready', async () => {
     cron.schedule('0 0 * * 1', async () => {
         await findTopMessage();
     });
-    cron.schedule('15 14 * * 2', () => {
+    cron.schedule('15 13 * * 2', () => {
         sendSPMessage();
     });
     await updateMoonMessage();
