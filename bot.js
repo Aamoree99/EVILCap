@@ -2314,7 +2314,8 @@ async function createMoonMessage(currentDate) {
         'июля/july', 'августа/august', 'сентября/september', 'октября/october', 'ноября/november', 'декабря/december'
     ];
 
-    const moonEmojis = ['🌖', '🌗', '🌘', '🌑'];
+    const moonEmojis = ['🌕', '🌖', '🌗', '🌘', '🌑'];
+
 
     // Получение данных
     const data = await combineAndFormatData();
@@ -2351,7 +2352,13 @@ async function createMoonMessage(currentDate) {
 
     // Обработка текущего месяца
     currentMonthData.forEach(({ chunk_arrival_date, name }, index) => {
-        const emoji = index < 3 ? moonEmojis[index] : moonEmojis[3];
+        let emoji = index < 3 ? moonEmojis[index + 1] : moonEmojis[4]; // Используем лунные фазы по порядку, начиная с 🌖
+
+        // Если первая запись совпадает с сегодняшним числом, ставим 🌕
+        if (index === 0 && chunk_arrival_date.getDate() === currentDate.getDate()) {
+            emoji = moonEmojis[0]; // Эмодзи полной луны
+        }
+
         content += formatEntry(chunk_arrival_date, name, emoji);
     });
 
