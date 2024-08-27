@@ -629,6 +629,7 @@ client.on('interactionCreate', async interaction => {
         },
 
         async evestatus(){
+            await interaction.reply('Checking server status...');
             await checkServerStatus();
         },
 
