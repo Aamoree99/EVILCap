@@ -633,15 +633,15 @@ app.get('/moon', async (req, res) => {
 
         const items = [
             { name: 'Compressed Bitumens', type_id: 62454 },
-            { name: 'Compressed Glistening Bitumens', type_id: 62456 },
-            { name: 'Compressed Glistening Zeolites', type_id: 62467 },
-            { name: 'Compressed Glistening Sylvite', type_id: 62466 },
-            { name: 'Compressed Glistening Coesite', type_id: 62459 },
             { name: 'Compressed Brimful Bitumens', type_id: 62455 },
-            { name: 'Compressed Brimful Zeolites', type_id: 62464 },
-            { name: 'Compressed Zeolites', type_id: 62463 },
+            { name: 'Compressed Brimful Coesite', type_id: 62458 },
             { name: 'Compressed Brimful Sylvite', type_id: 62461 },
-            { name: 'Compressed Brimful Coesite', type_id: 62458 }
+            { name: 'Compressed Brimful Zeolites', type_id: 62464 },
+            { name: 'Compressed Glistening Bitumens', type_id: 62456 },
+            { name: 'Compressed Glistening Coesite', type_id: 62459 },
+            { name: 'Compressed Glistening Sylvite', type_id: 62466 },
+            { name: 'Compressed Glistening Zeolites', type_id: 62467 },
+            { name: 'Compressed Zeolites', type_id: 62463 }
         ];
         
 
