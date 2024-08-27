@@ -198,11 +198,12 @@
         </div>
         <div class="prices-table" style="text-align: center;">
             <h3>Item Prices</h3>
-            <table style="margin: 0 auto; border-collapse: collapse; width: 60%;">
+            <table style="margin: 0 auto; border-collapse: collapse; width: auto; table-layout: auto">
                 <thead>
                     <tr>
                         <th style="border: 1px solid #ddd; padding: 8px;">Item Name</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Lowest Sell Price (ISK)</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Highest Buy Price (ISK)</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Average Price (ISK)</th>
                     </tr>
                 </thead>
@@ -211,6 +212,7 @@
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><%= item.name %></td>
                             <td id="lowest-price-<%= item.type_id %>" style="border: 1px solid #ddd; padding: 8px;">Loading...</td>
+                            <td id="highest-price-<%= item.type_id %>" style="border: 1px solid #ddd; padding: 8px;">Loading...</td>
                             <td id="average-price-<%= item.type_id %>" style="border: 1px solid #ddd; padding: 8px;">Loading...</td>
                         </tr>
                     <% }) %>
@@ -272,9 +274,11 @@
                 .then(response => response.json())
                 .then(data => {
                     const lowestPriceElement = document.getElementById(`lowest-price-${item.type_id}`);
+                    const highestPriceElement = document.getElementById(`highest-price-${item.type_id}`);
                     const averagePriceElement = document.getElementById(`average-price-${item.type_id}`);
                     
                     lowestPriceElement.textContent = data.lowestPrice + ' ISK';
+                    highestPriceElement.textContent = data.highestPrice + ' ISK';
                     averagePriceElement.textContent = data.averagePrice + ' ISK';
                     
                     // Изменение цвета текста в зависимости от сравнения цены
@@ -283,10 +287,16 @@
                     } else {
                         lowestPriceElement.style.color = 'green';
                     }
+                    if (data.highestPrice < data.averagePrice) {
+                        highestPriceElement.style.color = 'red';
+                    } else {
+                        highestPriceElement.style.color = 'green';
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching price:', error);
                     document.getElementById(`lowest-price-${item.type_id}`).textContent = 'Error loading price';
+                    document.getElementById(`highest-price-${item.type_id}`).textContent = 'Error loading price';
                     document.getElementById(`average-price-${item.type_id}`).textContent = 'Error loading price';
                 });
         });

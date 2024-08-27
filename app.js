@@ -685,6 +685,19 @@ app.get('/get-price', async (req, res) => {
         const filteredOrders = orders.filter(order => order.system_id === 30000142);
         const lowestPrice = filteredOrders.reduce((min, p) => p.price < min ? p.price : min, filteredOrders[0].price);
 
+        const buyOrdersResponse = await axios.get(`https://esi.evetech.net/latest/markets/10000002/orders/`, {
+            params: {
+                datasource: 'tranquility',
+                order_type: 'buy',
+                page: 1,
+                type_id: typeId
+            }
+        });
+
+        const buyOrders = buyOrdersResponse.data;
+        const filteredBuyOrders = buyOrders.filter(order => order.system_id === 30000142);
+        const highestPrice = filteredBuyOrders.reduce((max, p) => p.price > max ? p.price : max, filteredBuyOrders[0].price);
+
         // 2. Получаем среднюю цену за последний доступный день
         const historyResponse = await axios.get(`https://esi.evetech.net/latest/markets/10000002/history/`, {
             params: {
@@ -698,7 +711,7 @@ app.get('/get-price', async (req, res) => {
         const averagePrice = latestEntry.average;
 
         // 3. Возвращаем обе цены в формате JSON
-        res.json({ lowestPrice: lowestPrice, averagePrice: averagePrice });
+        res.json({ lowestPrice: lowestPrice, highestPrice: highestPrice, averagePrice: averagePrice });
     } catch (error) {
         console.error('Error fetching prices:', error);
         res.status(500).json({ error: 'Could not fetch prices' });
