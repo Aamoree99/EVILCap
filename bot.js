@@ -1094,8 +1094,8 @@ client.on('interactionCreate', async interaction => {
             const mainChannel = await client.channels.fetch(MAIN_CHANNEL_ID);
             const enMainChannel = await client.channels.fetch(EN_MAIN_CHANNEL_ID);
 
-            await mainChannel.send(`Сервер работает успешно, игроков: ${players}`);
-            await enMainChannel.send(`The server is running successfully, players: ${players}`);
+            await mainChannel.send(`Сервер успешно запущен, текущие количество игроков: ${players}`);
+            await enMainChannel.send(`Server operational, current player count: ${players}`);
         } else {
             setTimeout(checkServerStatus, 30000); // Повторить через 30 секунд
         }
