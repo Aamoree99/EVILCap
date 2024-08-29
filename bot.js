@@ -129,6 +129,8 @@ client.once('ready', async () => {
         checkMembersStatus();
         sendLatestNewsIfNew()
     });
+    updateCorporationInfo();
+    cron.schedule('0 * * * *', updateCorporationInfo);
 });
 
 async function notifyDatabaseConnection() {
@@ -310,6 +312,59 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         }
     }
 });
+
+async function updateCorporationInfo() {
+    try {
+      // Получаем данные о корпорациях
+      const response = await axios.get('https://esi.evetech.net/latest/alliances/99013040/corporations/?datasource=tranquility');
+      const corporationIds = response.data;
+  
+      if (corporationIds.length === 0) {
+        console.log('Нет корпораций для обработки.');
+        return;
+      }
+  
+      const results = await Promise.all(corporationIds.map(id => axios.get(`https://esi.evetech.net/latest/corporations/${id}/?datasource=tranquility`).then(res => res.data)));
+  
+      // Получаем канал и ищем сообщение
+      const channel = client.channels.cache.get('1239751709354627174');
+  
+      if (channel) {
+        // Получаем последние 100 сообщений из канала
+        const messages = await channel.messages.fetch({ limit: 100 });
+        const targetMessage = messages.find(msg => msg.content.includes('Информация о корпорациях'));
+  
+        if (targetMessage) {
+          // Форматируем данные
+          const messagesToUpdate = results.map(corp => {
+            if (corp) {
+              return `### **${corp.name}** - ${corp.member_count}\n`;
+            }
+            return 'Не удалось получить данные о корпорации.';
+          }).join('\n');
+  
+          // Обновляем найденное сообщение
+          await targetMessage.edit(`## Информация о корпорациях:\n${messagesToUpdate}`);
+          console.log('Сообщение обновлено');
+        } else {
+          // Если сообщение не найдено, отправляем новое
+          const messagesToSend = results.map(corp => {
+            if (corp) {
+                return `### **${corp.name}** - ${corp.member_count}\n`;
+            }
+            return 'Не удалось получить данные о корпорации.';
+          }).join('\n');
+  
+          await channel.send(`## Информация о корпорациях:\n${messagesToSend}`);
+          console.log('Новое сообщение отправлено');
+        }
+      } else {
+        console.error('Не удалось найти канал с ID 1239751709354627174');
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении информации о корпорациях:', error);
+    }
+  }
 
 const bannedWords = [
     "оскорбление", "политика", "ненависть", "расизм", 
