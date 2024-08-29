@@ -154,33 +154,145 @@ async function fetchObserverData(corporation_id, observerId, accessToken) {
   let allData = [];
   let page = 1;
   let hasMoreData = true;
-  while (hasMoreData) {
-  try {
-    const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/${observerId}/?datasource=tranquility&page=${page}`;
 
-    const response = await axios.get(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
+  while (hasMoreData) {
+    try {
+      const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/${observerId}/?datasource=tranquility&page=${page}`;
+
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.data.length > 0) {
+        allData = allData.concat(response.data);
+        page++;
+      } else {
+        hasMoreData = false;
       }
-    });
-    if (response.data.length > 0) {
-      allData = allData.concat(response.data);
-      page++;
-    } else {
-      hasMoreData = false;
-    }
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      hasMoreData = false;
-    } else {
-      console.error('Ошибка при получении данных об обсерваториях корпорации:', error.response ? error.response.data : error.message);
-      hasMoreData = false;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        hasMoreData = false;
+      } else {
+        console.error('Ошибка при получении данных об обсерваториях корпорации:', error.response ? error.response.data : error.message);
+        hasMoreData = false;
+      }
     }
   }
-}
+  // Фильтрация данных за последний месяц
+  const currentDate = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(currentDate.getMonth() - 1);
+
+  const filteredData = allData.filter(item => {
+    const itemDate = new Date(item.last_updated);
+    return itemDate >= oneMonthAgo && itemDate <= currentDate;
+  });
+
+  // Приведение дат в пределах одного дня к одной дате (минимальной)
+  const dateMap = {};
+
+  filteredData.forEach(item => {
+    const dateStr = item.last_updated.split('T')[0]; // Получаем только дату без времени
+    if (!dateMap[dateStr]) {
+      dateMap[dateStr] = dateStr;
+    }
+  });
+
+  const sortedDates = Object.keys(dateMap).sort((a, b) => new Date(a) - new Date(b));
+
+  const dateMapping = {};
+
+  sortedDates.forEach((date, index) => {
+    if (index > 0) {
+      const prevDate = sortedDates[index - 1];
+      const dateDifference = new Date(date) - new Date(prevDate);
+
+      if (dateDifference <= 24 * 60 * 60 * 1000) { // Если разница менее или равна одному дню
+        dateMapping[date] = prevDate;
+      } else {
+        dateMapping[date] = date;
+      }
+    } else {
+      dateMapping[date] = date;
+    }
+  });
+
+  const adjustedData = filteredData.map(item => {
+    const dateOnly = item.last_updated.split('T')[0];
+    return {
+      ...item,
+      last_updated: formatDate(dateMapping[dateOnly])
+    };
+  });
+
+  // Получение уникальных ID персонажей и руды
+  const characterIds = [...new Set(adjustedData.map(item => item.character_id))];
+  const typeIds = [...new Set(adjustedData.map(item => item.type_id))];
+  const idsToFetch = characterIds.concat(typeIds);
+  if (idsToFetch.length === 0) {
+    return [];
+  }
+  
+  let namesResponse;
+  try {
+    namesResponse = await axios.post(`https://esi.evetech.net/latest/universe/names/?datasource=tranquility`, idsToFetch, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при получении имен:', error.response ? error.response.data : error.message);
+    return [];
+  }
+
+  const namesData = namesResponse.data;
+
+  // Получение карты альтернативных имен
+  let altToMainMap;
+  try {
+    altToMainMap = await getAltToMainMap();
+  } catch (error) {
+    console.error('Ошибка при получении карты альтов:', error);
+    return [];
+  }
+
+  // Присвоение имен персонажам и типам, а также замена альтов на основные
+  adjustedData.forEach(item => {
+    const characterName = namesData.find(n => n.id === item.character_id)?.name || 'Unknown Character';
+    const typeName = 'Compressed ' + (namesData.find(n => n.id === item.type_id)?.name || 'Unknown Type');
+    const charecterId = item.character_id;
+    item.character_name = altToMainMap[characterName] || characterName;
+    item.type_name = typeName;
+  });
+
+  return adjustedData;
 }
 
+function formatDate(dateStr) {
+  const [year, month, day] = dateStr.split('-');
+  return `${year}-${month}-${day}`; // Форматируем в yyyy-mm-dd
+}
+
+async function getAltToMainMap() {
+  return new Promise((resolve, reject) => {
+    connection.query('SELECT alt_name, main_name FROM alts', (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        const map = results.reduce((acc, row) => {
+          acc[row.alt_name] = row.main_name;
+          return acc;
+        }, {});
+        resolve(map);
+      }
+    });
+  });
+}
 
 async function combineAndFormatData() {
   try {
@@ -217,7 +329,6 @@ async function combineAndFormatData() {
 
     // Фильтрация записей с именем "Manatirid - Ore - A-MIC"
     const filteredResult = result.filter(item => item.name !== 'Manatirid - Ore - A-MIC');
-    console.log(filteredResult);
     return filteredResult;
   } catch (error) {
     console.error('Ошибка при объединении и форматировании данных:', error);

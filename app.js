@@ -10,6 +10,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 const { combineAndFormatData, getObserverDataById } = require('./get_observers');
+const { sendMiningLogMessage } = require('./miner_bot');
 const lpApp = require('./lp_app');
 
 const app = express();
@@ -1055,13 +1056,96 @@ app.get('/api/filter', (req, res) => {
 app.get('/api/observer/:id', async (req, res) => {
     const observerId = req.params.id;
     try {
+        // Получаем все данные наблюдателя за последний месяц
         const data = await getObserverDataById(observerId);
-        res.json(data);
+        
+        // Извлекаем уникальные даты
+        const uniqueDates = [...new Set(data.map(item => item.last_updated))];
+        // Возвращаем все данные и уникальные даты
+        res.json({ data, uniqueDates });
     } catch (error) {
         res.status(500).send('Ошибка при получении данных наблюдателя');
     }
 });
 
+app.post('/api/obsdatasave', (req, res) => {
+    const { resultData, tableData } = req.body;
+    const date = tableData.length > 0 ? tableData[0].date : null;
+
+    // Массив для хранения всех промисов вставки
+    const insertPromises = [];
+
+    // Обработка данных из resultData
+    for (const data of resultData) {
+        const query = `
+            INSERT INTO mining_data (date, pilot_name, janice_link, total_amount, tax, payout, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'Pending')
+        `;
+        const values = [data.date, data.pilot_name, data.janice_link, data.total_amount, data.tax, data.payout];
+        insertPromises.push(
+            new Promise((resolve, reject) => {
+                connection.query(query, values, (err, results) => {
+                    if (err) {
+                        console.error('Ошибка при вставке данных в таблицу mining_data:', err);
+                        return reject(err);
+                    }
+                    resolve();
+                });
+            })
+        );
+    }
+
+    // Обработка данных из tableData
+    for (const entry of tableData) {
+        const { date, characterId, characterName, typeName, quantity } = entry;
+
+        // Запрос для получения corporation_id и других данных
+        insertPromises.push(
+            axios.get(`https://esi.evetech.net/latest/characters/${characterId}/?datasource=tranquility`)
+                .then(characterResponse => {
+                    const corporationId = characterResponse.data.corporation_id;
+
+                    return axios.get(`https://esi.evetech.net/latest/corporations/${corporationId}/?datasource=tranquility`)
+                        .then(corporationResponse => {
+                            const corporationName = corporationResponse.data.name;
+                            const volume = quantity * 10; // Рассчитываем объем
+
+                            // Вставка данных в таблицу mining_logs
+                            const queryLog = `
+                                INSERT INTO mining_logs (date, corporation, miner, material, quantity, volume)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            `;
+                            const valuesLog = [date, corporationName, characterName, typeName, quantity, volume];
+                            return new Promise((resolve, reject) => {
+                                connection.query(queryLog, valuesLog, (err, results) => {
+                                    if (err) {
+                                        console.error('Ошибка при вставке данных в таблицу mining_logs:', err);
+                                        return reject(err);
+                                    }
+                                    resolve();
+                                });
+                            });
+                        });
+                })
+        );
+    }
+
+    // Выполнение всех промисов вставки
+    Promise.all(insertPromises)
+        .then(() => {
+            // Отправляем сообщение в каналы
+            if (date) {
+                return sendMiningLogMessage(date);
+            }
+        })
+        .then(() => {
+            res.status(200).send('Данные успешно сохранены');
+        })
+        .catch(error => {
+            console.error('Ошибка при сохранении данных:', error);
+            res.status(500).send('Произошла ошибка при сохранении данных');
+        });
+});
 
 app.use('/lp', lpApp);
 

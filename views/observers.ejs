@@ -1,29 +1,430 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Observers List</title>
-    <script>
-        function getObserverData(observerId) {
-            fetch(`/api/observer/${observerId}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Здесь вы можете обработать полученные данные
-                    console.log(data);
-                    // Например, отображать данные на странице или в модальном окне
-                })
-                .catch(error => console.error('Error:', error));
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observers List - Barbie Style</title>
+    <style>
+        /* Ваш CSS стиль */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #fff;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background: url('ken.jpg') no-repeat center center fixed; 
+            background-size: cover;
         }
-    </script>
+
+        h1 {
+            color: #ff69b4;
+            margin-top: 20px;
+        }
+
+        .observer-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .observer-list li {
+            list-style-type: none;
+            margin: 10px;
+        }
+
+        .observer-list button {
+            background-color: #ff69b4;
+            color: #fff;
+            border: 1px solid white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .observer-list button:hover {
+            background-color: #ff85c1;
+        }
+
+        #datesContainer {
+            margin-top: 20px;
+        }
+
+        #dataTable, #resultTable {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        #dataTable th, #dataTable td, #resultTable th, #resultTable td {
+            border: 1px solid #ff69b4;
+            padding: 10px;
+            text-align: left;
+        }
+
+        #dataTable th, #resultTable th {
+            background-color: #ff69b4;
+            color: #fff;
+        }
+
+        #dataTable td, #resultTable td {
+            background-color: #ffe4e1;
+        }
+
+        .input-container {
+            margin: 20px auto;
+            width: 80%;
+            text-align: center;
+        }
+
+        .input-container input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+            width: 200px;
+            margin-right: 10px;
+        }
+
+        .input-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            margin: 5px;
+            cursor: pointer;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .input-container .calculate-button {
+            background-color: #ff69b4;
+        }
+
+        .input-container .calculate-button:hover {
+            background-color: #ff85c1;
+        }
+
+        .input-container .save-button {
+            background-color: #c0c0c0;
+        }
+
+        .input-container .save-button:hover {
+            background-color: #a0a0a0;
+        }
+
+        @media (max-width: 768px) {
+            #dataTable, #resultTable {
+                width: 100%;
+            }
+
+            .observer-list button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+
+        .button-style {
+            background-color: #ff69b4;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: background-color 0.3s ease;
+            margin: 10px;
+        }
+
+        .button-style:hover {
+            background-color: #ff85c1;
+        }
+    </style>
 </head>
 <body>
     <h1>Observers List</h1>
-    <ul>
+    <ul class="observer-list">
         <% observers.forEach(observer => { %>
             <li>
-                <span><%= observer.name %></span>
-                <button onclick="getObserverData(<%= observer.id %>)">Get Data</button>
+                <button onclick="getObserverData(<%= observer.id %>)"><%= observer.name %></button>
             </li>
         <% }) %>
     </ul>
+    <div class="input-container">
+        <input type="text" id="percentageInput" placeholder="Enter percentage">
+        <button class="calculate-button" onclick="calculateCoins()">Рассчитать монетки</button>
+        <button class="save-button" onclick="saveData()">Сохранить</button>
+    </div>
+    <!-- Контейнер для отображения кнопок с уникальными датами -->
+    <div id="datesContainer"></div>
+
+    <!-- Сообщение о пустых данных -->
+    <div id="noDataMessage" style="color: #ff69b4; font-size: 18px; margin-top: 20px;"></div>
+
+    <table id="resultTable" border="1"></table>
+
+    <!-- Таблица для отображения данных за выбранную дату -->
+    <table id="dataTable" border="1"></table>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        let selectedObserverId = null;
+
+        async function getObserverData(observerId) {
+            selectedObserverId = observerId; // Сохранить выбранного наблюдателя
+            try {
+                const response = await fetch(`/api/observer/${observerId}`);
+                const responseData = await response.json();
+                const datesContainer = document.getElementById('datesContainer');
+                const noDataMessage = document.getElementById('noDataMessage');
+                datesContainer.innerHTML = ''; // Очистить предыдущие кнопки
+                document.getElementById('dataTable').innerHTML = ''; // Очистить таблицу
+                const resultTable = document.getElementById('resultTable');
+                resultTable.innerHTML = '';
+                noDataMessage.textContent = ''; // Очистить сообщение о пустых данных
+
+                console.log('Response Data:', responseData);
+
+                if (!responseData.data || responseData.data.length === 0) {
+                    noDataMessage.textContent = 'Нет данных за последний месяц';
+                    return;
+                }
+
+                const uniqueDates = responseData.uniqueDates || [];
+
+                if (uniqueDates.length === 0) {
+                    noDataMessage.textContent = 'Нет уникальных дат для отображения';
+                    return;
+                }
+
+                uniqueDates.forEach(date => {
+                    const button = document.createElement('button');
+                    button.textContent = date;
+                    button.onclick = () => displayDataByDate(date, responseData.data);
+                    button.className = 'button-style'; // Применение класса для стиля
+                    datesContainer.appendChild(button);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayDataByDate(date, data) {
+            const filteredData = data.filter(item => item.last_updated.startsWith(date));
+
+            const table = document.getElementById('dataTable');
+            table.innerHTML = ''; // Очистить предыдущие данные
+            const resultTable = document.getElementById('resultTable');
+            resultTable.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                document.getElementById('noDataMessage').textContent = 'Нет данных за выбранную дату';
+                return;
+            }
+
+            filteredData.sort((a, b) => a.character_name.localeCompare(b.character_name));
+
+            // Заголовок таблицы
+            const headerRow = table.insertRow();
+            headerRow.insertCell(0).textContent = 'Date';
+            headerRow.insertCell(1).textContent = 'Character Name';
+            headerRow.insertCell(2).textContent = 'Type Name';
+            headerRow.insertCell(3).textContent = 'Quantity';
+
+            // Скрытый заголовок для character_id
+            const hiddenHeader = headerRow.insertCell(4);
+            hiddenHeader.textContent = 'Character ID';
+            hiddenHeader.style.display = 'none'; // Скрываем заголовок
+
+            // Заполнение таблицы данными
+            filteredData.forEach(item => {
+                const row = table.insertRow();
+                row.insertCell(0).textContent = item.last_updated.split('T')[0]; // Вставка даты
+                row.insertCell(1).textContent = item.character_name;
+                row.insertCell(2).textContent = item.type_name;
+                row.insertCell(3).textContent = item.quantity;
+
+                // Скрытая ячейка для character_id
+                const hiddenCell = row.insertCell(4);
+                hiddenCell.textContent = item.character_id;
+                hiddenCell.style.display = 'none'; // Скрываем ячейку
+            });
+
+
+        }
+
+        async function calculateCoins() {
+            const percentageInput = document.getElementById('percentageInput').value;
+
+            const percentage = parseFloat(percentageInput) / 100;
+            if (!percentage) {
+                alert('Введите процент для расчета монеток.');
+                return;
+            }
+
+            if (!selectedObserverId) {
+                alert('Выберите наблюдателя для расчета.');
+                return;
+            }
+
+            const response = await fetch(`/api/observer/${selectedObserverId}`);
+            const responseData = await response.json();
+
+            if (!responseData.data || responseData.data.length === 0) {
+                alert('Нет данных для расчета.');
+                return;
+            }
+
+            const groupedData = groupDataByCharacter(responseData.data);
+
+            // Запрашиваем ссылки для каждого персонажа
+            const individualLinks = await Promise.all(Object.entries(groupedData).map(async ([character, items]) => {
+                const requestBody = items.map(item => `${item.type_name} ${item.quantity}`).join('\n');
+                const result = await getJaniceData(requestBody, percentage);
+                return {
+                    character,
+                    janiceLink: result.janiceLink,
+                    totalBuyPrice: result.totalBuyPrice
+                };
+            }));
+
+            // Запрашиваем итоговую ссылку
+            const allItemsRequestBody = Object.entries(groupedData).map(([character, items]) => {
+                return items.map(item => `${item.type_name} ${item.quantity}`).join('\n');
+            }).join('\n');
+
+            const allResult = await getJaniceData(allItemsRequestBody, percentage);
+
+            displayResults(individualLinks, allResult);
+        }
+
+        function groupDataByCharacter(data) {
+            return data.reduce((acc, item) => {
+                if (!acc[item.character_name]) {
+                    acc[item.character_name] = [];
+                }
+                acc[item.character_name].push(item);
+                return acc;
+            }, {});
+        }
+
+        async function getJaniceData(requestBody, percentage) {
+            const apiKey = 'G9KwKq3465588VPd6747t95Zh94q3W2E';
+            const apiUrl = `https://janice.e-351.com/api/rest/v2/appraisal?market=2&designation=appraisal&pricing=sell&pricingVariant=immediate&persist=true&compactize=true&pricePercentage=${percentage}`;
+            const response = await axios.post(apiUrl, requestBody, {
+                headers: {
+                    'accept': 'application/json',
+                    'X-ApiKey': apiKey,
+                    'Content-Type': 'text/plain'
+                }
+            });
+            const data = response.data;
+            return {
+                janiceLink: `https://janice.e-351.com/a/${data.code}`,
+                totalBuyPrice: data.effectivePrices.totalBuyPrice
+            };
+        }
+
+        function displayResults(individualLinks, allResult) {
+    const resultTable = document.getElementById('resultTable');
+    resultTable.innerHTML = ''; // Очистить предыдущие данные
+
+    // Заголовок таблицы результатов
+    const headerRow = resultTable.insertRow();
+    headerRow.insertCell(0).textContent = 'Character Name';
+    headerRow.insertCell(1).textContent = 'Janice Link';
+    headerRow.insertCell(2).textContent = 'Total Price';
+    headerRow.insertCell(3).textContent = 'Tax (10%)';
+    headerRow.insertCell(4).textContent = 'Payout (90%)';
+
+    // Добавление данных по каждому персонажу
+    individualLinks.forEach(({ character, janiceLink, totalBuyPrice }) => {
+        const tax = totalBuyPrice * 0.10;
+        const payout = totalBuyPrice - tax;
+
+        const row = resultTable.insertRow();
+        row.insertCell(0).textContent = character;
+        row.insertCell(1).innerHTML = `<a href="${janiceLink}" target="_blank">${janiceLink}</a>`;
+        row.insertCell(2).textContent = totalBuyPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        row.insertCell(3).textContent = tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        row.insertCell(4).textContent = payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+
+    // Итоговая строка
+    const allTax = allResult.totalBuyPrice * 0.10;
+    const allPayout = allResult.totalBuyPrice - allTax;
+
+    const allRow = resultTable.insertRow();
+    allRow.insertCell(0).textContent = 'ALL';
+    allRow.insertCell(1).innerHTML = `<a href="${allResult.janiceLink}" target="_blank">${allResult.janiceLink}</a>`;
+    allRow.insertCell(2).textContent = allResult.totalBuyPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    allRow.insertCell(3).textContent = allTax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    allRow.insertCell(4).textContent = allPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+async function saveData() {
+    try {
+        // Получаем данные из таблицы данных за выбранную дату
+        const dataTable = document.getElementById('dataTable');
+        const date = Array.from(dataTable.querySelectorAll('tr')).slice(1)[0].querySelectorAll('td')[0].textContent;
+
+        // Получаем данные из таблицы результатов
+        const resultTable = document.getElementById('resultTable');
+        const resultData = Array.from(resultTable.querySelectorAll('tr')).slice(1).map(row => {
+            const cells = row.querySelectorAll('td');
+            const totalPrice = parseFloat(cells[2].textContent.replace(/,/g, ''));
+            const tax = totalPrice * 0.1; // Предположим, что налог составляет 10%
+            const payout = totalPrice * 0.9; // Выплата составляет 90% от общей суммы
+
+            return {
+                date: date, // Используем дату из другой таблицы
+                pilot_name: cells[0].textContent, // characterName
+                janice_link: cells[1].textContent,
+                total_amount: totalPrice,
+                tax: tax,
+                payout: payout
+            };
+        });
+
+        // Получаем данные из dataTable для отправки
+        const tableData = Array.from(dataTable.querySelectorAll('tr')).slice(1).map(row => {
+            const cells = row.querySelectorAll('td');
+            return {
+                date: cells[0].textContent,
+                characterName: cells[1].textContent,
+                typeName: cells[2].textContent,
+                quantity: parseInt(cells[3].textContent, 10),
+                characterId: cells[4].textContent // Извлечение скрытого столбца с character_id
+            };
+        });
+
+        // Отправка данных на сервер
+        const response = await fetch('/api/obsdatasave', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ resultData, tableData })
+        });
+
+        if (response.ok) {
+            alert('Данные успешно сохранены!');
+        } else {
+            alert('Произошла ошибка при сохранении данных.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Произошла ошибка при сохранении данных.');
+    }
+}
+
+    </script>
 </body>
 </html>

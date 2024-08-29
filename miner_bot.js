@@ -837,4 +837,22 @@ async function handlePayouts(interaction) {
     });
 }
 
+async function sendMiningLogMessage(date) {
+    try {
+        // Получаем канал на русском языке
+        const channelRU = await client.channels.fetch(MAIN_CHANNEL_ID);
+        const ruMessage = `Здравствуйте! Журнал добычи за ${date} успешно загружен на сайт. Вы молодцы, копатели! [Ссылка на журнал](https://evil-capybara.space/logs?date=${date})`;
+        await channelRU.send(ruMessage);
+
+        // Получаем канал на английском языке
+        const channelEN = await client.channels.fetch(EN_MAIN_CHANNEL_ID);
+        const enMessage = `Hello! The mining log for ${date} has been successfully uploaded to the site. Great job, miners! [Link to the log](https://evil-capybara.space/logs?date=${date})`;
+        await channelEN.send(enMessage);
+
+        console.log('Messages sent successfully');
+    } catch (error) {
+        console.error('Error sending messages:', error);
+    }
+}
+module.exports = { sendMiningLogMessage };
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);
