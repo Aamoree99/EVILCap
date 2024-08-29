@@ -9,6 +9,7 @@ const querystring = require('querystring');
 const crypto = require('crypto');
 require('dotenv').config();
 const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
+const { combineAndFormatData, getObserverDataById } = require('./get_observers');
 const lpApp = require('./lp_app');
 
 const app = express();
@@ -1040,6 +1041,27 @@ app.get('/api/filter', (req, res) => {
         });
     });
 });
+
+
+  app.get('/observers', async (req, res) => {
+    try {
+        const observers = await combineAndFormatData();
+        res.render('observers', { observers });
+    } catch (error) {
+        res.status(500).send('Ошибка при получении данных наблюдателей');
+    }
+});
+
+app.get('/api/observer/:id', async (req, res) => {
+    const observerId = req.params.id;
+    try {
+        const data = await getObserverDataById(observerId);
+        res.json(data);
+    } catch (error) {
+        res.status(500).send('Ошибка при получении данных наблюдателя');
+    }
+});
+
 
 app.use('/lp', lpApp);
 

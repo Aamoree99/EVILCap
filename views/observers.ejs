@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Observers List</title>
+    <script>
+        function getObserverData(observerId) {
+            fetch(`/api/observer/${observerId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Здесь вы можете обработать полученные данные
+                    console.log(data);
+                    // Например, отображать данные на странице или в модальном окне
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</head>
+<body>
+    <h1>Observers List</h1>
+    <ul>
+        <% observers.forEach(observer => { %>
+            <li>
+                <span><%= observer.name %></span>
+                <button onclick="getObserverData(<%= observer.id %>)">Get Data</button>
+            </li>
+        <% }) %>
+    </ul>
+</body>
+</html>

@@ -130,6 +130,58 @@ async function getObserverData(corporation_id, accessToken) {
   }
 }
 
+async function getObserverDataById(observerId) {
+  try {
+    const accessToken = await getObservers();
+    if (!accessToken) throw new Error('Не удалось получить токен доступа');
+
+    const playerInfo = await getPlayerInfo(accessToken);
+    if (!playerInfo) throw new Error('Не удалось получить информацию о владельце токена');
+
+    const { corporation_id } = playerInfo;
+
+      const observerData = await fetchObserverData(corporation_id, observerId, accessToken);
+      if (!observerData) throw new Error('Не удалось получить данные наблюдателя');
+
+      return observerData;
+  } catch (error) {
+      console.error('Ошибка при получении данных наблюдателя:', error);
+      throw error;
+  }
+}
+
+async function fetchObserverData(corporation_id, observerId, accessToken) {
+  let allData = [];
+  let page = 1;
+  let hasMoreData = true;
+  while (hasMoreData) {
+  try {
+    const url = `https://esi.evetech.net/latest/corporation/${corporation_id}/mining/observers/${observerId}/?datasource=tranquility&page=${page}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    if (response.data.length > 0) {
+      allData = allData.concat(response.data);
+      page++;
+    } else {
+      hasMoreData = false;
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      hasMoreData = false;
+    } else {
+      console.error('Ошибка при получении данных об обсерваториях корпорации:', error.response ? error.response.data : error.message);
+      hasMoreData = false;
+    }
+  }
+}
+}
+
+
 async function combineAndFormatData() {
   try {
     const accessToken = await getObservers();
@@ -156,7 +208,8 @@ async function combineAndFormatData() {
         return {
           name: structure.name,
           chunk_arrival_date: observer.chunk_arrival_time,
-          fuel_expires_date: structure.fuel_expires
+          fuel_expires_date: structure.fuel_expires,
+          id: observer.structure_id
         };
       }
       return null;
@@ -164,7 +217,7 @@ async function combineAndFormatData() {
 
     // Фильтрация записей с именем "Manatirid - Ore - A-MIC"
     const filteredResult = result.filter(item => item.name !== 'Manatirid - Ore - A-MIC');
-    
+    console.log(filteredResult);
     return filteredResult;
   } catch (error) {
     console.error('Ошибка при объединении и форматировании данных:', error);
@@ -173,5 +226,6 @@ async function combineAndFormatData() {
 
 
 module.exports = {
-  combineAndFormatData
+  combineAndFormatData, 
+  getObserverDataById
 };
