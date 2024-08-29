@@ -331,7 +331,8 @@ const bannedWords = [
 client.on('messageCreate', async (message) => {
     if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
 
-    const hasBannedWord = bannedWords.some(word => message.content.toLowerCase().includes(word));
+    const hasBannedWord = bannedWords.some(word => new RegExp(word, 'i').test(message.content));
+
     if (hasBannedWord) {
         try {
             const response = await axios.post(
