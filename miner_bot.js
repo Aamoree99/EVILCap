@@ -145,12 +145,10 @@ client.on('interactionCreate', async (interaction) => {
 
 async function handleMoonCommand(interaction) {
     try {
-        // Чтение данных
         const data = await readFromJSON(DATA_FILE);
         const ignoreList = data.ignoreList || [];
         const authorUsername = interaction.user.username;
 
-        // Получение данных чанков и массивов объемов
         const chunks = await combineAndFormatData();
         const stationDescriptions = [
             "Bitumens: 11,844,546 m3\nCoesite: 6,559,526 m3\nZeolites: 3,792,468 m3",
@@ -197,11 +195,11 @@ async function handleMoonCommand(interaction) {
                     const stationDescription = isEvenDay && descriptionIndex >= 0 && descriptionIndex < stationDescriptions.length
                         ? stationDescriptions[descriptionIndex]
                         : '';
-            
+                    const extractedText = currentChunk.name.split(' ')[0];
                     const embedRU = new EmbedBuilder()
                         .setTitle("*Лунные ресурсы готовы к сбору.*")
                         .addFields(
-                            { name: "Система", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "Система", value: `[**${extractedText}**](https://evemaps.dotlan.net/system/${extractedText})`, inline: true },
                             { name: "Станция", value: `**${currentChunk.name}**\n${stationDescription}\n\n*Объемы указаны примерно.*`, inline: true }
                         )
                         .setColor("#A52A2A")
@@ -210,7 +208,7 @@ async function handleMoonCommand(interaction) {
                     const embedEN = new EmbedBuilder()
                         .setTitle("*The moon products are ready to be harvested.*")
                         .addFields(
-                            { name: "System", value: "[**Pashanai**](https://evemaps.dotlan.net/system/Pashanai)", inline: true },
+                            { name: "System", value: `[**${extractedText}**](https://evemaps.dotlan.net/system/${extractedText})`, inline: true },
                             { name: "Station", value: `**${currentChunk.name}**\n${stationDescription}\n\n*Volumes are approximate.*`, inline: true }
                         )
                         .setColor("#A52A2A")

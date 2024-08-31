@@ -2405,7 +2405,6 @@ async function createMoonMessage(currentDate) {
 
     // Получение данных
     const result = await combineAndFormatData();
-    console.log(result);
     const data = result.filter(item => item.name !== 'Manatirid - Ore - A-MIC');
     if (!Array.isArray(data)) {
         throw new TypeError('Expected data to be an array');
