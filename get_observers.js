@@ -327,9 +327,7 @@ async function combineAndFormatData() {
       return null;
     }).filter(item => item !== null);
 
-    // Фильтрация записей с именем "Manatirid - Ore - A-MIC"
-    const filteredResult = result.filter(item => item.name !== 'Manatirid - Ore - A-MIC');
-    return filteredResult;
+    return result;
   } catch (error) {
     console.error('Ошибка при объединении и форматировании данных:', error);
   }
