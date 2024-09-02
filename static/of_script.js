@@ -37,10 +37,6 @@ const translations = {
             ru: { name: "Ivan Grozny", img: "/slides/of9.png", text: "Менеджер по коммуникациям", extra: "Эксперт дипломат" }
         },
         {
-            en: { name: "Hell Heim", img: "/slides/of11.jpg", text: "CEO of Capybara's Legion Lair", extra: "Null-Sec Conqueror" },
-            ru: { name: "Hell Heim", img: "/slides/of11.jpg", text: "Генеральный директор Capybara's Legion Lair", extra: "Завоеватель нулевых секторов" }
-        },
-        {
             en: { name: "Igarelsky LL", img: "/slides/of_igar.jpg", text: "CEO of Everybody Loves Pizza", extra: "Culinary King" },
             ru: { name: "Igarelsky LL", img: "/slides/of_igar.jpg", text: "Генеральный директор Everybody Loves Pizza", extra: "Король кулинарии" }
         }

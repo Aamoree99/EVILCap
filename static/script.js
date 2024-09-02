@@ -29,14 +29,10 @@ document.addEventListener('DOMContentLoaded', function () {
             en: { title: "Yellow Foxes" , text: 'Join the "Yellow Foxes" and soar to the stars! We are a vibrant community focused on earning substantial ISK in EVE, offering both support and vast opportunities to our members. Dive into a secure environment with expert guidance, where every pilot is valued and success is within reach.' }
         },
         8: {
-            ru: { title: "Capybara's Legion Lair", text: "Присоединяйтесь к 'Легиону Капибар' и исследуйте вселенную! Мы уникальная раса, созданная древними учеными, способная выживать в экстремальных условиях космоса. Наши капибары путешествуют по галактике, исследуют новые миры и устанавливают контакт с другими формами жизни. Наша специализация - Null-sec. Станьте частью космического сообщества и откройте новые горизонты вместе с нами."},
-            en: { title: "Capybara's Legion Lair", text: "Join the 'Capybara's Legion Lair' and explore the universe! We are a unique race, created by ancient scientists, capable of surviving in extreme space conditions. Our capybaras travel the galaxy, explore new worlds, and establish contact with other life forms. Our specialization is in Null-sec. Become part of the cosmic community and discover new horizons with us."}
-        },
-        9: {
             ru: { title: "Everybody Loves Pizza", text: "Это корпорация, занимающаяся изучением и освоением космоса. Мы неспешно пролетаем мимо маленьких камушков и огромных астероидов размером с баржу, собирая яркие облака газа в трюм осторожного пилота. Наша миссия — создавать ламповую атмосферу и не терпеть тех, кто ее нарушает. Мы приглашаем тех, кто также любит перелопатить пару белтов или высосать облако газа перед сном." },
             en: { title: "Everybody Loves Pizza", text: "This is a corporation focused on the exploration and utilization of space. We leisurely pass by small rocks and massive asteroids the size of barges, collecting bright clouds of gas into the cargo hold of a cautious pilot. Our mission is to create a warm and friendly atmosphere and not tolerate those who disrupt it. We welcome those who also enjoy mining a few belts or harvesting a cloud of gas before bed." }
         },
-        10: {
+        9: {
             en: {
                 title: "Join Our Ranks Today!",
                 text: `You've decided to join us — excellent choice! In-game, reach out to <span class="contact-name">DonaldKrak</span> to get started or click the button below to join our Discord and become part of our thriving community. We're excited to welcome you aboard and start our journey together. Let’s achieve greatness!`,
