@@ -343,8 +343,8 @@ async function updateCorporationInfo() {
             return 'Не удалось получить данные о корпорации.';
           }).join('\n');
   
-          // Обновляем найденное сообщение
-          await targetMessage.edit(`## Информация о корпорациях:\n${messagesToUpdate}`);
+          // Обновляем найденное сообщение с добавлением разделительной линии
+          await targetMessage.edit(`## Информация о корпорациях:\n${messagesToUpdate}\n\n---\nНаши ссылки:\n\nНаш сайт: [ТЫК](<https://evil-capybara.space>)\nНаш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\nНаш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\nНаш ВК: ДОБАВИТЬ\nНаш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
           console.log('Сообщение обновлено');
         } else {
           // Если сообщение не найдено, отправляем новое
@@ -355,7 +355,7 @@ async function updateCorporationInfo() {
             return 'Не удалось получить данные о корпорации.';
           }).join('\n');
   
-          await channel.send(`## Информация о корпорациях:\n${messagesToSend}`);
+          await channel.send(`# Информация о корпорациях:\n${messagesToSend}\n------------\n# Наши ссылки:\n\n## Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n## Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n## Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\n\n## Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n## Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
           console.log('Новое сообщение отправлено');
         }
       } else {
@@ -365,6 +365,7 @@ async function updateCorporationInfo() {
       console.error('Ошибка при обновлении информации о корпорациях:', error);
     }
   }
+  
 
 const bannedWords = [
     "оскорбление", "политика", "ненависть", "расизм", 
