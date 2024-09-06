@@ -344,7 +344,7 @@ async function updateCorporationInfo() {
           }).join('\n');
   
           // Обновляем найденное сообщение с добавлением разделительной линии
-          await targetMessage.edit(`# Информация о корпорациях:\n${messagesToUpdate}\n------------\n# Наши ссылки:\n\n### Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n### Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n### Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\n\n### Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n### Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
+          await targetMessage.edit(`# Информация о корпорациях:\n${messagesToUpdate}\n------------\n# Наши ссылки:\n\n### Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n### Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n### Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n### Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)\n\n### Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)`);
           console.log('Сообщение обновлено');
         } else {
           // Если сообщение не найдено, отправляем новое
@@ -355,7 +355,7 @@ async function updateCorporationInfo() {
             return 'Не удалось получить данные о корпорации.';
           }).join('\n');
   
-          await channel.send(`# Информация о корпорациях:\n${messagesToSend}\n------------\n# Наши ссылки:\n\n### Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n### Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n### Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\n\n### Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n### Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
+          await channel.send(`# Информация о корпорациях:\n${messagesToSend}\n------------\n# Наши ссылки:\n\n### Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n### Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n### Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n### Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)\n\n### Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)`);
           console.log('Новое сообщение отправлено');
         }
       } else {
