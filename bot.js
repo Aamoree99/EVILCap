@@ -344,7 +344,7 @@ async function updateCorporationInfo() {
           }).join('\n');
   
           // Обновляем найденное сообщение с добавлением разделительной линии
-          await targetMessage.edit(`## Информация о корпорациях:\n${messagesToUpdate}\n\n---\nНаши ссылки:\n\nНаш сайт: [ТЫК](<https://evil-capybara.space>)\nНаш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\nНаш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\nНаш ВК: ДОБАВИТЬ\nНаш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
+          await targetMessage.edit(`# Информация о корпорациях:\n${messagesToUpdate}\n------------\n# Наши ссылки:\n\n## Наш сайт: [ТЫК](<https://evil-capybara.space>)\n\n## Наш LP Store: [ТЫК](<https://evil-capybara.space/lp/lp_calc>)\n\n## Наш трекер CRAB: [ТЫК](<https://evil-capybara.space/crabs>)\n\n## Наш ВК: [ТЫК](<https://vk.com/evilcapybaraincorporated>)\n\n## Наш waitlist homefronts: [ТЫК](<https://evil-capybara.space/hf_waitlist>)`);
           console.log('Сообщение обновлено');
         } else {
           // Если сообщение не найдено, отправляем новое
