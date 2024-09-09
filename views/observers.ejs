@@ -176,7 +176,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         let selectedObserverId = null;
-
+        let selectedDate = null;
         async function getObserverData(observerId) {
             selectedObserverId = observerId; // Сохранить выбранного наблюдателя
             try {
@@ -207,7 +207,11 @@
                 uniqueDates.forEach(date => {
                     const button = document.createElement('button');
                     button.textContent = date;
-                    button.onclick = () => displayDataByDate(date, responseData.data);
+                    button.onclick = () => {
+                        selectedDate = date; // Сохранить выбранную дату
+                        console.log(selectedDate);
+                        displayDataByDate(date, responseData.data);
+                    };
                     button.className = 'button-style'; // Применение класса для стиля
                     datesContainer.appendChild(button);
                 });
@@ -276,13 +280,13 @@
 
             const response = await fetch(`/api/observer/${selectedObserverId}`);
             const responseData = await response.json();
-
+            const filteredData = responseData.data.filter(item => item.last_updated.startsWith(selectedDate));
             if (!responseData.data || responseData.data.length === 0) {
                 alert('Нет данных для расчета.');
                 return;
             }
 
-            const groupedData = groupDataByCharacter(responseData.data);
+            const groupedData = groupDataByCharacter(filteredData.data);
 
             // Запрашиваем ссылки для каждого персонажа
             const individualLinks = await Promise.all(Object.entries(groupedData).map(async ([character, items]) => {
