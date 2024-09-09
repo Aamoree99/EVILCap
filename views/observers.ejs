@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Observers List - Barbie Style</title>
+    <title>Кальулятор для Эвелины</title>
     <style>
         /* Ваш CSS стиль */
         body {
@@ -150,6 +150,7 @@
 </head>
 <body>
     <h1>Observers List</h1>
+    <h2>Добро пожаловать, Эвелина!</h2>
     <ul class="observer-list">
         <% observers.forEach(observer => { %>
             <li>
@@ -281,12 +282,13 @@
             const response = await fetch(`/api/observer/${selectedObserverId}`);
             const responseData = await response.json();
             const filteredData = responseData.data.filter(item => item.last_updated.startsWith(selectedDate));
+            console.log(filteredData);
             if (!responseData.data || responseData.data.length === 0) {
                 alert('Нет данных для расчета.');
                 return;
             }
 
-            const groupedData = groupDataByCharacter(filteredData.data);
+            const groupedData = groupDataByCharacter(filteredData);
 
             // Запрашиваем ссылки для каждого персонажа
             const individualLinks = await Promise.all(Object.entries(groupedData).map(async ([character, items]) => {
