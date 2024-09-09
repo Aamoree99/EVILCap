@@ -264,6 +264,14 @@ const commands = [
     new SlashCommandBuilder()
         .setName('evestatus')
         .setDescription('Server status'),
+    new SlashCommandBuilder()
+        .setName('market')
+        .setDescription('Market data')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('The name of the item')
+                .setRequired(true)
+        )
 
 ]
     .map(command => command.toJSON());
@@ -385,7 +393,12 @@ const bannedWords = [
 
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot || message.channel.id !== MAIN_CHANNEL_ID) return;
+    if (
+        message.author.bot || 
+        message.channel.id !== MAIN_CHANNEL_ID || 
+        message.author.id === '235822777678954496'
+      ) return;
+      
 
     const hasBannedWord = bannedWords.some(word => new RegExp(word, 'i').test(message.content));
 
@@ -1065,6 +1078,14 @@ client.on('interactionCreate', async interaction => {
           },
         async crabs() {
             await handleDungeonCommand(interaction); 
+        },
+        async market(){
+            const itemName = options.getString('name');
+            if (itemName) {
+                await getMarketData(interaction, itemName);
+            } else {
+                await interaction.reply('Please provide a valid item name.');
+            }
         }
           
           
@@ -3787,6 +3808,133 @@ client.on('messageCreate', async message => {
         }
     }
 });
+
+async function getMarketData(interaction, itemName) {
+
+    await interaction.reply('Looking for prices...');
+
+    try {
+        // Получаем typeID по имени товара
+        const typeIdResponse = await axios.get(`http://www.fuzzwork.co.uk/api/typeid.php?typename=${encodeURIComponent(itemName)}`);
+        const typeId = typeIdResponse.data.typeID;
+        console.log(typeId);
+
+        if (!typeId) {
+            return interaction.editReply('Item not found.');
+        }
+
+        const regions = {
+            'The Forge': 10000002,
+            'Metropolis': 10000042,
+            'Domain': 10000043,
+            'Sinq Laison': 10000032
+        };
+
+        let bestBuyPrice = 0;
+        let bestSellPrice = Infinity;
+        let bestBuyLocation = null;
+        let bestSellLocation = null;
+
+        let responseText = '';
+        responseText += `# Market Data for ${itemName}\n\n`;
+
+        for (const [regionName, regionId] of Object.entries(regions)) {
+            const marketDataResponse = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=all&type_id=${typeId}`);
+            const marketData = marketDataResponse.data;
+
+            let minSellPrice = Infinity;
+            let maxBuyPrice = 0;
+            let totalSellVolume = 0;
+            let totalBuyVolume = 0;
+            let totalSellPrice = 0;
+            let totalBuyPrice = 0;
+            let sellOrdersCount = 0;
+            let buyOrdersCount = 0;
+
+            marketData.forEach(order => {
+                if (order.is_buy_order) {
+                    if (order.price > maxBuyPrice) {
+                        maxBuyPrice = order.price;
+                    }
+                    totalBuyVolume += order.volume_remain;
+                    totalBuyPrice += order.price * order.volume_remain;
+                    buyOrdersCount++;
+                } else {
+                    if (order.price < minSellPrice) {
+                        minSellPrice = order.price;
+                    }
+                    totalSellVolume += order.volume_remain;
+                    totalSellPrice += order.price * order.volume_remain;
+                    sellOrdersCount++;
+                }
+            });
+
+            const avgSellPrice = totalSellPrice / totalSellVolume || 0;
+            const avgBuyPrice = totalBuyPrice / totalBuyVolume || 0;
+            function formatNumber(number) {
+                return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            responseText += `## **📍 ${regionName}**\n`;
+            responseText += `💲 **Min Sell Price:** ${formatNumber(minSellPrice)} ISK\n`;
+            responseText += `💰 **Max Buy Price:** ${formatNumber(maxBuyPrice)} ISK\n`;
+            responseText += `📦 **Total Sell Volume:** ${totalSellVolume.toLocaleString('en-US')}\n`;
+            responseText += `🛒 **Total Buy Volume:** ${totalBuyVolume.toLocaleString('en-US')}\n`;
+            responseText += `📊 **Average Sell Price:** ${formatNumber(avgSellPrice)} ISK\n`;
+            responseText += `📈 **Average Buy Price:** ${formatNumber(avgBuyPrice)} ISK\n\n`;
+
+            if (minSellPrice < bestSellPrice) {
+                bestSellPrice = minSellPrice;
+                bestSellLocation = marketData.find(order => !order.is_buy_order && order.price === minSellPrice).location_id;
+            }
+
+            if (maxBuyPrice > bestBuyPrice) {
+                bestBuyPrice = maxBuyPrice;
+                bestBuyLocation = marketData.find(order => order.is_buy_order && order.price === maxBuyPrice).location_id;
+            }
+        }
+
+        const locationIds = [];
+        function isValidInt32(value) {
+            return Number.isInteger(value) && value >= -2147483648 && value <= 2147483647;
+        }
+        
+        if (bestBuyLocation && isValidInt32(bestBuyLocation)) {
+            locationIds.push(bestBuyLocation);
+        }
+        if (bestSellLocation && isValidInt32(bestSellLocation)) {
+            locationIds.push(bestSellLocation);
+        }
+        
+        let locationNames = [];
+        console.log(locationIds);
+        
+        if (locationIds.length > 0) {
+            try {
+                const namesResponse = await axios.post('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', locationIds);
+                locationNames = namesResponse.data.map(location => location.name);
+            } catch (error) {
+                console.error('Failed to retrieve location names:', error);
+            }
+        }
+        
+        // Если location_id не прошли проверку, ищем другие
+        if (locationIds.length === 0) {
+            console.log('No valid location IDs found. Please check the data and try again.');
+        }
+        
+
+        responseText += `### **Best Buy Location:** ${locationNames[0] || 'N/A'} (Price: ${formatNumber(bestSellPrice)} ISK)\n`;
+        responseText += `### **Best Sell Location:** ${locationNames[1] || 'N/A'} (Price: ${formatNumber(bestBuyPrice)} ISK)\n`;
+
+        await interaction.editReply(responseText);
+
+    } catch (error) {
+        console.error(error);
+        await interaction.editReply('An error occurred while fetching the market data.');
+    }
+}
+
 
 client.login(token); 
 
