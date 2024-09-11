@@ -3811,7 +3811,7 @@ client.on('messageCreate', async message => {
 
 async function getMarketData(interaction, itemName) {
 
-    await interaction.reply('Looking for prices...');
+    await interaction.reply({ content: 'Looking for prices...', ephemeral: true });
 
     try {
         // Получаем typeID по имени товара
