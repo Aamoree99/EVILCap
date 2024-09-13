@@ -228,8 +228,21 @@ async function handleMoonCommand(interaction) {
             // Находим следующий чанк
             chunks.sort((a, b) => new Date(a.chunk_arrival_date) - new Date(b.chunk_arrival_date));
 
-            const nextChunk = chunks.find(chunk => new Date(chunk.chunk_arrival_date) > now);
-            
+let nextChunk = null;
+
+if (todayDay % 2 !== 0) {
+    // Для нечетных дней ищем запись через 7 дней
+    const futureDate = new Date();
+    futureDate.setUTCDate(todayDay + 7);
+
+    nextChunk = chunks.find(chunk => {
+        const chunkArrivalDate = new Date(chunk.chunk_arrival_date);
+        return chunkArrivalDate.getUTCDate() === futureDate.getUTCDate();
+    });
+} else {
+    // Для четных дней находим следующий чанк
+    nextChunk = chunks.find(chunk => new Date(chunk.chunk_arrival_date) > now);
+}
             if (nextChunk) {
                 const timeUntilNextChunk = new Date(nextChunk.chunk_arrival_date) - now;
                 const hoursUntilNextChunk = Math.floor(timeUntilNextChunk / (1000 * 60 * 60));
