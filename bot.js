@@ -779,7 +779,7 @@ client.on('interactionCreate', async interaction => {
             await startCasinoGame(interaction);
         },
 
-        async getfirstchunk(interaction) {
+        async getfirstchunk() {
             try {
                 
                 await saveChunksToJson();
@@ -796,7 +796,7 @@ client.on('interactionCreate', async interaction => {
                 const firstChunk = data.chunks[0];
     
                
-                const message = `Первая запись:\nСистема: ${firstChunk.name}\nДата прибытия чанка: ${firstChunk.chunk_arrival_date}`;
+                const message = `Следующая луна:\nСистема: ${firstChunk.name}\nДата прибытия чанка: ${firstChunk.chunk_arrival_date}`;
     
                 
                 await interaction.reply({ content: message, ephemeral: true });
