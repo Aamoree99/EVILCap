@@ -75,6 +75,7 @@ const HOMEFRONTS_ID='1243701044157091860';
 const allowedUserId = '235822777678954496';
 const guildId = GUILD_ID;
 const RSS_URL = 'https://status.eveonline.com/history.rss';
+const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
 let tokenCache = {
     accessToken: null,
@@ -131,6 +132,16 @@ client.once('ready', async () => {
     });
     updateCorporationInfo();
     cron.schedule('0 * * * *', updateCorporationInfo);
+    cron.schedule('0 8 * * *', async () => {
+        try {
+            const chunks = await combineAndFormatData();
+            await writeToJSON(DATA_FILE, { chunks });
+            console.log('Данные успешно сохранены в JSON.');
+            await sendMoonReminder();
+        } catch (error) {
+            console.error('Ошибка при сохранении данных в JSON:', error);
+        }
+    });
 });
 
 async function notifyDatabaseConnection() {
@@ -303,6 +314,67 @@ client.on('messageCreate', message => {
         }
     }
 });
+
+async function sendMoonReminder() {
+    try {
+        const data = await readFromJSON(DATA_FILE);
+        if (!data || !data.chunks) {
+            console.log('Нет данных о лунах.');
+            return;
+        }
+
+        const chunks = data.chunks;
+        const now = new Date();
+        const todayDay = now.getUTCDate();
+
+        // Находим чанк, который прилетает сегодня
+        const currentChunk = chunks.find(chunk => {
+            const chunkArrivalDate = new Date(chunk.chunk_arrival_date);
+            return chunkArrivalDate.getUTCDate() === todayDay;
+        });
+
+        if (!currentChunk) {
+            console.log('Сегодня нет луны.');
+            return;
+        }
+
+        const extractedText = currentChunk.name.split(' ')[0];
+        
+        // Сообщения в каналы
+        const embedRU = new EmbedBuilder()
+            .setTitle("*Напоминание: Лунные ресурсы сегодня будут готовы к сбору.*")
+            .addFields(
+                { name: "Система", value: `[**${extractedText}**](https://evemaps.dotlan.net/system/${extractedText})`, inline: true },
+                { name: "Станция", value: `**${currentChunk.name}**`, inline: true }
+            )
+            .setColor("#A52A2A")
+            .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+
+        const embedEN = new EmbedBuilder()
+            .setTitle("*Reminder: The moon products will be ready to harvest today.*")
+            .addFields(
+                { name: "System", value: `[**${extractedText}**](https://evemaps.dotlan.net/system/${extractedText})`, inline: true },
+                { name: "Station", value: `**${currentChunk.name}**`, inline: true }
+            )
+            .setColor("#A52A2A")
+            .setImage("https://wiki.eveuniversity.org/images/1/10/Athanor.jpg");
+
+        // Отправляем сообщения в каналы
+        const channelRU = client.channels.cache.get(MAIN_CHANNEL_ID);
+        const channelEN = client.channels.cache.get(EN_MAIN_CHANNEL_ID);
+
+        if (channelRU && channelEN) {
+            await channelRU.send({ content: "<@&1163380015191302214> Напоминание о луне!", embeds: [embedRU] });
+            await channelEN.send({ content: "<@&1163380015191302214> Moon reminder!", embeds: [embedEN] });
+
+            console.log('Сообщения отправлены в каналы.');
+        } else {
+            console.log('Один или оба канала не найдены.');
+        }
+    } catch (error) {
+        console.error('Ошибка в функции sendMoonReminder:', error);
+    }
+}
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     const VOICE_CHANNEL_ID = '1212507874593349732';
@@ -1862,8 +1934,6 @@ async function fetchGameNames() {
         return new Set();
     }
 }
-
-const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
 
 async function readFromJSON(filePath) {
     try {

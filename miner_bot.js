@@ -147,9 +147,9 @@ async function handleMoonCommand(interaction) {
     try {
         const data = await readFromJSON(DATA_FILE);
         const ignoreList = data.ignoreList || [];
+        const chunks = data.chunks || [];
         const authorUsername = interaction.user.username;
 
-        const chunks = await combineAndFormatData();
         const stationDescriptions = [
             "Bitumens: 11,844,546 m3\nCoesite: 6,559,526 m3\nZeolites: 3,792,468 m3",
             "Bitumens: 6,866,833 m3\nSylvite: 5,118,296 m3\nZeolites: 9,945,053 m3",

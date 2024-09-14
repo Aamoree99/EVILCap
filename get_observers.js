@@ -325,7 +325,8 @@ async function combineAndFormatData() {
         };
       }
       return null;
-    }).filter(item => item !== null);
+    }).filter(item => item !== null)
+    .sort((a, b) => new Date(a.chunk_arrival_date) - new Date(b.chunk_arrival_date));
 
     return result;
   } catch (error) {
