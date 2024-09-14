@@ -318,7 +318,7 @@ client.on('messageCreate', message => {
 
 async function saveChunksToJson() {
     const chunks = await combineAndFormatData();
-    await writeData(DATA_FILE, { chunks });
+    await writeData({ chunks });
     console.log('Данные успешно сохранены в JSON.');
 }
 
