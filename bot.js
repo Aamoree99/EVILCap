@@ -134,9 +134,7 @@ client.once('ready', async () => {
     cron.schedule('0 * * * *', updateCorporationInfo);
     cron.schedule('0 8 * * *', async () => {
         try {
-            const chunks = await combineAndFormatData();
-            await writeToJSON(DATA_FILE, { chunks });
-            console.log('Данные успешно сохранены в JSON.');
+            await saveChunksToJson();
             await sendMoonReminder();
         } catch (error) {
             console.error('Ошибка при сохранении данных в JSON:', error);
@@ -276,6 +274,9 @@ const commands = [
         .setName('evestatus')
         .setDescription('Server status'),
     new SlashCommandBuilder()
+        .setName('getfirstchunk')
+        .setDescription('Получает первую запись в чанках'),
+    new SlashCommandBuilder()
         .setName('market')
         .setDescription('Market data')
         .addStringOption(option =>
@@ -314,6 +315,13 @@ client.on('messageCreate', message => {
         }
     }
 });
+
+async function saveChunksToJson() {
+    const chunks = await combineAndFormatData();
+    await writeToJSON(DATA_FILE, { chunks });
+    console.log('Данные успешно сохранены в JSON.');
+}
+
 
 async function sendMoonReminder() {
     try {
@@ -769,6 +777,33 @@ client.on('interactionCreate', async interaction => {
 
         async startcasino() {
             await startCasinoGame(interaction);
+        },
+
+        async getfirstchunk(interaction) {
+            try {
+                
+                await saveChunksToJson();
+    
+                
+                const data = await readFromJSON(DATA_FILE);
+    
+                if (!data || !data.chunks || data.chunks.length === 0) {
+                    await interaction.reply({ content: 'Нет данных о чанках.', ephemeral: true });
+                    return;
+                }
+    
+                
+                const firstChunk = data.chunks[0];
+    
+               
+                const message = `Первая запись:\nСистема: ${firstChunk.name}\nДата прибытия чанка: ${firstChunk.chunk_arrival_date}`;
+    
+                
+                await interaction.reply({ content: message, ephemeral: true });
+            } catch (error) {
+                console.error('Ошибка при выполнении команды:', error);
+                await interaction.reply({ content: 'Произошла ошибка при выполнении команды.', ephemeral: true });
+            }
         },
 
         async evestatus(){
