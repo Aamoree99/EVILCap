@@ -130,8 +130,8 @@ client.once('ready', async () => {
         checkMembersStatus();
         sendLatestNewsIfNew()
     });
-    updateCorporationInfo();
-    cron.schedule('0 * * * *', updateCorporationInfo);
+    // updateCorporationInfo();
+    // cron.schedule('0 * * * *', updateCorporationInfo);
     cron.schedule('0 8 * * *', async () => {
         try {
             await saveChunksToJson();
