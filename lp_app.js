@@ -38,7 +38,7 @@ cron.schedule('0 0 * * *', async () => {
 
 cron.schedule('*/15 * * * *', () => {
   console.log('Checking for new donations every 15 minutes');
-  checkDonations();
+  //checkDonations();
 });
 
 cron.schedule('0 */2 * * *', async () => {
@@ -309,6 +309,6 @@ lpApp.get('*', (req, res) => {
   }
 });
 
-checkDonations();
+//checkDonations();
 
 module.exports = lpApp;
