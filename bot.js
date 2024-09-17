@@ -118,7 +118,7 @@ client.once('ready', async () => {
         sendSPMessage();
         checkServerStatus();
     });
-    await updateMoonMessage();
+    // await updateMoonMessage();
     //scheduleDailyMessage();
     //setInterval(cleanupOldMessages, 60 * 60 * 1000);
     cron.schedule('0 12 * * 0', async () => {
