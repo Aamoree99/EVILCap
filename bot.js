@@ -90,6 +90,11 @@ let isProcessing = false;
 const userSessions = {};
 let StealthBot = false;
 
+const proxy = {
+  host: '18.204.105.153',  // IP прокси
+  port: 80
+};
+
 
 client.once('ready', async () => {
     client.user.setPresence({
@@ -3944,7 +3949,7 @@ async function getMarketData(interaction, itemName) {
         responseText += `# Market Data for ${itemName}\n\n`;
 
         for (const [regionName, regionId] of Object.entries(regions)) {
-            const marketDataResponse = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=all&type_id=${typeId}`);
+            const marketDataResponse = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=all&type_id=${typeId}`, { proxy });
             const marketData = marketDataResponse.data;
 
             let minSellPrice = Infinity;
