@@ -91,8 +91,8 @@ const userSessions = {};
 let StealthBot = false;
 
 const proxy = {
-  host: '18.204.105.153',  // IP прокси
-  port: 80
+  host: '198.23.143.24',  // IP прокси
+  port: 6969
 };
 
 
