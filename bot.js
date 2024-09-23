@@ -328,7 +328,8 @@ async function saveChunksToJson() {
 async function getMyIP() {
     try {
       const ipResponse = await axios.get('https://ipinfo.io/json');
-      return ipResponse.data.ip;
+      console.log(ipResponse);
+      return ipResponse.data;
     } catch (error) {
       return `Ошибка получения IP: ${error.message}`;
     }
@@ -821,10 +822,26 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply('Checking server status...');
             await checkServerStatus();
         },
-        async getmyip(){
-            const ip = getMyIP();
-            await interaction.reply(ip);
-        },
+        async getmyip() {
+            try {
+              const ipInfo = await getMyIP();  // Дожидаемся завершения функции
+              // Формируем сообщение с подробной информацией
+              const message = `
+              IP: ${ipInfo.ip}
+              Hostname: ${ipInfo.hostname}
+              City: ${ipInfo.city}
+              Region: ${ipInfo.region}
+              Country: ${ipInfo.country}
+              Location: ${ipInfo.loc}
+              Organization: ${ipInfo.org}
+              Postal: ${ipInfo.postal}
+              Timezone: ${ipInfo.timezone}
+              `;
+              await interaction.reply(message);  // Отправляем сообщение
+            } catch (error) {
+              await interaction.reply(`Ошибка: ${error.message}`);
+            }
+          },
 
         async show_sessions() {
             if (channelId !== LOG_CHANNEL_ID) {

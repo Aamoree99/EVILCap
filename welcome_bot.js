@@ -177,7 +177,8 @@ async function updateBotStatus() {
     const statuses = [
         { name: 'Следит за всеми!', type: ActivityType.Custom },
         { name: `Ведет ${recruitCount} рекрутов`, type: ActivityType.Custom },
-        { name: 'Пугает Олегов', type: ActivityType.Custom }
+        { name: 'Ищет Олегов', type: ActivityType.Custom },
+        { name: 'Считает иски Томаса', type: ActivityType.Custom }
     ];
 
     client.user.setPresence({
