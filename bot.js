@@ -283,7 +283,10 @@ const commands = [
             option.setName('name')
                 .setDescription('The name of the item')
                 .setRequired(true)
-        )
+        ),
+    new SlashCommandBuilder()
+        .setName('getmyip')
+        .setDescription('Получает IP'),
 
 ]
     .map(command => command.toJSON());
