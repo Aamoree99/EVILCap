@@ -90,11 +90,6 @@ let isProcessing = false;
 const userSessions = {};
 let StealthBot = false;
 
-const proxy = {
-  host: '198.23.143.24',  // IP прокси
-  port: 6969
-};
-
 
 client.once('ready', async () => {
     client.user.setPresence({
@@ -327,6 +322,14 @@ async function saveChunksToJson() {
     console.log('Данные успешно сохранены в JSON.');
 }
 
+async function getMyIP() {
+    try {
+      const ipResponse = await axios.get('https://ipinfo.io/json');
+      return ipResponse.data.ip;
+    } catch (error) {
+      return `Ошибка получения IP: ${error.message}`;
+    }
+  }
 
 async function sendMoonReminder() {
     try {
@@ -814,6 +817,10 @@ client.on('interactionCreate', async interaction => {
         async evestatus(){
             await interaction.reply('Checking server status...');
             await checkServerStatus();
+        },
+        async getmyip(){
+            const ip = getMyIP();
+            await interaction.reply(ip);
         },
 
         async show_sessions() {
@@ -3949,7 +3956,7 @@ async function getMarketData(interaction, itemName) {
         responseText += `# Market Data for ${itemName}\n\n`;
 
         for (const [regionName, regionId] of Object.entries(regions)) {
-            const marketDataResponse = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=all&type_id=${typeId}`, { proxy });
+            const marketDataResponse = await axios.get(`https://esi.evetech.net/latest/markets/${regionId}/orders/?datasource=tranquility&order_type=all&type_id=${typeId}`);
             const marketData = marketDataResponse.data;
 
             let minSellPrice = Infinity;
