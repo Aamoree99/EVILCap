@@ -11,7 +11,6 @@ require('dotenv').config();
 const { client, fleetNotify, deleteVoiceChannelByFc } = require('./bot');
 const { combineAndFormatData, getObserverDataById } = require('./get_observers');
 const { sendMiningLogMessage } = require('./miner_bot');
-const lpApp = require('./lp_app');
 
 const app = express();
 const port = 8080; 
@@ -1147,7 +1146,6 @@ app.post('/api/obsdatasave', (req, res) => {
         });
 });
 
-app.use('/lp', lpApp);
 
 fetchDataFromDB();
 recalculatePilotStats();
