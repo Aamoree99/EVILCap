@@ -20,6 +20,9 @@ const { Client,
     InteractionType } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { combineAndFormatData } = require('./get_observers.js');
+const { Telegraf } = require('telegraf');
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const fetch = require('node-fetch');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const GUILD_ID = '1159107187407335434';
@@ -27,6 +30,15 @@ const MAIN_CHANNEL_ID = '1172972375688626276';
 const EN_MAIN_CHANNEL_ID = '1212507080934686740';
 const LOG_CHANNEL_ID = '1239085828395892796'; 
 const DATA_FILE = path.join(__dirname, 'complianceData.json'); 
+
+const TARGET_CHAT_ID = -1002479123103; // Убедитесь, что это число, без кавычек
+const TARGET_THREAD_ID = 3; // ID топика, куда нужно отправить сообщение
+
+async function sendTelegramMessage(text) {
+    await bot.telegram.sendMessage(TARGET_CHAT_ID, text, {
+        message_thread_id: TARGET_THREAD_ID
+    });
+}
 
 
 const commands = [
@@ -143,12 +155,12 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-async function handleMoonCommand(interaction) {
+async function handleMoonCommand(interaction, isTelegram = false) {
     try {
         const data = await readFromJSON(DATA_FILE);
         const ignoreList = data.ignoreList || [];
         const chunks = data.chunks || [];
-        const authorUsername = interaction.user.username;
+        const authorUsername = isTelegram ? "aamoree" : interaction.user.username;
 
         const stationDescriptions = [
             "Bitumens: 11,844,546 m3\nCoesite: 6,559,526 m3\nZeolites: 3,792,468 m3",
@@ -216,7 +228,11 @@ async function handleMoonCommand(interaction) {
             
                     await channel.send({ content: "<@&1163380015191302214>", embeds: [embedRU] });
                     await en_channel.send({ content: "<@&1163380015191302214>", embeds: [embedEN] });
-            
+
+                    const telegramMessage = `*Лунные ресурсы готовы к сбору.*\nСистема: [${extractedText}](https://evemaps.dotlan.net/system/${extractedText})\nСтанция: ${currentChunk.name}\n${stationDescription}\n*Объемы указаны примерно.*`;
+
+                    await sendTelegramMessage(telegramMessage);
+
                     responseMessage = "Сообщение отправлено.";
                 }else {
                     responseMessage = "Сегодня нет данных о луне.";
@@ -852,5 +868,5 @@ async function sendMiningLogMessage(date) {
         console.error('Error sending messages:', error);
     }
 }
-module.exports = { sendMiningLogMessage };
+module.exports = { sendMiningLogMessage, handleMoonCommand };
 client.login(process.env.DISCORD_MINER_BOT_TOKEN);

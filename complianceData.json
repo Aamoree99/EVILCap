@@ -26,13 +26,25 @@
     "1240673539015708803"
   ],
   "birthdays": {},
-  "rssfeed": "https://status.eveonline.com/incidents/fdfyqj23qh4v",
+  "rssfeed": "https://status.eveonline.com/incidents/tkd37kn7k6ch",
   "chunks": [
+    {
+      "name": "TEST",
+      "chunk_arrival_date": "2024-10-09T14:01:01Z",
+      "fuel_expires_date": "2024-10-14T01:00:00Z",
+      "id": 1046307287399
+    },
     {
       "name": "Manatirid - Ore-3",
       "chunk_arrival_date": "2024-09-15T07:01:01Z",
       "fuel_expires_date": "2024-10-14T01:00:00Z",
       "id": 1046307287399
+    },
+    {
+      "name": "Fake Chunk - Today",
+      "chunk_arrival_date": "2024-10-09T00:00:00Z",
+      "fuel_expires_date": "2024-10-14T00:00:00Z",
+      "id": 1046307287400
     },
     {
       "name": "Pashanai - Ore 8",
